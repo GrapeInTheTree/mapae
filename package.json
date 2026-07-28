@@ -1,0 +1,16 @@
+{
+  "name": "@mapae/workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fixtures": "forge script script/GenFixtures.s.sol && tsx sdk/test/encoding.test.ts",
+    "demo": "tsx scripts/demo.ts",
+    "trace": "tsx scripts/trace.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "viem": "^2.21.0"
+  }
+}
