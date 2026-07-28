@@ -35,8 +35,13 @@ exclude_lints = ["mixed-case-function", "asm-keccak256"]
 [rpc_endpoints]
 giwa_sepolia = "${GIWA_SEPOLIA_RPC_URL}"
 
-[etherscan]
-giwa_sepolia = {key = "unused", url = "https://sepolia-explorer.giwa.io/api/", chain = 91342}
+# NOTE: no [etherscan] section on purpose. Declaring chain 91342 there makes forge resolve it
+# against the named-chain registry and `forge script --broadcast` dies with "Chain 91342 not
+# supported" BEFORE broadcasting (the dry-run still writes deployments/*.json, which is how that
+# failure masquerades as success - always verify code on-chain after deploying). Verification is
+# done explicitly:
+#   forge verify-contract <addr> <path:Name> --verifier blockscout \
+#     --verifier-url https://sepolia-explorer.giwa.io/api/
 
 [fmt]
 line_length = 110

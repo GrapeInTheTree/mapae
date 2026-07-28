@@ -1,0 +1,13 @@
+{
+  "AllowedPayeeEnforcer": "0x7eF0f193B721B1749d890F1e231C8074670f1bD1",
+  "DojangScroll": "0xd5077b67dcb56caC8b270C7788FC3E6ee03F17B9",
+  "DojangVerifiedEnforcer": "0xb2906a5079702B82C2973423d8cf91e8B41e6371",
+  "ERC20PeriodTransferEnforcer": "0xE33ba891fa502A075D3E422258723eF4cB6AC892",
+  "GiwaFaucetExtension": "0x63CCe2b569A7bC35895ee24306c1512fefc06121",
+  "MapaeAccountFactory": "0x157aF4D7b3f52685c817d5558b3468caD9b61299",
+  "MapaeDelegationManager": "0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd",
+  "MockKRW": "0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B",
+  "TimestampEnforcer": "0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02",
+  "chainId": 91342,
+  "deployBlock": 31935476
+}
