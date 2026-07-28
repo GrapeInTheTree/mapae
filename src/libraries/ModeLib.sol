@@ -63,4 +63,18 @@ library ModeLib {
     function encodeSimpleSingle() internal pure returns (ModeCode mode) {
         mode = encode(CALLTYPE_SINGLE, EXECTYPE_DEFAULT, MODE_DEFAULT, ModePayload.wrap(0x00));
     }
+
+    /// @notice Reads the call type without unpacking the rest. Byte 0.
+    function getCallType(ModeCode mode) internal pure returns (CallType callType_) {
+        assembly {
+            callType_ := mode
+        }
+    }
+
+    /// @notice Reads the exec type without unpacking the rest. Byte 1.
+    function getExecType(ModeCode mode) internal pure returns (ExecType execType_) {
+        assembly {
+            execType_ := shl(8, mode)
+        }
+    }
 }
