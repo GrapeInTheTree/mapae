@@ -2,7 +2,15 @@
 pragma solidity ^0.8.29;
 
 import {Test} from "forge-std/Test.sol";
-import {Delegation, Caveat, ModeCode, CallType, ExecType} from "../../src/utils/Types.sol";
+import {
+    Delegation,
+    Caveat,
+    ModeCode,
+    CallType,
+    ExecType,
+    ModeSelector,
+    ModePayload
+} from "../../src/utils/Types.sol";
 import {
     DELEGATION_TYPEHASH,
     CAVEAT_TYPEHASH,
@@ -12,7 +20,14 @@ import {
 } from "../../src/utils/Constants.sol";
 import {EncoderLib} from "../../src/libraries/EncoderLib.sol";
 import {ExecutionLib} from "../../src/libraries/ExecutionLib.sol";
-import {ModeLib, CALLTYPE_SINGLE, EXECTYPE_DEFAULT} from "../../src/libraries/ModeLib.sol";
+import {
+    ModeLib,
+    CALLTYPE_SINGLE,
+    CALLTYPE_DELEGATECALL,
+    EXECTYPE_DEFAULT,
+    EXECTYPE_TRY,
+    MODE_DEFAULT
+} from "../../src/libraries/ModeLib.sol";
 import {IERC7710} from "../../src/interfaces/IERC7710.sol";
 
 /// @title EncodingConformanceTest
@@ -150,6 +165,47 @@ contract EncodingConformanceTest is Test {
         (CallType ct, ExecType et,,) = ModeLib.decode(ModeLib.encodeSimpleSingle());
         assertEq(CallType.unwrap(ct), CallType.unwrap(CALLTYPE_SINGLE));
         assertEq(ExecType.unwrap(et), ExecType.unwrap(EXECTYPE_DEFAULT));
+    }
+
+    /// @notice Round-trips the mode word with NON-ZERO fields, at the exact byte offsets.
+    /// @dev The simple-single case is all zeros, so it round-trips no matter how badly `encode`
+    ///      misplaces its operands. An earlier revision shifted all four fields wrongly and still
+    ///      passed that test - while `EXECTYPE_TRY` landed in the unused bytes and the account's
+    ///      guard against it silently stopped firing. Non-zero values are the only real check.
+    function test_ModeCode_RoundTripsNonZeroFields() public pure {
+        ModeCode mode = ModeLib.encode(
+            CALLTYPE_DELEGATECALL,
+            EXECTYPE_TRY,
+            ModeSelector.wrap(0xAABBCCDD),
+            ModePayload.wrap(bytes22(hex"0102030405060708090A0B0C0D0E0F10111213141516"))
+        );
+
+        (CallType ct, ExecType et, ModeSelector sel, ModePayload pl) = ModeLib.decode(mode);
+        assertEq(CallType.unwrap(ct), bytes1(0xFF), "callType offset");
+        assertEq(ExecType.unwrap(et), bytes1(0x01), "execType offset");
+        assertEq(ModeSelector.unwrap(sel), bytes4(0xAABBCCDD), "selector offset");
+        assertEq(
+            ModePayload.unwrap(pl),
+            bytes22(hex"0102030405060708090A0B0C0D0E0F10111213141516"),
+            "payload offset"
+        );
+
+        // And the packed word itself, byte for byte:
+        // callType(1) | execType(1) | unused(4) | selector(4) | payload(22)
+        assertEq(
+            ModeCode.unwrap(mode),
+            bytes32(hex"FF0100000000AABBCCDD0102030405060708090A0B0C0D0E0F10111213141516"),
+            "packed layout"
+        );
+    }
+
+    /// @notice The two bytes an account's execution guard reads must be exactly bytes 0 and 1.
+    function testFuzz_ModeCode_CallAndExecTypeAreTheFirstTwoBytes(bytes1 ct, bytes1 et) public pure {
+        ModeCode mode =
+            ModeLib.encode(CallType.wrap(ct), ExecType.wrap(et), MODE_DEFAULT, ModePayload.wrap(0));
+        bytes32 raw = ModeCode.unwrap(mode);
+        assertEq(bytes1(raw), ct, "callType is not byte 0");
+        assertEq(bytes1(raw << 8), et, "execType is not byte 1");
     }
 
     /// @notice Single-execution calldata is tightly packed target(20) | value(32) | callData.

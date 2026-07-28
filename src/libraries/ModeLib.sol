@@ -39,13 +39,22 @@ library ModeLib {
         }
     }
 
+    /// @dev Shift amounts are the byte offsets {decode} reads back, and must stay in lockstep with
+    ///      it: callType byte 0 (no shift), execType byte 1 (8), selector bytes 6-9 (48), payload
+    ///      bytes 10-31 (80). All four operands are left-aligned fixed-byte types, so a right
+    ///      shift moves them DOWN into position.
+    ///
+    ///      Getting these wrong is silent. With every field zero the result is still bytes32(0),
+    ///      so a round-trip test that only exercises the simple-single mode passes vacuously - and
+    ///      an execution-shape guard reading a misplaced field will wave through exactly the modes
+    ///      it exists to refuse. Exercised with non-zero values instead.
     function encode(CallType callType, ExecType execType, ModeSelector selector, ModePayload payload)
         internal
         pure
         returns (ModeCode mode)
     {
         assembly {
-            mode := or(or(shr(8, callType), shr(16, execType)), or(shr(80, selector), shr(176, payload)))
+            mode := or(or(callType, shr(8, execType)), or(shr(48, selector), shr(80, payload)))
         }
     }
 
