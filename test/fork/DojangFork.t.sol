@@ -30,10 +30,8 @@ contract DojangForkTest is Test {
     address internal constant UPBIT_ATTESTER = 0x09B170CA2A006081042992bCE7379B85a02149C6;
 
     IDojangScroll internal scroll = IDojangScroll(DojangConstants.DOJANG_SCROLL);
-    IDojangAttesterBook internal attesterBook =
-        IDojangAttesterBook(DojangConstants.DOJANG_ATTESTER_BOOK);
-    IGiwaFaucetExtension internal faucet =
-        IGiwaFaucetExtension(DojangConstants.GIWA_FAUCET_EXTENSION);
+    IDojangAttesterBook internal attesterBook = IDojangAttesterBook(DojangConstants.DOJANG_ATTESTER_BOOK);
+    IGiwaFaucetExtension internal faucet = IGiwaFaucetExtension(DojangConstants.GIWA_FAUCET_EXTENSION);
 
     function setUp() public {
         vm.createSelectFork(vm.envString("GIWA_SEPOLIA_RPC_URL"), FORK_BLOCK);
@@ -60,9 +58,7 @@ contract DojangForkTest is Test {
     /// @notice The attester ids resolve to the addresses we claim they do.
     function test_AttesterBookResolvesIssuers() public view {
         assertEq(
-            attesterBook.getAttester(DojangConstants.UPBIT_KOREA),
-            UPBIT_ATTESTER,
-            "Upbit attester mismatch"
+            attesterBook.getAttester(DojangConstants.UPBIT_KOREA), UPBIT_ATTESTER, "Upbit attester mismatch"
         );
         assertEq(
             attesterBook.getAttester(DojangConstants.TESTNET_FAUCET),
@@ -82,9 +78,7 @@ contract DojangForkTest is Test {
             "Upbit anchor should be verified"
         );
         assertEq(
-            scroll.getVerifiedAddressAttestationUid(
-                UPBIT_VERIFIED_EOA, DojangConstants.UPBIT_KOREA
-            ),
+            scroll.getVerifiedAddressAttestationUid(UPBIT_VERIFIED_EOA, DojangConstants.UPBIT_KOREA),
             UPBIT_VERIFIED_UID,
             "attestation uid mismatch"
         );
@@ -120,9 +114,7 @@ contract DojangForkTest is Test {
     function test_ZeroUid_SelectorIsPinned() public pure {
         assertEq(bytes4(IDojangVerifierErrors.ZeroUid.selector), bytes4(0x6e7910da), "selector drift");
         // The declared-but-unthrown interface error, pinned so the discrepancy stays visible.
-        assertEq(
-            bytes4(IDojangScroll.NotVerifiedAddress.selector), bytes4(0xab9797df), "selector drift"
-        );
+        assertEq(bytes4(IDojangScroll.NotVerifiedAddress.selector), bytes4(0xab9797df), "selector drift");
     }
 
     /// @notice After revocation, the boolean gate is false and the uid getter reverts as revoked.
@@ -179,9 +171,7 @@ contract DojangForkTest is Test {
         assertTrue(scroll.isVerified(carol, DojangConstants.TESTNET_FAUCET), "issued");
 
         vm.warp(block.timestamp + 31 days);
-        assertFalse(
-            scroll.isVerified(carol, DojangConstants.TESTNET_FAUCET), "expiry must close the gate"
-        );
+        assertFalse(scroll.isVerified(carol, DojangConstants.TESTNET_FAUCET), "expiry must close the gate");
     }
 
     /* -------------------------------------------------------------------------- */
@@ -199,9 +189,7 @@ contract DojangForkTest is Test {
         assertEq(fee, 1e15, "fee drifted from 0.001 ETH - read at runtime, never hardcode");
         vm.deal(alice, 1 ether);
 
-        assertFalse(
-            scroll.isVerified(alice, DojangConstants.TESTNET_FAUCET), "alice starts unverified"
-        );
+        assertFalse(scroll.isVerified(alice, DojangConstants.TESTNET_FAUCET), "alice starts unverified");
 
         vm.prank(alice);
         faucet.payAndIssueEAS{value: fee}();

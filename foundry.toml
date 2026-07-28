@@ -24,6 +24,14 @@ optimizer = false
 fuzz = {runs = 50}
 invariant = {runs = 10, depth = 32}
 
+[lint]
+# mixed-case-function: Dojang's external names (payAndIssueEAS, revokeEAS) are fixed by the
+#   deployed contract; our interfaces mirror them verbatim and cannot rename them.
+# asm-keccak256: EncoderLib is byte-for-byte identical to MetaMask's delegation-framework so that
+#   delegations are portable between the two managers. Hand-rolling the hashing in assembly would
+#   save gas and risk exactly the drift the whole compatibility claim rests on.
+exclude_lints = ["mixed-case-function", "asm-keccak256"]
+
 [rpc_endpoints]
 giwa_sepolia = "${GIWA_SEPOLIA_RPC_URL}"
 
