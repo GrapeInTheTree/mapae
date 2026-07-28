@@ -1,0 +1,41 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+
+solc_version = "0.8.29"          # matches GIWA Blockscout: v0.8.29+commit.ab55807c
+evm_version = "cancun"           # GIWA runs Osaka; cancun is the safe verified floor
+optimizer = true
+optimizer_runs = 1_000           # deploy size + verification stability
+via_ir = false                   # DO NOT ENABLE - breaks Blockscout verification
+bytecode_hash = "none"
+cbor_metadata = false
+verbosity = 2
+fs_permissions = [{access = "read-write", path = "./deployments"}]
+
+[profile.ci]
+fuzz = {runs = 5_000}
+invariant = {runs = 1_000, depth = 256, fail_on_revert = false}
+
+[profile.lite]
+optimizer = false
+fuzz = {runs = 50}
+invariant = {runs = 10, depth = 32}
+
+[rpc_endpoints]
+giwa_sepolia = "${GIWA_SEPOLIA_RPC_URL}"
+
+[etherscan]
+giwa_sepolia = {key = "unused", url = "https://sepolia-explorer.giwa.io/api/", chain = 91342}
+
+[fmt]
+line_length = 110
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+quote_style = "double"
+number_underscore = "thousands"
+multiline_func_header = "attributes_first"
+wrap_comments = true
