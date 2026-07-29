@@ -65,15 +65,23 @@ The delegation layer did not need to be told. It reads identity liveness at the 
 so revoking who you are revokes everything you delegated. No other agent-payment stack has this
 property, because no other chain has an exchange-issued identity layer to anchor it to.
 
-All sixteen demo transactions — payments, and every category of rejection with its decoded
-error — are public and clickable in **[docs/DEMO.md](docs/DEMO.md)**.
+All twenty demo transactions — payments, and every category of rejection with its decoded
+error — are public and clickable in **[docs/DEMO.md](docs/DEMO.md)**. Four of them were signed by
+a person in MetaMask rather than by a script, which is the difference between a system that
+demonstrably works and two programs agreeing with themselves.
 
 ---
 
 ## What is deployed
 
-GIWA Sepolia (chain 91342). Every contract is source-verified on
-[Blockscout](https://sepolia-explorer.giwa.io).
+GIWA Sepolia (chain 91342). All eight are source-verified on
+[Blockscout](https://sepolia-explorer.giwa.io) — re-checkable with `pnpm check-verified`, which
+reads `is_verified` from the API rather than trusting that a browser displays source.
+
+That distinction is not pedantry. `MockKRW` showed source in the explorer and `forge
+verify-contract` reported "already verified", while the API said `is_verified: false`: Blockscout
+was borrowing source from a `verified_twin_address_hash`, a different address with identical
+bytecode that someone else had verified. It is verified in its own right now.
 
 | Contract | Address | Role |
 |---|---|---|
@@ -168,8 +176,17 @@ than a success. And **time is honest**: a payment that was valid when made shows
 proven valid then by the gate event, revoked now by the live read — the tense distinction an
 auditor actually needs.
 
+The round trip is closed, not asserted. `pnpm verify-signing` runs the Composer's exact
+construction headlessly — the same SDK modules, with viem substituted where MetaMask signs — and
+checks eleven things against the deployed contracts, ending at a disabled delegation refusing the
+payment it had just made. A person then did it in a browser: [P1–P4 in
+docs/DEMO.md](docs/DEMO.md) are that same sequence with MetaMask doing the signing.
+
 ```bash
 cd explorer && pnpm install && pnpm dev
+
+pnpm preflight <your wallet>      # gas, attestation, account, funds - each with its fix
+pnpm redeem <permission context>  # spend a Mapae the browser issued
 ```
 
 ## The x402 path
@@ -210,7 +227,8 @@ test behind it. **153 tests**, all passing.
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
 | Cross-language byte parity | 4 + 27 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
-| Live transactions | 16 | The T1–T8 demo and the facilitator flow, on the public chain |
+| Live transactions | 20 | The T1–T8 demo, the facilitator flow, and four signed in MetaMask through the Composer |
+| Source verification | 8 of 8 | Every deployed contract, checked against Blockscout's API by `pnpm check-verified` |
 
 Development surfaced real bugs before deployment, each caught by a verification layer doing its
 job: a mode-word packing error that silently disabled two execution-shape guards (caught by
@@ -234,6 +252,12 @@ GIWA_SEPOLIA_RPC_URL=https://sepolia-rpc.giwa.io forge test --match-path 'test/f
 
 # cross-language byte parity and the policy codec
 pnpm install && pnpm fixtures
+
+# every deployed contract is source-verified, right now
+pnpm check-verified
+
+# the Composer's signing path, against the deployed contracts
+pnpm verify-signing
 
 # the live demo (needs two funded keys - see .env.example)
 cp .env.example .env && pnpm demo

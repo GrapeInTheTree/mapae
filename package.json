@@ -8,7 +8,8 @@
     "trace": "tsx scripts/trace.ts",
     "preflight": "tsx scripts/preflight.ts",
     "redeem": "tsx scripts/redeem.ts",
-    "verify-signing": "tsx scripts/verify-signing.ts"
+    "verify-signing": "tsx scripts/verify-signing.ts",
+    "check-verified": "tsx scripts/check-verified.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
