@@ -141,9 +141,17 @@ export default function Tx() {
 
                 {/* Overview strip: the four facts every explorer answers first, in one glance. */}
                 <Card className="mt-6 grid grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
-                    <Fact k={t("common", "time")} v={
-                        trace.timestamp ? fmtStamp(trace.timestamp, lang) : "—"
-                    } />
+                    {/* Numeric, not locale prose: the Korean long form wraps to two lines and the
+                        strip's whole point is four facts of equal weight on one line each. The
+                        format is also identical in both languages, so switching cannot reflow it. */}
+                    <Fact
+                        k={t("common", "time")}
+                        v={
+                            <Mono className="!text-[12.5px]">
+                                {trace.timestamp ? fmtStampShort(trace.timestamp) : "—"}
+                            </Mono>
+                        }
+                    />
                     <Fact k={t("tx", "block")} v={<Mono className="!text-[12.5px]">{trace.blockNumber.toLocaleString()}</Mono>} />
                     <Fact
                         k={t("tx", "redeemer")}
@@ -558,12 +566,18 @@ export default function Tx() {
 function Fact({k, v}: {k: string; v: ReactNode}) {
     return (
         <div className="px-4 py-3">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-mute">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap text-mute">
                 {k}
             </div>
-            <div className="tnum mt-1 text-[13px] text-ink-2">{v}</div>
+            <div className="tnum mt-1 text-[13px] whitespace-nowrap text-ink-2">{v}</div>
         </div>
     );
+}
+
+function fmtStampShort(unix: number): string {
+    const d = new Date(unix * 1000);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function fmtStamp(unix: number, lang: "en" | "ko"): string {

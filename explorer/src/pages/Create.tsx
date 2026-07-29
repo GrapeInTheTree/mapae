@@ -289,7 +289,9 @@ export default function Create() {
                     </div>
                     {/* The selected preset explains itself where the choice was made, so switching
                         cards reads as comparing opinions rather than guessing from titles. */}
-                    <p className="mb-6 min-h-[20px] text-[13px] leading-relaxed text-mute">
+                    {/* Two reserved lines: the English copy wraps and the Korean does not, and
+                        without the reservation every preset switch nudged the form below. */}
+                    <p className="mb-6 min-h-[44px] text-[13px] leading-relaxed text-mute">
                         {presetMeta.long}{" "}
                         <span className="text-mute/70">{t("create", "presetHint")}</span>
                     </p>
@@ -484,6 +486,16 @@ export default function Create() {
     }) {
         const meta = usePreset(id);
         const pd = preset(id);
+        /** Compact period notation for a chip: "일"/"d", never "30 days" - the long form made one
+         *  card's chip row wrap in English while every other stayed on one line. */
+        const per = (s: bigint) =>
+            s === 86_400n
+                ? lang === "ko" ? "일" : "d"
+                : s === 604_800n
+                  ? lang === "ko" ? "주" : "w"
+                  : lang === "ko"
+                    ? `${Number(s) / 86_400}일`
+                    : `${Number(s) / 86_400}d`;
         /** The conditions this preset composes, with their default values - so the cards answer
          *  "what would I actually be granting" before anything is clicked. */
         const chips: string[] =
@@ -491,7 +503,7 @@ export default function Create() {
                 ? [t("policy", "identityShort"), t("create", "customChip")]
                 : [
                       t("policy", "identityShort"),
-                      `${fmtToken(pd.defaults.token, pd.defaults.amount)}/${fmtDuration(pd.defaults.period, lang)}`,
+                      `${fmtToken(pd.defaults.token, pd.defaults.amount)}/${per(pd.defaults.period)}`,
                       t("policy", "payeeShort"),
                       lang === "ko" ? `${pd.defaults.validDays}일` : `${pd.defaults.validDays}d`,
                   ];
@@ -516,7 +528,12 @@ export default function Create() {
                         }`}
                     />
                 </div>
-                <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">{meta.desc}</p>
+                {/* Reserves two lines in both languages, so a one-line Korean description and a
+                    two-line English one produce identical cards - and switching cannot reflow
+                    the grid. */}
+                <p className="mt-1.5 min-h-[38px] text-[12.5px] leading-relaxed text-mute">
+                    {meta.desc}
+                </p>
                 <div className="mt-auto pt-3">
                     <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute/80">
                         {t("create", "presetIncludes")}
@@ -774,6 +791,39 @@ export default function Create() {
                     ? "sentenceNoPayee"
                     : "sentenceNoPayeeNoWindow";
 
+        /**
+         * The sentence with its decisions in ink.
+         *
+         * Every value in it is something the person chose; setting those in weight (and the two
+         * that money actually rides on - the amount and the identity issuer - in bronze) turns a
+         * wall of prose into a scannable statement of what is about to be signed. The template
+         * still comes from the catalog untouched: `t` without vars leaves the placeholders in
+         * place, and they are resolved here into styled spans instead of plain text.
+         */
+        const sentenceRich = (() => {
+            const vars: Record<string, {v: string; cls: string}> = {
+                agent: {v: f.agentName, cls: "font-semibold text-paper-ink"},
+                merchant: {v: merchantLabel, cls: "font-semibold text-paper-ink"},
+                amount: {v: fmtToken(f.token, f.amount), cls: "tnum font-semibold text-bronze-solid"},
+                period: {v: periodLabel, cls: "font-semibold text-paper-ink"},
+                until: {v: until, cls: "font-semibold text-paper-ink"},
+                issuer: {v: issuerName(f.issuer, lang), cls: "font-semibold text-bronze-solid"},
+            };
+            return t("create", sentenceKey)
+                .split(/(\{\w+\})/g)
+                .map((part, i) => {
+                    const key = part.match(/^\{(\w+)\}$/)?.[1];
+                    const s = key ? vars[key] : undefined;
+                    return s ? (
+                        <strong key={i} className={s.cls}>
+                            {s.v}
+                        </strong>
+                    ) : (
+                        part
+                    );
+                });
+        })();
+
         return (
             <Paper className="overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-paper-line px-6 py-4">
@@ -797,15 +847,8 @@ export default function Create() {
                         </p>
                     ) : (
                         <>
-                            <p className="text-[14.5px] leading-relaxed text-paper-ink">
-                                {t("create", sentenceKey, {
-                                    agent: f.agentName,
-                                    merchant: merchantLabel,
-                                    amount: fmtToken(f.token, f.amount),
-                                    period: periodLabel,
-                                    until,
-                                    issuer: issuerName(f.issuer, lang),
-                                })}
+                            <p className="text-[15px] leading-[1.85] text-paper-ink-2">
+                                {sentenceRich}
                             </p>
                             <div className="mt-5 space-y-2 border-t border-paper-line pt-4">
                                 {rs.map((r, i) => (

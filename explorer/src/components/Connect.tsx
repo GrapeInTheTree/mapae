@@ -1,7 +1,7 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {useLang} from "../i18n";
 import {useWallet} from "../lib/wallet";
-import {short} from "../lib/config";
+import {BLOCKSCOUT, short} from "../lib/config";
 import {Mark} from "./brand";
 
 /**
@@ -157,7 +157,6 @@ export function ConnectDialog() {
 export function ConnectButton({compact}: {compact?: boolean}) {
     const {t} = useLang();
     const w = useWallet();
-    const [copied, setCopied] = useState(false);
 
     if (w.address && !w.onGiwa) {
         return (
@@ -172,28 +171,7 @@ export function ConnectButton({compact}: {compact?: boolean}) {
     }
 
     if (w.address) {
-        return (
-            <div className="group relative">
-                <button
-                    onClick={() => {
-                        void navigator.clipboard.writeText(w.address!);
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 1400);
-                    }}
-                    title={t("wallet", "copyAddress")}
-                    className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-2.5 py-1.5 font-mono text-[12.5px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
-                >
-                    <span className="h-1.5 w-1.5 rounded-full bg-jade" />
-                    {copied ? t("create", "copied") : short(w.address, 4)}
-                </button>
-                <button
-                    onClick={w.disconnect}
-                    className="absolute top-full right-0 mt-1 hidden w-max rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12px] text-mute shadow-xl transition-colors group-hover:block hover:text-ink"
-                >
-                    {t("wallet", "disconnect")}
-                </button>
-            </div>
-        );
+        return <AccountMenu />;
     }
 
     return (
@@ -209,5 +187,107 @@ export function ConnectButton({compact}: {compact?: boolean}) {
                 language; an in-page CTA is content and is localised. */}
             {compact ? "Connect" : t("nav", "connect")}
         </button>
+    );
+}
+
+/**
+ * The connected chip opens a menu on CLICK, not on hover.
+ *
+ * The first version made the chip itself the copy button and hung "Disconnect" off a hover state;
+ * the pointer had to cross a gap to reach it, the browser's own title-tooltip drew over it, and
+ * disconnecting became a dexterity test that usually ended in copying the address instead. A menu
+ * that opens on click and stays open owes nothing to pointer geometry.
+ */
+function AccountMenu() {
+    const {t} = useLang();
+    const w = useWallet();
+    const [open, setOpen] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const box = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const onDown = (e: MouseEvent) => {
+            if (!box.current?.contains(e.target as Node)) setOpen(false);
+        };
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+        document.addEventListener("mousedown", onDown);
+        document.addEventListener("keydown", onKey);
+        return () => {
+            document.removeEventListener("mousedown", onDown);
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [open]);
+
+    const item =
+        "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition-colors";
+
+    return (
+        <div ref={box} className="relative">
+            <button
+                onClick={() => setOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className={`inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5 font-mono text-[12.5px] text-ink-2 transition-colors ${
+                    open ? "border-line-strong bg-surface-2 text-ink" : "border-line bg-surface hover:border-line-strong hover:text-ink"
+                }`}
+            >
+                <span className="h-1.5 w-1.5 rounded-full bg-jade" />
+                {short(w.address!, 4)}
+                <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 16 16"
+                    className={`text-mute transition-transform ${open ? "rotate-180" : ""}`}
+                >
+                    <path
+                        d="M4 6l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </button>
+
+            {open && (
+                <div className="rise absolute top-full right-0 z-40 mt-1.5 w-56 rounded-xl border border-line-strong bg-surface-2 p-1.5 shadow-2xl shadow-black/60">
+                    <div className="px-3 pt-2 pb-2.5">
+                        <div className="font-mono text-[12px] break-all text-ink-2">{w.address}</div>
+                    </div>
+                    <div className="mx-1.5 h-px bg-line" />
+                    <div className="pt-1.5">
+                        <button
+                            className={`${item} text-ink-2 hover:bg-line hover:text-ink`}
+                            onClick={() => {
+                                void navigator.clipboard.writeText(w.address!);
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 1400);
+                            }}
+                        >
+                            {copied ? t("create", "copied") : t("wallet", "copyAddress")}
+                        </button>
+                        <a
+                            className={`${item} text-ink-2 hover:bg-line hover:text-ink`}
+                            href={`${BLOCKSCOUT}/address/${w.address}`}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            {t("wallet", "viewOnExplorer")} ↗
+                        </a>
+                        <button
+                            className={`${item} text-reject hover:bg-reject/10`}
+                            onClick={() => {
+                                setOpen(false);
+                                w.disconnect();
+                            }}
+                        >
+                            {t("wallet", "disconnect")}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
