@@ -104,12 +104,12 @@ export function Logo({
     className?: string;
 }) {
     return (
-        <span className={`inline-flex items-center gap-2.5 ${className}`}>
+        /* Optically ~1px high of geometric centre: the seal's visual weight hangs low and the
+           wordmark is all caps (no descenders), so exact centring reads as sitting slightly
+           below the nav. Tuned against the header by eye, not by box math. */
+        <span className={`inline-flex -translate-y-[0.5px] items-center gap-2.5 ${className}`}>
             <Mark size={px} tone={tone} />
-            {/* Uppercase glyphs sit above the baseline only, so a centred line box floats them
-                slightly high next to smaller neighbours; the half-pixel nudge re-centres the caps
-                themselves rather than the box. Verified against the nav at 200% zoom. */}
-            <Wordmark tone={tone} className="translate-y-[0.5px] text-[14px] leading-none" />
+            <Wordmark tone={tone} className="text-[14px] leading-none" />
         </span>
     );
 }
