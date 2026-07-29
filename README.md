@@ -1,6 +1,38 @@
-# Mapae
+<div align="center">
 
-**The authority layer for delegated payments on GIWA, rooted in verified identity.**
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark-dark.svg">
+  <img src="docs/brand/mark-light.svg" width="60" alt="Mapae">
+</picture>
+
+<h1>M&nbsp;A&nbsp;P&nbsp;A&nbsp;E</h1>
+
+**Don't give AI your wallet. Give it bounded authority.**
+
+The authority layer for delegated payments on GIWA, rooted in verified identity.<br>
+AI에게 지갑을 주지 마세요. 범위를 정한 권한만 주세요.
+
+<sub>
+  <a href="#the-one-transaction-that-explains-the-whole-system">Live demo</a> ·
+  <a href="#what-is-deployed">Contracts</a> ·
+  <a href="#the-contribution">The contribution</a> ·
+  <a href="#verification">Verification</a> ·
+  <a href="docs/DEMO.md">Every transaction</a>
+</sub>
+
+<br>
+
+<sub>
+  <img alt="GIWA Sepolia" src="https://img.shields.io/badge/GIWA_Sepolia-91342-8A5A35?style=flat-square&labelColor=11100E">
+  <img alt="Solidity" src="https://img.shields.io/badge/Solidity-0.8.29-8A5A35?style=flat-square&labelColor=11100E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-153_passing-1D7A5F?style=flat-square&labelColor=11100E">
+  <img alt="Slither" src="https://img.shields.io/badge/Slither-0_high_·_0_medium-1D7A5F?style=flat-square&labelColor=11100E">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-8A5A35?style=flat-square&labelColor=11100E">
+</sub>
+
+</div>
+
+<br>
 
 GIWA ships primitives that answer questions of identity: Dojang answers *who is this address*,
 UP.ID answers *what is it called*, Bojagi answers *who may see this transfer*. None of them answer
@@ -33,14 +65,14 @@ The delegation layer did not need to be told. It reads identity liveness at the 
 so revoking who you are revokes everything you delegated. No other agent-payment stack has this
 property, because no other chain has an exchange-issued identity layer to anchor it to.
 
-All fourteen demo transactions — payments, and every category of rejection with its decoded
+All sixteen demo transactions — payments, and every category of rejection with its decoded
 error — are public and clickable in **[docs/DEMO.md](docs/DEMO.md)**.
 
 ---
 
 ## What is deployed
 
-GIWA Sepolia (chain 91342), block 31,935,436. Every contract is source-verified on
+GIWA Sepolia (chain 91342). Every contract is source-verified on
 [Blockscout](https://sepolia-explorer.giwa.io).
 
 | Contract | Address | Role |
@@ -113,6 +145,33 @@ revoking the identity blocks payment while the delegation stays enabled; each is
 reversible; and when both are thrown, the manager's disabled check wins deterministically because
 chain validation runs strictly before any caveat.
 
+Re-delegation is a first-class ERC-7710 operation, so an agent can pass part of its authority on.
+Every link's caveats are evaluated, which is what makes a child able to **narrow** what it
+received and never widen it — the property the chain suite exists to defend.
+
+## The product
+
+`explorer/` is not only an explorer. It is the three surfaces the primitive needs to be usable by
+a person, bilingual throughout (한국어 / English), a pure static SPA with **no backend** — the
+browser reads GIWA directly.
+
+| | |
+|---|---|
+| **Explorer** | Paste any payment hash and it renders the full chain: every link of the delegation with its conditions in plain language, each naming the contract that enforces it, the funding account with its consent binding, the principal's identity with its live status, and the attestation read back from EAS. Verified on the spot, nothing stored. |
+| **Create** | A person who has never read ERC-7710 composes a scoped authority, reads it back as one sentence in their own language, and signs it. No gas, no transaction — a grant is off-chain by design and leaves no trace until an agent spends it. The sentence and the bytes are generated from the same structure, so what is read cannot drift from what is signed. |
+| **Permissions** | What I granted, what it has spent against its cap, and the switch that stops it. Two truths joined: what was *issued* comes from the browser, what *happened* is read live from the chain on every mount. Where they disagree, the chain wins, and the UI says which is which. |
+
+Two properties distinguish the trace from a block explorer. **Rejections are first-class**: a
+refused payment has no logs, so the delegation is decoded from calldata and the refusal reason
+recovered by replaying the call against pre-block state — a rejection page tells a richer story
+than a success. And **time is honest**: a payment that was valid when made shows both facts —
+proven valid then by the gate event, revoked now by the live read — the tense distinction an
+auditor actually needs.
+
+```bash
+cd explorer && pnpm install && pnpm dev
+```
+
 ## The x402 path
 
 x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of them — `eip3009`,
@@ -138,25 +197,29 @@ gas at all:
 ## Verification
 
 The demo is asserted, not screenshotted; every claim above has either a transaction hash or a
-test behind it.
+test behind it. **153 tests**, all passing.
 
-| Layer | What it proves |
-|---|---|
-| 10 fork tests, pinned at block 31,909,542 | Every Dojang assumption, against the **real** deployment: a genuine Upbit-KYC'd address passes the gate, issuers discriminate, revocation and expiry close `isVerified` immediately |
-| 16 encoding tests | Typehashes, hash exclusions (`signature`, `args` — fuzzed), ERC-7579 mode word and execution layout — pinned as literal constants, never recomputed |
-| 54 unit tests | Enforcers (forgery paths included), account execution-shape refusals, factory consent binding |
-| 13 integration tests | The full T1–T8 demo through the real manager; batch atomicity; the 2×2 kill-switch matrix |
-| 5 invariants, 1000 runs × 256 calls | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
-| Cross-language byte parity | `abi.encode(Delegation[])`, the EIP-712 digest, and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK), and Go (facilitator) — Solidity emits the fixtures, the other two are pinned to them |
-| Slither | 0 high, 0 medium; five findings triaged and disabled inline with rationale |
-| 14 + 5 live transactions | The T1–T8 demo and the facilitator flow, on the public chain |
+| Layer | Count | What it proves |
+|---|---|---|
+| Fork tests, pinned at block 31,909,542 | 10 | Every Dojang assumption against the **real** deployment: a genuine Upbit-KYC'd address passes the gate, issuers discriminate, revocation and expiry close `isVerified` immediately |
+| Encoding conformance | 16 | Typehashes, hash exclusions (`signature`, `args` — fuzzed), ERC-7579 mode word and execution layout — pinned as literal constants, never recomputed |
+| Delegation chain | 16 | Re-delegation: a child cannot widen its parent's cap, broken authority links and forged grafts are refused, disabling the root kills a sub-agent nobody upstream has heard of. The only path that exercises ECDSA, since a child's delegator is an EOA where the root's is an account on ERC-1271 |
+| Manager API | 16 | Who may throw the kill switch, malformed batches, and two structural guarantees: no hook can re-enter redemption, and hook ordering across both a batch and a chain is pinned rather than assumed |
+| Enforcers and account | 77 | Forgery paths, execution-shape refusals, factory consent binding, and the vendored MetaMask code exercised rather than merely present |
+| Integration | 13 | The full T1–T8 demo through the real manager; batch atomicity; the 2×2 kill-switch matrix |
+| Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
+| Cross-language byte parity | 4 + 27 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
+| Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
+| Live transactions | 16 | The T1–T8 demo and the facilitator flow, on the public chain |
 
-Development surfaced four real bugs before deployment, each caught by a verification layer doing
-its job: a mode-word packing error that silently disabled two execution-shape guards (caught by
-non-zero round-trips after the all-zero test passed vacuously), a terms-length check that a
-comment claimed and the code lacked, a foundry configuration that reported deployment success
-while broadcasting nothing (caught by reading code back from the chain), and RPC read-consistency
-races on GIWA's load-balanced public endpoint (documented in [docs/GAPS.md](docs/GAPS.md)).
+Development surfaced real bugs before deployment, each caught by a verification layer doing its
+job: a mode-word packing error that silently disabled two execution-shape guards (caught by
+non-zero round-trips after the all-zero test passed vacuously), a foundry configuration that
+reported deployment success while broadcasting nothing (caught by reading code back from the
+chain), an account-creation signature that was well-formed and rejected on-chain because it was
+signed as EIP-191 rather than the factory's EIP-712 digest, and an address field that refused
+valid addresses because viem's `isAddress` is checksum-strict by default. RPC read-consistency
+races on GIWA's load-balanced public endpoint are documented in [docs/GAPS.md](docs/GAPS.md).
 
 ## Reproduce
 
@@ -169,7 +232,7 @@ forge test --no-match-path 'test/fork/*'
 # fork suite against the live Dojang deployment
 GIWA_SEPOLIA_RPC_URL=https://sepolia-rpc.giwa.io forge test --match-path 'test/fork/*'
 
-# cross-language byte parity
+# cross-language byte parity and the policy codec
 pnpm install && pnpm fixtures
 
 # the live demo (needs two funded keys - see .env.example)
@@ -183,26 +246,10 @@ pnpm trace <any T1 hash>
 |---|---|
 | **EIP-7702 path** | Verified active on GIWA by behavioural test. The principal's EOA becomes the delegator directly — the Upbit-attested address itself holds the delegation, no account contract. The enforcer already accepts this shape (`principal == delegator`). |
 | **Graduated autonomy** | `VerifiedCodeEnforcer` is deployed and verified: Dojang's Verified Code attests an *off-chain human confirmation* (OTP-style, under a service domain), so high-value delegations can require a person in the loop per confirmation window while small ones run unattended — the historical mapae tiers, as caveats. Awaiting the first Verified Code issuer integration for a live flow; today only Upbit issues them, through its own channel. |
+| **More conditions** | Per-payment ceiling, lifetime total, call count, allowed function selector, and an approved-order hash that binds a payment to a purpose without any Dojang change. Visible in the Composer as *coming next*, deliberately not shipped before the user flow was complete. |
 | **Attestation query API** | GIWA has no off-chain Dojang query surface ([docs/GAPS.md](docs/GAPS.md)). A Ponder-based index of real-issuer attestations and Mapae redemptions is measured and scoped. |
-| **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. |
+| **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. The Composer is already that screen. |
 | **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |
-
-## Mapae Explorer
-
-`explorer/` is the product surface: an accountability explorer for delegated payments. Paste any
-payment hash and it renders the full chain — the signed caveats in plain language, the funding
-account with its consent binding, the principal's identity with its live status, and the
-attestation read back from EAS — every link verified on the spot, nothing stored.
-
-Two properties distinguish it from a block explorer. Rejections are first-class: a refused payment
-has no logs, so the explorer decodes the delegation from calldata and recovers the refusal reason
-by replaying the call against pre-block state — a rejection page tells a richer story than a
-success. And time is honest: a payment that was valid when made shows both facts — proven valid
-then by the gate event, revoked now by the live read — the tense distinction an auditor actually
-needs.
-
-Pure static SPA, no backend: the browser reads GIWA directly (the RPC serves CORS). React, viem,
-Tailwind. `cd explorer && pnpm install && pnpm dev`.
 
 ## Documentation
 
@@ -210,6 +257,7 @@ Tailwind. `cd explorer && pnpm install && pnpm dev`.
 - [docs/SPEC.md](docs/SPEC.md) — byte-level terms layouts, typehashes, conformance
 - [docs/GAPS.md](docs/GAPS.md) — measured ecosystem gaps, with the measurements
 - [docs/ERC7715.md](docs/ERC7715.md) — the wallet-integration mapping
+- [docs/DEPLOY.md](docs/DEPLOY.md) — deploying the explorer, and why it has no backend
 
 ## License
 

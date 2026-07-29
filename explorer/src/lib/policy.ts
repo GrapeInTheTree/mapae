@@ -59,11 +59,30 @@ export function issuerIsReal(attesterId: Hex): boolean {
     return (ISSUERS[attesterId.toLowerCase()] ?? ISSUERS[attesterId])?.real ?? false;
 }
 
-export function fmtToken(token: Address, raw: bigint): string {
+/**
+ * Amounts, with the ticker where it matters.
+ *
+ * mKRW is declared with `decimals() == 0`, so an on-chain balance of 20000 is literally twenty
+ * thousand - no scaling, and any explorer reads it correctly. That makes "₩20,000" an honest
+ * rendering of the number.
+ *
+ * It is not an honest rendering of the ASSET, though: mKRW is a mock, and Mapae is deliberately
+ * asset-agnostic. A bare ₩ next to a large figure reads as Korean won, which would be claiming
+ * something we have not built. So anywhere the amount is the headline, the ticker comes with it;
+ * dense tables keep the short form, where the column header already says what the asset is.
+ */
+export function fmtToken(token: Address, raw: bigint, withTicker = false): string {
     const t = TOKENS[token.toLowerCase()];
-    if (t?.won) return `₩${raw.toLocaleString("ko-KR")}`;
+    if (t?.won) {
+        const won = `₩${raw.toLocaleString("ko-KR")}`;
+        return withTicker ? `${won} ${t.symbol}` : won;
+    }
     if (t) return `${raw.toLocaleString()} ${t.symbol}`;
     return `${raw.toString()} (${token.slice(0, 8)}…)`;
+}
+
+export function tokenSymbol(token: Address): string {
+    return TOKENS[token.toLowerCase()]?.symbol ?? "";
 }
 
 export function fmtDuration(seconds: bigint, lang: Lang): string {

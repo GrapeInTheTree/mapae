@@ -5,7 +5,7 @@ import {traceTx, type DecodedDelegation, type Trace} from "../lib/data";
 import {Card, Check, CopyButton, ExtLink, Mono, Spinner, StatusPill, Tag} from "../components/ui";
 import {useLang} from "../i18n";
 import {BLOCKSCOUT, short} from "../lib/config";
-import {fmtToken, issuerIsReal, issuerName, renderCondition} from "../lib/policy";
+import {fmtToken, issuerIsReal, issuerName, renderCondition, tokenSymbol} from "../lib/policy";
 
 /**
  * The authority trace.
@@ -101,6 +101,9 @@ export default function Tx() {
                 {trace.payment && (
                     <div className="tnum mt-4 text-[30px] font-semibold tracking-tight text-ink">
                         {fmtToken(trace.payment.token, trace.payment.amount)}
+                        <span className="ml-2 align-middle text-[15px] font-normal text-mute">
+                            {tokenSymbol(trace.payment.token)}
+                        </span>
                         <span className="mx-3 text-[20px] text-mute">→</span>
                         <Mono className="!text-[16px] text-ink-2">{short(trace.payment.to, 8)}</Mono>
                         <CopyButton
