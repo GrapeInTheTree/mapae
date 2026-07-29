@@ -20,7 +20,8 @@ import {
     managerAbi,
     periodEnforcerAbi,
 } from "@mapae/abi";
-import {addresses, DEPLOY_BLOCK, giwaSepolia, ISSUERS, BLOCKSCOUT} from "./config";
+import {addresses, giwaSepolia, ISSUERS, BLOCKSCOUT} from "./config";
+import snapshot from "../data/snapshot.json";
 
 export const client = createPublicClient({chain: giwaSepolia, transport: http()});
 
@@ -202,23 +203,34 @@ export interface Stats {
     rejections: number;
     principals: number;
     headBlock: bigint;
+    /** Blocks scanned live on top of the build-time checkpoint. */
+    deltaBlocks: bigint;
 }
 
 let statsCache: Promise<Stats> | null = null;
 
+/**
+ * Checkpoint + catch-up, which is what an indexer does - here with the checkpoint baked in at
+ * build time and the catch-up run in the browser.
+ *
+ * GIWA mints a block per second, so scanning from the deploy block on every page load costs one
+ * getLogs call today and 351 within a year. Starting from the shipped checkpoint keeps it at one
+ * call for as long as deployments are reasonably fresh, and degrades gently rather than
+ * catastrophically if a build goes stale.
+ */
 export function fetchStats(): Promise<Stats> {
     statsCache ??= (async () => {
         const head = await client.getBlockNumber();
         const CHUNK = 90_000n;
-        const redeemed: Set<string> = new Set();
-        const principals: Set<string> = new Set();
-        // Payments are counted by TRANSACTION, not by event. The manager emits one
-        // RedeemedDelegation per hop in the chain, so a two-hop redelegation (as the x402
-        // facilitator uses: principal -> agent -> settlement address) emits twice for a single
-        // payment. Counting events would inflate the figure by exactly the redelegation depth.
-        const paymentTxs: Set<string> = new Set();
 
-        for (let from = DEPLOY_BLOCK; from <= head; from += CHUNK) {
+        const delegations = new Set<string>(snapshot.delegationHashes);
+        const principals = new Set<string>(snapshot.principalAddresses);
+        // Counted by TRANSACTION, not by event: the manager emits one RedeemedDelegation per hop,
+        // so a two-hop redelegation (as the x402 facilitator uses) would otherwise count twice.
+        const paymentTxs = new Set<string>(snapshot.paymentTxHashes);
+
+        const from0 = BigInt(snapshot.checkpointBlock) + 1n;
+        for (let from = from0; from <= head; from += CHUNK) {
             const to = from + CHUNK - 1n > head ? head : from + CHUNK - 1n;
             const logs = await client.getLogs({
                 address: [addresses.manager, addresses.dojangEnforcer],
@@ -227,7 +239,7 @@ export function fetchStats(): Promise<Stats> {
             });
             for (const l of parseEventLogs({abi: managerEventsAbi, logs, eventName: "RedeemedDelegation"})) {
                 paymentTxs.add(l.transactionHash);
-                redeemed.add(l.args.delegationHash);
+                delegations.add(l.args.delegationHash);
             }
             for (const l of parseEventLogs({
                 abi: dojangEnforcerAbi,
@@ -240,11 +252,12 @@ export function fetchStats(): Promise<Stats> {
 
         const feed = await fetchFeed();
         return {
-            delegations: redeemed.size,
+            delegations: delegations.size,
             redemptions: paymentTxs.size,
             rejections: feed.filter((f) => !f.ok).length,
             principals: principals.size,
             headBlock: head,
+            deltaBlocks: head > from0 ? head - from0 : 0n,
         };
     })();
     return statsCache;

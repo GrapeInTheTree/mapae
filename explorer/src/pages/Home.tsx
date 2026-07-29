@@ -97,11 +97,19 @@ export default function Home() {
             </section>
 
             {/* ------------------------------- stats ------------------------------ */}
-            <section className="mx-auto grid max-w-5xl grid-cols-2 gap-3 px-6 sm:grid-cols-4">
-                <Stat label="위임" value={stats ? String(stats.delegations) : "—"} />
-                <Stat label="승인된 결제" value={stats ? String(stats.redemptions) : "—"} tone="jade" />
-                <Stat label="거부된 시도" value={stats ? String(stats.rejections) : "—"} tone="reject" />
-                <Stat label="검증된 위임자" value={stats ? String(stats.principals) : "—"} />
+            <section className="mx-auto max-w-5xl px-6">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <Stat label="위임" value={stats ? String(stats.delegations) : "—"} />
+                    <Stat label="승인된 결제" value={stats ? String(stats.redemptions) : "—"} tone="jade" />
+                    <Stat label="거부된 시도" value={stats ? String(stats.rejections) : "—"} tone="reject" />
+                    <Stat label="검증된 위임자" value={stats ? String(stats.principals) : "—"} />
+                </div>
+                {stats && (
+                    <p className="mt-2.5 text-right text-[11.5px] text-mute">
+                        빌드 시점 체크포인트 + 이후 {stats.deltaBlocks.toLocaleString()}블록을 방금
+                        직접 스캔했습니다 · 현재 #{stats.headBlock.toLocaleString()}
+                    </p>
+                )}
             </section>
 
             {/* ------------------------------- feed ------------------------------- */}
