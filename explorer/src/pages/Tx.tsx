@@ -129,19 +129,18 @@ export default function Tx() {
                 </Card>
             </Step>
 
-            {/* Every link, leaf first. Showing only the root would hide a re-delegation's extra
-                conditions; showing only the leaf would hide the root's limit, which is usually
-                the binding one. */}
+            {/* Every link. Showing only the root would hide a re-delegation's extra conditions;
+                showing only the leaf would hide the root's limit, which is usually the binding
+                one.
+
+                The context is encoded leaf-first, but it is read root-first here, because that
+                is the direction authority actually travels: a person grants, an agent passes part
+                of it on. Numbering follows the same direction, so link 1 is always the origin. */}
             {trace.chain.length > 0 && (
                 <Step n={next()} title={t("tx", "delegation")}>
                     <div className="space-y-3">
-                        {trace.chain.map((link, i) => (
-                            <Link
-                                key={i}
-                                link={link}
-                                index={i}
-                                total={trace.chain.length}
-                            />
+                        {[...trace.chain].reverse().map((link, i) => (
+                            <Link key={i} link={link} index={i} total={trace.chain.length} />
                         ))}
                     </div>
                     <p className="mt-3 text-[12.5px] leading-relaxed text-mute">
@@ -289,7 +288,7 @@ export default function Tx() {
                     </Tag>
                     {total > 1 && (
                         <span className="text-[11.5px] text-mute">
-                            {t("tx", "chainOf", {n: total - index, total})} ·{" "}
+                            {t("tx", "chainOf", {n: index + 1, total})} ·{" "}
                             {link.isRoot ? t("tx", "rootLink") : t("tx", "childLink")}
                         </span>
                     )}

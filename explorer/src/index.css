@@ -53,7 +53,13 @@
 
     --color-warn: #d99a3c;
 
-    --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    /* Noto Sans KR sets both scripts. Listing a Latin-first face ahead of it would mean a
+       sentence with one English word in it changed typeface halfway through, which is exactly
+       the kind of seam this interface cannot afford - most of its text is mixed. */
+    --font-sans: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    /* Display only, and only for the one headline that names a page. The Latin serif has no
+       Hangul, so Korean headlines resolve to Noto Serif KR - the same editorial register in the
+       other script rather than a fallback that looks like an accident. */
     --font-serif: "Iowan Old Style", "Apple Garamond", "Noto Serif KR", Georgia, serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
