@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+    /* Bronze plate on lacquer black - the material language of the mapae itself. */
+    --color-bg: #0a0a0c;
+    --color-surface: #131316;
+    --color-surface-2: #1a1a1f;
+    --color-line: #26262c;
+    --color-line-strong: #34343c;
+
+    --color-ink: #f0efec;
+    --color-ink-2: #b9b8b3;
+    --color-mute: #83828b;
+
+    --color-bronze: #c9995c;
+    --color-bronze-bright: #e3b87f;
+    --color-bronze-dim: #8a6a40;
+
+    /* Verdigris - aged bronze patina - marks what is alive. */
+    --color-jade: #4cbd9a;
+    --color-jade-dim: #2a6b58;
+
+    --color-reject: #e5484d;
+    --color-reject-dim: #7f2e31;
+
+    --font-sans: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+    --font-serif: "Noto Serif KR", serif;
+    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+::selection {
+    background: color-mix(in srgb, var(--color-bronze) 35%, transparent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+}

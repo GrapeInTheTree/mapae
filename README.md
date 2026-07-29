@@ -187,6 +187,23 @@ pnpm trace <any T1 hash>
 | **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. |
 | **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |
 
+## Mapae Explorer
+
+`explorer/` is the product surface: an accountability explorer for delegated payments. Paste any
+payment hash and it renders the full chain — the signed caveats in plain language, the funding
+account with its consent binding, the principal's identity with its live status, and the
+attestation read back from EAS — every link verified on the spot, nothing stored.
+
+Two properties distinguish it from a block explorer. Rejections are first-class: a refused payment
+has no logs, so the explorer decodes the delegation from calldata and recovers the refusal reason
+by replaying the call against pre-block state — a rejection page tells a richer story than a
+success. And time is honest: a payment that was valid when made shows both facts — proven valid
+then by the gate event, revoked now by the live read — the tense distinction an auditor actually
+needs.
+
+Pure static SPA, no backend: the browser reads GIWA directly (the RPC serves CORS). React, viem,
+Tailwind. `cd explorer && pnpm install && pnpm dev`.
+
 ## Documentation
 
 - [docs/DEMO.md](docs/DEMO.md) — every live transaction, expected vs. on-chain result
