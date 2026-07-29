@@ -212,7 +212,11 @@ export function fetchStats(): Promise<Stats> {
         const CHUNK = 90_000n;
         const redeemed: Set<string> = new Set();
         const principals: Set<string> = new Set();
-        let redemptions = 0;
+        // Payments are counted by TRANSACTION, not by event. The manager emits one
+        // RedeemedDelegation per hop in the chain, so a two-hop redelegation (as the x402
+        // facilitator uses: principal -> agent -> settlement address) emits twice for a single
+        // payment. Counting events would inflate the figure by exactly the redelegation depth.
+        const paymentTxs: Set<string> = new Set();
 
         for (let from = DEPLOY_BLOCK; from <= head; from += CHUNK) {
             const to = from + CHUNK - 1n > head ? head : from + CHUNK - 1n;
@@ -222,7 +226,7 @@ export function fetchStats(): Promise<Stats> {
                 toBlock: to,
             });
             for (const l of parseEventLogs({abi: managerEventsAbi, logs, eventName: "RedeemedDelegation"})) {
-                redemptions++;
+                paymentTxs.add(l.transactionHash);
                 redeemed.add(l.args.delegationHash);
             }
             for (const l of parseEventLogs({
@@ -237,7 +241,7 @@ export function fetchStats(): Promise<Stats> {
         const feed = await fetchFeed();
         return {
             delegations: redeemed.size,
-            redemptions,
+            redemptions: paymentTxs.size,
             rejections: feed.filter((f) => !f.ok).length,
             principals: principals.size,
             headBlock: head,
