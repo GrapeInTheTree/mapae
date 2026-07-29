@@ -86,6 +86,20 @@ body {
     scrollbar-color: var(--color-line-strong) transparent;
 }
 
+/* Korean breaks lines anywhere by default, which splits 어절 mid-word - "보세 / 요." Scoped to
+   the Korean document because keep-all is wrong for English, where it would refuse to break long
+   sentences at all. Monospace is exempted: an address has no word boundaries and must be allowed
+   to wrap or it overflows its container. */
+html[lang="ko"] {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+
+html[lang="ko"] .font-mono,
+html[lang="ko"] code {
+    word-break: break-all;
+}
+
 /* Numerals in tables must line up; addresses and amounts are read by column. */
 .tnum {
     font-variant-numeric: tabular-nums;

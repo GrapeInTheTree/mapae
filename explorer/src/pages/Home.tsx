@@ -1,7 +1,9 @@
 import {useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {fetchFeed, fetchStats, type FeedItem, type Stats} from "../lib/data";
+import {fetchFeed, fetchStats, type FeedItem, type Stats as StatsData} from "../lib/data";
 import {Card, Mono, StatusPill, TxLink, relTime} from "../components/ui";
+import {AuthorityFlow} from "../components/AuthorityFlow";
+import {Stats} from "../components/Stats";
 import {useLang} from "../i18n";
 import {short} from "../lib/config";
 
@@ -29,7 +31,7 @@ export default function Home() {
     const {t, lang} = useLang();
     const nav = useNavigate();
     const [q, setQ] = useState("");
-    const [stats, setStats] = useState<Stats | null>(null);
+    const [stats, setStats] = useState<StatsData | null>(null);
     const [feed, setFeed] = useState<FeedItem[] | null>(null);
     const [feedError, setFeedError] = useState(false);
 
@@ -102,34 +104,12 @@ export default function Home() {
 
             {/* --------------------------------- stats --------------------------------- */}
             <section className="mx-auto max-w-6xl px-6">
-                <Card className="divide-y divide-line sm:grid sm:grid-cols-4 sm:divide-x sm:divide-y-0">
-                    <Stat label={t("home", "statActive")} value={stats?.delegations} />
-                    <Stat label={t("home", "statSettled")} value={stats?.redemptions} tone="jade" />
-                    <Stat label={t("home", "statBlocked")} value={stats?.rejections} tone="reject" />
-                    <Stat label={t("home", "statPrincipals")} value={stats?.principals} />
-                </Card>
-                {stats && (
-                    <p className="mt-2.5 text-right text-[11.5px] text-mute">
-                        {lang === "ko"
-                            ? `빌드 시점 체크포인트 + 이후 ${stats.deltaBlocks.toLocaleString()}블록을 방금 직접 스캔했습니다 · 현재 #${stats.headBlock.toLocaleString()}`
-                            : `Build-time checkpoint plus ${stats.deltaBlocks.toLocaleString()} blocks scanned just now · head #${stats.headBlock.toLocaleString()}`}
-                    </p>
-                )}
+                <Stats stats={stats} />
             </section>
 
             {/* ---------------------------- the authority chain ------------------------ */}
-            <section className="mx-auto mt-10 max-w-6xl px-6">
-                <Card className="px-6 py-7">
-                    <div className="flex flex-wrap items-center justify-between gap-y-6">
-                        <ChainNode label={t("home", "chainPrincipal")} sub={lang === "ko" ? "실명 검증" : "Dojang verified"} />
-                        <Arrow label={lang === "ko" ? "위임" : "delegates"} />
-                        <ChainNode label={t("home", "chainAccount")} sub={lang === "ko" ? "자금 보관" : "holds funds"} />
-                        <Arrow label={lang === "ko" ? "범위 강제" : "bounded by"} />
-                        <ChainNode label={t("home", "chainAgent")} sub={lang === "ko" ? "소프트웨어" : "software"} />
-                        <Arrow label={lang === "ko" ? "결제" : "pays"} />
-                        <ChainNode label={t("home", "chainMerchant")} sub={lang === "ko" ? "정산" : "settles"} />
-                    </div>
-                </Card>
+            <section className="mx-auto mt-12 max-w-6xl px-6">
+                <AuthorityFlow />
             </section>
 
             {/* --------------------------------- ledger -------------------------------- */}
@@ -214,46 +194,4 @@ export default function Home() {
     );
 }
 
-function Stat({label, value, tone}: {label: string; value?: number; tone?: "jade" | "reject"}) {
-    return (
-        <div className="px-6 py-5">
-            <div className="text-[12.5px] text-mute">{label}</div>
-            <div
-                className={`tnum mt-1 text-[28px] font-semibold tracking-tight ${
-                    tone === "jade" ? "text-jade" : tone === "reject" ? "text-reject" : "text-ink"
-                }`}
-            >
-                {value === undefined ? "—" : value.toLocaleString()}
-            </div>
-        </div>
-    );
-}
 
-function ChainNode({label, sub}: {label: string; sub: string}) {
-    return (
-        <div className="min-w-[92px]">
-            <div className="text-[13.5px] font-medium text-ink">{label}</div>
-            <div className="mt-0.5 text-[12px] text-mute">{sub}</div>
-        </div>
-    );
-}
-
-function Arrow({label}: {label: string}) {
-    return (
-        <div className="flex min-w-[70px] flex-1 flex-col items-center gap-1 px-2">
-            <span className="text-[11px] text-mute">{label}</span>
-            <svg viewBox="0 0 100 6" className="h-1.5 w-full" preserveAspectRatio="none">
-                <line
-                    x1="0"
-                    y1="3"
-                    x2="94"
-                    y2="3"
-                    stroke="var(--color-line-strong)"
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                />
-                <path d="M94 0.5L99 3L94 5.5Z" fill="var(--color-bronze-dim)" />
-            </svg>
-        </div>
-    );
-}
