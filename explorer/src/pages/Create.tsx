@@ -23,6 +23,7 @@ import {
     Select,
     Spinner,
     Steps,
+    Toggle,
 } from "../components/ui";
 import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
@@ -58,7 +59,7 @@ import {useWallet} from "../lib/wallet";
 
 type Stage = "compose" | "review" | "issued";
 
-const PRESET_IDS: PresetId[] = ["api", "shopping", "subscription"];
+const PRESET_IDS: PresetId[] = ["api", "shopping", "subscription", "custom"];
 
 export default function Create() {
     const {t, lang} = useLang();
@@ -73,6 +74,7 @@ export default function Create() {
     const [issued, setIssued] = useState<store.StoredMapae | null>(null);
 
     const p = preset(presetId);
+    const presetMeta = usePreset(presetId);
     const [form, setForm] = useState<PresetForm>(() => ({
         agentName: "",
         agent: "",
@@ -108,7 +110,9 @@ export default function Create() {
      * address carries no checksum information at all and must pass silently.
      */
     const agentOk = form.agent !== "" && isAddress(form.agent, {strict: false});
-    const merchantOk = form.merchant !== "" && isAddress(form.merchant, {strict: false});
+    // A merchant is only required while the payee condition is part of the policy.
+    const merchantOk =
+        !form.usePayee || (form.merchant !== "" && isAddress(form.merchant, {strict: false}));
     const badChecksum = (v: string) =>
         v !== "" &&
         isAddress(v, {strict: false}) &&
@@ -152,7 +156,10 @@ export default function Create() {
             const normalised = {
                 ...form,
                 agent: getAddress(form.agent as string),
-                merchant: getAddress(form.merchant as string),
+                merchant:
+                    form.usePayee && form.merchant !== ""
+                        ? getAddress(form.merchant as string)
+                        : ("" as const),
             };
             return buildConditions(normalised, (wallet.address ?? PREVIEW_PRINCIPAL) as Address, Date.now());
         } catch {
@@ -270,7 +277,7 @@ export default function Create() {
                 />
             ) : (
                 <>
-                    <div className="mb-6 grid gap-3 sm:grid-cols-3">
+                    <div className="mb-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         {PRESET_IDS.map((id) => (
                             <PresetCard
                                 key={id}
@@ -280,7 +287,12 @@ export default function Create() {
                             />
                         ))}
                     </div>
-                    <p className="mb-6 text-[13px] text-mute">{t("create", "presetHint")}</p>
+                    {/* The selected preset explains itself where the choice was made, so switching
+                        cards reads as comparing opinions rather than guessing from titles. */}
+                    <p className="mb-6 min-h-[20px] text-[13px] leading-relaxed text-mute">
+                        {presetMeta.long}{" "}
+                        <span className="text-mute/70">{t("create", "presetHint")}</span>
+                    </p>
 
                     <div className="grid items-start gap-6 lg:grid-cols-[1fr_420px]">
                         <PolicyForm
@@ -471,13 +483,27 @@ export default function Create() {
         onSelect: () => void;
     }) {
         const meta = usePreset(id);
+        const pd = preset(id);
+        /** The conditions this preset composes, with their default values - so the cards answer
+         *  "what would I actually be granting" before anything is clicked. */
+        const chips: string[] =
+            id === "custom"
+                ? [t("policy", "identityShort"), t("create", "customChip")]
+                : [
+                      t("policy", "identityShort"),
+                      `${fmtToken(pd.defaults.token, pd.defaults.amount)}/${fmtDuration(pd.defaults.period, lang)}`,
+                      t("policy", "payeeShort"),
+                      lang === "ko" ? `${pd.defaults.validDays}일` : `${pd.defaults.validDays}d`,
+                  ];
         return (
             <button
                 onClick={onSelect}
-                className={`rounded-xl border p-4 text-left transition-all ${
+                className={`flex h-full flex-col rounded-xl border p-4 text-left transition-all ${
                     selected
                         ? "border-bronze bg-bronze/8 ring-1 ring-bronze/40"
-                        : "border-line bg-surface hover:border-line-strong"
+                        : id === "custom"
+                          ? "border-dashed border-line-strong bg-surface/60 hover:border-bronze-dim"
+                          : "border-line bg-surface hover:border-line-strong"
                 }`}
             >
                 <div className="flex items-start justify-between gap-3">
@@ -491,6 +517,25 @@ export default function Create() {
                     />
                 </div>
                 <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">{meta.desc}</p>
+                <div className="mt-auto pt-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute/80">
+                        {t("create", "presetIncludes")}
+                    </div>
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                        {chips.map((c) => (
+                            <span
+                                key={c}
+                                className={`tnum rounded border px-1.5 py-px text-[10.5px] ${
+                                    selected
+                                        ? "border-bronze-dim/60 text-bronze-bright"
+                                        : "border-line text-mute"
+                                }`}
+                            >
+                                {c}
+                            </span>
+                        ))}
+                    </div>
+                </div>
             </button>
         );
     }
@@ -557,7 +602,32 @@ export default function Create() {
                     <div className="h-px bg-line" />
 
                     <FormSection title={t("create", "groupLimits")}>
-                        {fields.includes("merchant") && (
+                        {p.composable && (
+                            <>
+                                {/* The two conditions a person may genuinely drop. Identity and
+                                    the cap are not offered as switches: the first is the thesis,
+                                    the second is the difference between a permission and a
+                                    wallet. */}
+                                <div className="grid gap-2.5 sm:grid-cols-2">
+                                    <Toggle
+                                        on={f.usePayee}
+                                        onChange={(v) => setF("usePayee", v)}
+                                        label={t("create", "togglePayee")}
+                                        hint={t("create", "togglePayeeHint")}
+                                    />
+                                    <Toggle
+                                        on={f.useWindow}
+                                        onChange={(v) => setF("useWindow", v)}
+                                        label={t("create", "toggleWindow")}
+                                        hint={t("create", "toggleWindowHint")}
+                                    />
+                                </div>
+                                <p className="text-[12px] leading-relaxed text-mute">
+                                    {t("create", "customHint")}
+                                </p>
+                            </>
+                        )}
+                        {fields.includes("merchant") && f.usePayee && (
                             <Field
                                 label={t("create", "merchant")}
                                 hint={
@@ -606,7 +676,7 @@ export default function Create() {
                                 </Field>
                             )}
                         </div>
-                        {fields.includes("validDays") && (
+                        {fields.includes("validDays") && f.useWindow && (
                             <Field label={t("create", "duration")}>
                                 <Select
                                     value={String(f.validDays)}
@@ -693,6 +763,16 @@ export default function Create() {
             BigInt(Math.floor(Date.now() / 1000) + f.validDays * 86_400),
             lang,
         );
+        /** The sentence follows the composition. Four written variants rather than clause
+         *  splicing, because Korean does not concatenate the way English does. */
+        const sentenceKey =
+            f.usePayee && f.useWindow
+                ? "sentence"
+                : f.usePayee
+                  ? "sentenceNoWindow"
+                  : f.useWindow
+                    ? "sentenceNoPayee"
+                    : "sentenceNoPayeeNoWindow";
 
         return (
             <Paper className="overflow-hidden">
@@ -718,7 +798,7 @@ export default function Create() {
                     ) : (
                         <>
                             <p className="text-[14.5px] leading-relaxed text-paper-ink">
-                                {t("create", "sentence", {
+                                {t("create", sentenceKey, {
                                     agent: f.agentName,
                                     merchant: merchantLabel,
                                     amount: fmtToken(f.token, f.amount),
@@ -734,6 +814,21 @@ export default function Create() {
                                     </Check>
                                 ))}
                             </div>
+                            {/* Widening the grant is legal; doing it without noticing is not. */}
+                            {(!f.usePayee || !f.useWindow) && (
+                                <div className="mt-4 space-y-1.5 rounded-lg border border-warn/40 bg-warn/10 p-3">
+                                    {!f.usePayee && (
+                                        <p className="text-[12.5px] leading-relaxed text-paper-ink-2">
+                                            {t("create", "warnNoPayee")}
+                                        </p>
+                                    )}
+                                    {!f.useWindow && (
+                                        <p className="text-[12.5px] leading-relaxed text-paper-ink-2">
+                                            {t("create", "warnNoWindow")}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </>
                     )}
 

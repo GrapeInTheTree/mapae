@@ -200,6 +200,9 @@ export interface Trace {
     hash: Hex;
     ok: boolean;
     blockNumber: bigint;
+    /** Unix seconds, from the block header. */
+    timestamp?: number;
+    gasUsed?: bigint;
     redeemer: Address;
     /** Decoded reason, failures only. */
     rejection?: string;
@@ -265,10 +268,21 @@ export async function traceTx(hash: Hex): Promise<Trace> {
         hash,
         ok,
         blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed,
         redeemer: tx.from,
         chain: [],
         batchSize: 0,
     };
+
+    // The header timestamp is presentation, not evidence - a failure to fetch it must not take
+    // the trace down with it. Awaited (not fire-and-forget) because the object is handed to React
+    // once; a late mutation would never render.
+    try {
+        const block = await client.getBlock({blockNumber: receipt.blockNumber});
+        trace.timestamp = Number(block.timestamp);
+    } catch {
+        /* header row simply omits the time */
+    }
 
     // The delegation itself comes from CALLDATA, so failed payments decode just as richly as
     // successful ones - a rejection page shows exactly what was refused.

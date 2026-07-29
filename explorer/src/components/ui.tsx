@@ -222,6 +222,54 @@ export function AddressInput({
     );
 }
 
+/**
+ * A condition switch, labelled with what turning it off costs.
+ *
+ * Dropping a condition WIDENS a grant, so the control carries its own explanation - the hint is
+ * part of the switch, not a tooltip a hurried reader never opens.
+ */
+export function Toggle({
+    on,
+    onChange,
+    label,
+    hint,
+}: {
+    on: boolean;
+    onChange: (v: boolean) => void;
+    label: string;
+    hint?: string;
+}) {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={on}
+            onClick={() => onChange(!on)}
+            className={`flex w-full items-center justify-between gap-4 rounded-lg border px-3.5 py-3 text-left transition-colors ${
+                on ? "border-line-strong bg-surface-2" : "border-line bg-surface-2/40"
+            }`}
+        >
+            <span className="min-w-0">
+                <span className={`block text-[13.5px] font-medium ${on ? "text-ink" : "text-ink-2"}`}>
+                    {label}
+                </span>
+                {hint && <span className="mt-0.5 block text-[12px] leading-relaxed text-mute">{hint}</span>}
+            </span>
+            <span
+                className={`relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors ${
+                    on ? "bg-bronze-solid" : "bg-line-strong"
+                }`}
+            >
+                <span
+                    className={`absolute top-[2px] h-[18px] w-[18px] rounded-full bg-paper shadow-sm transition-all ${
+                        on ? "left-[18px]" : "left-[2px]"
+                    }`}
+                />
+            </span>
+        </button>
+    );
+}
+
 /** A labelled group, so a long form reads as three decisions rather than nine inputs. */
 export function FormSection({title, children}: {title: string; children: ReactNode}) {
     return (

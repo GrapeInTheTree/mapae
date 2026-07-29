@@ -106,7 +106,10 @@ export function Logo({
     return (
         <span className={`inline-flex items-center gap-2.5 ${className}`}>
             <Mark size={px} tone={tone} />
-            <Wordmark tone={tone} className="text-[15px] leading-none" />
+            {/* Uppercase glyphs sit above the baseline only, so a centred line box floats them
+                slightly high next to smaller neighbours; the half-pixel nudge re-centres the caps
+                themselves rather than the box. Verified against the nav at 200% zoom. */}
+            <Wordmark tone={tone} className="translate-y-[0.5px] text-[14px] leading-none" />
         </span>
     );
 }

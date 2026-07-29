@@ -42,18 +42,22 @@ function Header() {
         return () => clearInterval(id);
     }, []);
 
+    /** Every header item is a full-height flex cell centred on the same axis, so nothing can sit
+     *  higher than its neighbours - the earlier py-based layout let the logo and the nav compute
+     *  different line boxes and drift ~2px apart. The active underline hugs the header's bottom
+     *  edge for the same reason: one shared baseline for the whole strip. */
     const link = ({isActive}: {isActive: boolean}) =>
-        `relative py-1 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors ${
+        `relative flex h-full items-center text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors ${
             isActive
-                ? "text-ink after:absolute after:-bottom-[14px] after:left-0 after:h-px after:w-full after:bg-bronze"
+                ? "text-ink after:absolute after:bottom-0 after:left-0 after:h-px after:w-full after:bg-bronze"
                 : "text-mute hover:text-ink-2"
         }`;
 
     return (
         <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
-            <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-3.5">
-                <Link to="/" className="shrink-0">
-                    <Logo px={22} />
+            <div className="mx-auto flex h-14 max-w-6xl items-stretch gap-8 px-6">
+                <Link to="/" className="flex shrink-0 items-center">
+                    <Logo px={21} />
                 </Link>
 
                 {/* Navigation stays in English in both languages. These are three proper nouns for
@@ -61,7 +65,7 @@ function Header() {
                     whole header reflows the moment someone switches - the chrome moving is a worse
                     cost than the labels being English. It is also the convention GIWA's own site
                     follows. Everything below the header is fully localised. */}
-                <nav className="flex items-center gap-7">
+                <nav className="flex items-stretch gap-7">
                     <NavLink to="/" end className={link}>
                         Explorer
                     </NavLink>

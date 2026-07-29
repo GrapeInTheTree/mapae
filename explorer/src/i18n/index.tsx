@@ -64,7 +64,7 @@ export function useLang(): Ctx {
 }
 
 /** Nested catalog entries (presets) that a flat key cannot reach. */
-export function usePreset(id: "api" | "shopping" | "subscription") {
+export function usePreset(id: "api" | "shopping" | "subscription" | "custom") {
     const {lang} = useLang();
     return catalogs[lang].presets[id] as {name: string; desc: string; long: string};
 }

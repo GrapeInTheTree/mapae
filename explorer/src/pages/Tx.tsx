@@ -70,6 +70,18 @@ export default function Tx() {
         id &&
         trace.delegation.delegator.toLowerCase() !== id.principal.toLowerCase();
 
+    const rejectionKind: Kind | null = !trace.ok && trace.rejection ? classify(trace.rejection) : null;
+    /** The signed condition the revert points at, when it points at one. This is what lets the
+     *  trace mark the exact card that refused, instead of leaving the reader to map an error
+     *  string onto a grid of conditions themselves. */
+    const culprit: "identity" | "payee" | "period" | "window" | null =
+        rejectionKind === "identity" ||
+        rejectionKind === "payee" ||
+        rejectionKind === "period" ||
+        rejectionKind === "window"
+            ? rejectionKind
+            : null;
+
     let step = 0;
     const next = () => ++step;
 
@@ -99,35 +111,89 @@ export default function Tx() {
                 </div>
 
                 {trace.payment && (
-                    <div className="tnum mt-4 text-[30px] font-semibold tracking-tight text-ink">
-                        {fmtToken(trace.payment.token, trace.payment.amount)}
-                        <span className="ml-2 align-middle text-[15px] font-normal text-mute">
-                            {tokenSymbol(trace.payment.token)}
-                        </span>
-                        <span className="mx-3 text-[20px] text-mute">→</span>
-                        <Mono className="!text-[16px] text-ink-2">{short(trace.payment.to, 8)}</Mono>
-                        <CopyButton
-                            value={trace.payment.to}
-                            label={t("tx", "copy")}
-                            copiedLabel={t("tx", "copied")}
-                            className="ml-1 align-middle"
-                        />
+                    <div className="mt-5">
+                        {/* Names the tense: a refused amount never moved, and the page must not
+                            let a large figure imply that it did. */}
+                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+                            {trace.ok ? t("tx", "settledAmount") : t("tx", "attempted")}
+                        </div>
+                        <div className="tnum mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <span className="text-[32px] font-semibold tracking-tight text-ink">
+                                {fmtToken(trace.payment.token, trace.payment.amount)}
+                                <span className="ml-2 text-[15px] font-normal text-mute">
+                                    {tokenSymbol(trace.payment.token)}
+                                </span>
+                            </span>
+                            <span className="text-[18px] text-mute">→</span>
+                            <span className="inline-flex items-center gap-1">
+                                <Mono className="!text-[15px] text-ink-2">
+                                    {short(trace.payment.to, 8)}
+                                </Mono>
+                                <CopyButton
+                                    value={trace.payment.to}
+                                    label={t("tx", "copy")}
+                                    copiedLabel={t("tx", "copied")}
+                                />
+                            </span>
+                        </div>
                     </div>
                 )}
 
+                {/* Overview strip: the four facts every explorer answers first, in one glance. */}
+                <Card className="mt-6 grid grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
+                    <Fact k={t("common", "time")} v={
+                        trace.timestamp ? fmtStamp(trace.timestamp, lang) : "—"
+                    } />
+                    <Fact k={t("tx", "block")} v={<Mono className="!text-[12.5px]">{trace.blockNumber.toLocaleString()}</Mono>} />
+                    <Fact
+                        k={t("tx", "redeemer")}
+                        v={
+                            <span className="inline-flex items-center gap-0.5">
+                                <Mono className="!text-[12.5px]">{short(trace.redeemer, 5)}</Mono>
+                                <CopyButton
+                                    value={trace.redeemer}
+                                    label={t("tx", "copy")}
+                                    copiedLabel={t("tx", "copied")}
+                                />
+                            </span>
+                        }
+                    />
+                    <Fact
+                        k={t("tx", "gasUsed")}
+                        v={
+                            <Mono className="!text-[12.5px]">
+                                {trace.gasUsed !== undefined ? trace.gasUsed.toLocaleString() : "—"}
+                            </Mono>
+                        }
+                    />
+                </Card>
+
                 {!trace.ok && trace.rejection && (
-                    <div className="mt-5 rounded-xl border border-reject-dim bg-reject/[0.06] px-5 py-4">
-                        <div className="text-[11px] font-semibold uppercase tracking-wider text-reject/80">
-                            {t("tx", "whyRefused")}
+                    <div className="mt-5 overflow-hidden rounded-xl border border-reject-dim bg-reject/[0.06]">
+                        <div className="px-5 py-4">
+                            <div className="text-[11px] font-semibold uppercase tracking-wider text-reject/80">
+                                {t("tx", "whyRefused")}
+                            </div>
+                            <p className="mt-2 text-[15px] leading-relaxed text-ink">
+                                {t("reject", classify(trace.rejection))}
+                            </p>
+                            {culprit && (
+                                <p className="mt-1.5 text-[12.5px] leading-relaxed text-mute">
+                                    {t("tx", "refusedPointer")}
+                                </p>
+                            )}
                         </div>
-                        <p className="mt-2 text-[15px] leading-relaxed text-ink">
-                            {t("reject", classify(trace.rejection))}
-                        </p>
-                        <div className="mt-3 border-t border-reject-dim/50 pt-2.5">
-                            <span className="text-[11.5px] text-mute">{t("tx", "rawSelector")}: </span>
+                        <div className="border-t border-reject-dim/50 bg-reject/[0.04] px-5 py-2.5">
+                            <span className="text-[11.5px] text-mute">{t("tx", "rawSelector")} </span>
                             <Mono className="text-[12px] break-all text-reject/90">
                                 {trace.rejection}
                             </Mono>
+                            <CopyButton
+                                value={trace.rejection}
+                                label={t("tx", "copy")}
+                                copiedLabel={t("tx", "copied")}
+                                className="ml-1"
+                            />
                         </div>
                     </div>
                 )}
@@ -143,8 +209,54 @@ export default function Tx() {
 
             <Step n={next()} title={t("tx", "payment")} question={t("tx", "q1")}>
                 <Card className="px-4 py-1.5">
-                    <Row k={t("tx", "redeemer")} v={<Mono>{short(trace.redeemer, 8)}</Mono>} />
-                    <Row k={t("tx", "block")} v={<Mono>{trace.blockNumber.toString()}</Mono>} />
+                    {trace.payment ? (
+                        <>
+                            <Row
+                                k={t("tx", "execution")}
+                                v={<Mono>ERC-20 transfer</Mono>}
+                            />
+                            <Row
+                                k={t("tx", "token")}
+                                v={
+                                    <span className="inline-flex items-center gap-1">
+                                        <span>{tokenSymbol(trace.payment.token)}</span>
+                                        <Mono className="text-mute">{short(trace.payment.token, 5)}</Mono>
+                                        <CopyButton
+                                            value={trace.payment.token}
+                                            label={t("tx", "copy")}
+                                            copiedLabel={t("tx", "copied")}
+                                        />
+                                    </span>
+                                }
+                            />
+                            <Row
+                                k={t("tx", "recipient")}
+                                v={
+                                    <span className="inline-flex items-center gap-1">
+                                        <Mono>{short(trace.payment.to, 8)}</Mono>
+                                        <CopyButton
+                                            value={trace.payment.to}
+                                            label={t("tx", "copy")}
+                                            copiedLabel={t("tx", "copied")}
+                                        />
+                                    </span>
+                                }
+                            />
+                            <Row
+                                k={t("common", "amount")}
+                                v={
+                                    <span className="tnum">
+                                        {fmtToken(trace.payment.token, trace.payment.amount, true)}
+                                    </span>
+                                }
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <Row k={t("tx", "redeemer")} v={<Mono>{short(trace.redeemer, 8)}</Mono>} />
+                            <Row k={t("tx", "block")} v={<Mono>{trace.blockNumber.toString()}</Mono>} />
+                        </>
+                    )}
                 </Card>
             </Step>
 
@@ -302,9 +414,12 @@ export default function Tx() {
             ...renderCondition(c, t as never, lang),
             enforcer: link.raw[i]?.enforcer,
         }));
+        const linkDisabled = rejectionKind === "disabled" && link.isRoot;
         return (
-            <Card className="px-4 py-3.5">
-                <div className="mb-2.5 flex flex-wrap items-center gap-2">
+            <Card className="overflow-hidden">
+                {/* Who granted to whom, labelled - two bare truncated addresses with an arrow
+                    made every reader work out which side was which. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-line bg-surface-2/50 px-4 py-2.5">
                     <Tag tone={link.isRoot ? "bronze" : "mute"}>
                         {link.isRoot ? t("tx", "delegation") : t("tx", "redelegation")}
                     </Tag>
@@ -314,85 +429,141 @@ export default function Tx() {
                             {link.isRoot ? t("tx", "rootLink") : t("tx", "childLink")}
                         </span>
                     )}
-                    <span className="ml-auto font-mono text-[11.5px] text-mute">
-                        {short(link.delegator, 5)} → {short(link.delegate, 5)}
+                    {linkDisabled && (
+                        <span className="rounded border border-reject-dim bg-reject/10 px-1.5 py-px text-[10.5px] font-medium text-reject">
+                            {t("tx", "linkDisabled")}
+                        </span>
+                    )}
+                    <span className="ml-auto flex items-center gap-2 text-[11px]">
+                        <span className="text-mute">{t("tx", "delegator")}</span>
+                        <span className="inline-flex items-center">
+                            <Mono className="!text-[11.5px] text-ink-2">{short(link.delegator, 5)}</Mono>
+                            <CopyButton
+                                value={link.delegator}
+                                label={t("tx", "copy")}
+                                copiedLabel={t("tx", "copied")}
+                            />
+                        </span>
+                        <span className="text-mute">→</span>
+                        <span className="text-mute">{t("tx", "delegate")}</span>
+                        <span className="inline-flex items-center">
+                            <Mono className="!text-[11.5px] text-ink-2">{short(link.delegate, 5)}</Mono>
+                            <CopyButton
+                                value={link.delegate}
+                                label={t("tx", "copy")}
+                                copiedLabel={t("tx", "copied")}
+                            />
+                        </span>
                     </span>
                 </div>
 
-                {conditions.length === 0 ? (
-                    <p className="text-[12.5px] text-mute">
-                        {lang === "ko" ? "조건 없음 — 무제한 위임" : "No conditions - unbounded"}
-                    </p>
-                ) : (
-                    <>
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {conditions.map((c, i) => {
-                                const headline = c.kind === "identity" || c.kind === "humanloop";
-                                return (
-                                    <div
-                                        key={i}
-                                        className={`flex flex-col rounded-lg border px-3.5 py-3 ${
-                                            headline
-                                                ? "border-bronze-dim bg-bronze/[0.07]"
-                                                : "border-line-strong bg-surface-2"
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-2">
-                                            <span
-                                                className={`text-[12.5px] font-semibold ${
-                                                    headline ? "text-bronze-bright" : "text-ink"
-                                                }`}
-                                            >
-                                                {c.title}
-                                            </span>
-                                            {headline && (
-                                                <span className="shrink-0 rounded border border-bronze-dim px-1.5 py-px text-[10px] text-bronze">
-                                                    {t("tx", "contribution")}
+                <div className="px-4 py-3.5">
+                    {conditions.length === 0 ? (
+                        <p className="text-[12.5px] text-mute">
+                            {lang === "ko" ? "조건 없음 — 무제한 위임" : "No conditions - unbounded"}
+                        </p>
+                    ) : (
+                        <>
+                            <div className="grid items-stretch gap-2 sm:grid-cols-2">
+                                {conditions.map((c, i) => {
+                                    const refused = culprit !== null && c.kind === culprit;
+                                    const headline =
+                                        !refused && (c.kind === "identity" || c.kind === "humanloop");
+                                    return (
+                                        /* h-full + mt-auto footer: every card in a row is the
+                                           same height and every enforcer line sits on the same
+                                           bottom edge, whatever the prose above it did. */
+                                        <div
+                                            key={i}
+                                            className={`flex h-full flex-col rounded-lg border px-3.5 py-3 ${
+                                                refused
+                                                    ? "border-reject bg-reject/[0.08]"
+                                                    : headline
+                                                      ? "border-bronze-dim bg-bronze/[0.07]"
+                                                      : "border-line-strong bg-surface-2"
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <span
+                                                    className={`text-[12.5px] font-semibold ${
+                                                        refused
+                                                            ? "text-reject"
+                                                            : headline
+                                                              ? "text-bronze-bright"
+                                                              : "text-ink"
+                                                    }`}
+                                                >
+                                                    {c.title}
                                                 </span>
+                                                {refused ? (
+                                                    <span className="shrink-0 rounded border border-reject-dim bg-reject/10 px-1.5 py-px text-[10px] font-medium text-reject">
+                                                        {t("tx", "refusedBy")}
+                                                    </span>
+                                                ) : headline ? (
+                                                    <span className="shrink-0 rounded border border-bronze-dim px-1.5 py-px text-[10px] text-bronze">
+                                                        {t("tx", "contribution")}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                            {c.lines.map((l, j) => (
+                                                <div
+                                                    key={j}
+                                                    className={
+                                                        j === 0
+                                                            ? "mt-1 text-[12.5px] text-ink-2"
+                                                            : "mt-0.5 text-[11.5px] leading-relaxed text-mute"
+                                                    }
+                                                >
+                                                    {l}
+                                                </div>
+                                            ))}
+                                            {c.enforcer && (
+                                                <div className="mt-auto flex items-center gap-1 pt-2.5">
+                                                    <div className="flex w-full items-center gap-1 border-t border-line pt-2 text-[10.5px] text-mute">
+                                                        <span className="shrink-0">
+                                                            {t("tx", "enforcedBy")}
+                                                        </span>
+                                                        <a
+                                                            href={`${BLOCKSCOUT}/address/${c.enforcer}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="truncate font-mono transition-colors hover:text-bronze-bright"
+                                                        >
+                                                            {short(c.enforcer, 6)} ↗
+                                                        </a>
+                                                        <CopyButton
+                                                            value={c.enforcer}
+                                                            label={t("tx", "copy")}
+                                                            copiedLabel={t("tx", "copied")}
+                                                        />
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
-                                        {c.lines.map((l, j) => (
-                                            <div
-                                                key={j}
-                                                className={
-                                                    j === 0
-                                                        ? "mt-1 text-[12.5px] text-ink-2"
-                                                        : "mt-0.5 text-[11.5px] leading-relaxed text-mute"
-                                                }
-                                            >
-                                                {l}
-                                            </div>
-                                        ))}
-                                        {c.enforcer && (
-                                            <div className="mt-2.5 flex items-center gap-1 border-t border-line pt-2 text-[10.5px] text-mute">
-                                                <span className="shrink-0">{t("tx", "enforcedBy")}</span>
-                                                <a
-                                                    href={`${BLOCKSCOUT}/address/${c.enforcer}`}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="truncate font-mono transition-colors hover:text-bronze-bright"
-                                                >
-                                                    {short(c.enforcer, 6)} ↗
-                                                </a>
-                                                <CopyButton
-                                                    value={c.enforcer}
-                                                    label={t("tx", "copy")}
-                                                    copiedLabel={t("tx", "copied")}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <p className="mt-2.5 text-[11.5px] leading-relaxed text-mute">
-                            {t("tx", "enforcedNote")}
-                        </p>
-                    </>
-                )}
+                                    );
+                                })}
+                            </div>
+                            <p className="mt-2.5 text-[11.5px] leading-relaxed text-mute">
+                                {t("tx", "enforcedNote")}
+                            </p>
+                        </>
+                    )}
+                </div>
             </Card>
         );
     }
+}
+
+/** One cell of the overview strip. */
+function Fact({k, v}: {k: string; v: ReactNode}) {
+    return (
+        <div className="px-4 py-3">
+            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-mute">
+                {k}
+            </div>
+            <div className="tnum mt-1 text-[13px] text-ink-2">{v}</div>
+        </div>
+    );
 }
 
 function fmtStamp(unix: number, lang: "en" | "ko"): string {
