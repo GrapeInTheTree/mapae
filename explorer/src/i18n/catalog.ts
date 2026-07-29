@@ -241,6 +241,22 @@ export const en = {
         connectToSee: "Connect a wallet to see the permissions you have issued.",
     },
 
+    dlist: {
+        title: "Delegations",
+        lede: "Every Mapae that has ever appeared on-chain. Settled, refused, disabled or expired - none of it deletable.",
+        boundary: "A Mapae that was issued but never used does not exist on-chain: a grant is a free, traceless signature. This list begins the moment one is first used - and from then on, every attempt against it is permanent.",
+        uses: "uses",
+        settledN: "{n} settled",
+        refusedN: "{n} refused",
+        lastUsed: "Last used",
+        mine: "Issued from this browser",
+        recent: "Attempts",
+        empty: "No delegation has been used on-chain yet.",
+        loadFail: "Could not load the delegation list.",
+        identityDead: "Identity revoked",
+        chainOf: "{n}-link chain",
+    },
+
     tx: {
         title: "Authority trace",
         notFound: "That transaction is not a Mapae redemption.",
@@ -566,6 +582,22 @@ export const ko: Catalog = {
         howLine3: "비활성화는 바로 다음 결제부터 적용되고, 도장을 취소하면 모든 마패가 한 번에 멈춥니다.",
         spent: "사용",
         connectToSee: "발급한 권한을 보려면 지갑을 연결하세요.",
+    },
+
+    dlist: {
+        title: "발급된 마패",
+        lede: "체인에 한 번이라도 등장한 모든 마패. 승인도 거부도 비활성도 만료도 — 무엇도 지워지지 않습니다.",
+        boundary: "발급만 되고 아직 쓰이지 않은 마패는 체인에 없습니다. 발급은 흔적 없는 무료 서명이기 때문입니다. 이 목록은 마패가 처음 사용되는 순간부터 시작되고, 그 뒤의 모든 시도는 영구히 남습니다.",
+        uses: "회 사용",
+        settledN: "승인 {n}",
+        refusedN: "거부 {n}",
+        lastUsed: "마지막 사용",
+        mine: "이 브라우저에서 발급",
+        recent: "사용 기록",
+        empty: "아직 체인에서 사용된 마패가 없습니다.",
+        loadFail: "마패 목록을 불러오지 못했습니다.",
+        identityDead: "신원 취소됨",
+        chainOf: "{n}홉 체인",
     },
 
     tx: {

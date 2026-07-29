@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Tx from "./pages/Tx";
 import Create from "./pages/Create";
 import Permissions from "./pages/Permissions";
+import Delegations from "./pages/Delegations";
 import {Logo} from "./components/ui";
 import {ConnectButton, ConnectDialog} from "./components/Connect";
 import {client} from "./lib/data";
@@ -137,6 +138,7 @@ export default function App() {
                                 <Route path="/" element={<Home />} />
                                 <Route path="/create" element={<Create />} />
                                 <Route path="/permissions" element={<Permissions />} />
+                                <Route path="/delegations" element={<Delegations />} />
                                 <Route path="/tx/:hash" element={<Tx />} />
                             </Routes>
                         </main>

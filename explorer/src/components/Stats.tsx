@@ -1,4 +1,5 @@
 import {useEffect, useRef} from "react";
+import {Link} from "react-router-dom";
 import {animate, motion, useInView, useMotionValue, useReducedMotion, useTransform} from "motion/react";
 import {useLang} from "../i18n";
 import type {Stats as StatsData} from "../lib/data";
@@ -21,6 +22,8 @@ interface Figure {
     value?: number;
     tone?: "jade" | "reject";
     note: string;
+    /** Where the number expands into its list, when it has one. */
+    to?: string;
 }
 
 export function Stats({stats}: {stats: StatsData | null}) {
@@ -33,6 +36,7 @@ export function Stats({stats}: {stats: StatsData | null}) {
             label: t("home", "statActive"),
             value: stats?.delegations,
             note: lang === "ko" ? "서명되어 사용된 권한" : "signed, and used at least once",
+            to: "/delegations",
         },
         {
             label: t("home", "statSettled"),
@@ -65,28 +69,48 @@ export function Stats({stats}: {stats: StatsData | null}) {
                             initial={{opacity: 0, y: 8}}
                             animate={inView ? {opacity: 1, y: 0} : {}}
                             transition={{delay: i * 0.07, duration: 0.45, ease: [0.2, 0.7, 0.3, 1]}}
-                            className={`relative px-6 py-6 ${
+                            className={`relative ${
                                 i % 2 === 1 ? "border-l border-line" : ""
                             } ${i >= 2 ? "border-t border-line sm:border-t-0" : ""} ${
                                 i >= 1 ? "sm:border-l sm:border-line" : ""
                             }`}
                         >
-                            <div className="flex items-center gap-2">
-                                {f.tone && (
-                                    <span
-                                        className={`h-1.5 w-1.5 rounded-full ${
-                                            f.tone === "jade" ? "bg-jade" : "bg-reject"
-                                        }`}
-                                    />
-                                )}
-                                <span className="caps text-[11px] font-semibold text-mute">
-                                    {f.label}
-                                </span>
-                            </div>
+                            <Cell to={f.to}>
+                                <div className="flex items-center gap-2">
+                                    {f.tone && (
+                                        <span
+                                            className={`h-1.5 w-1.5 rounded-full ${
+                                                f.tone === "jade" ? "bg-jade" : "bg-reject"
+                                            }`}
+                                        />
+                                    )}
+                                    <span className="caps text-[11px] font-semibold text-mute">
+                                        {f.label}
+                                    </span>
+                                    {f.to && (
+                                        <svg
+                                            width="11"
+                                            height="11"
+                                            viewBox="0 0 16 16"
+                                            className="text-mute opacity-0 transition-opacity group-hover:opacity-70"
+                                        >
+                                            <path
+                                                d="M6 4l4 4-4 4"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                fill="none"
+                                                strokeLinecap="round"
+                                            />
+                                        </svg>
+                                    )}
+                                </div>
 
-                            <Counter value={f.value} start={inView} tone={f.tone} delay={i * 0.07} />
+                                <Counter value={f.value} start={inView} tone={f.tone} delay={i * 0.07} />
 
-                            <p className="mt-1.5 text-[11.5px] leading-relaxed text-mute">{f.note}</p>
+                                <p className="mt-1.5 text-[11.5px] leading-relaxed text-mute">
+                                    {f.note}
+                                </p>
+                            </Cell>
                         </motion.div>
                     ))}
                 </div>
@@ -155,6 +179,21 @@ export function Stats({stats}: {stats: StatsData | null}) {
                 </motion.p>
             )}
         </div>
+    );
+}
+
+/** A cell that owns its whole area. When the figure has a list behind it, the entire cell is the
+ *  link, not a 6px word inside it. */
+function Cell({to, children}: {to?: string; children: React.ReactNode}) {
+    return to ? (
+        <Link
+            to={to}
+            className="group block h-full px-6 py-6 transition-colors hover:bg-surface-2/50"
+        >
+            {children}
+        </Link>
+    ) : (
+        <div className="h-full px-6 py-6">{children}</div>
     );
 }
 

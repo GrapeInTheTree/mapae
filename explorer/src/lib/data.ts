@@ -20,6 +20,7 @@ import {
     managerAbi,
     periodEnforcerAbi,
 } from "@mapae/abi";
+import {delegationHash} from "@mapae/sdk";
 import {addresses, giwaSepolia, BLOCKSCOUT} from "./config";
 import {decodeConditions, type Condition} from "./policy";
 import snapshot from "../data/snapshot.json";
@@ -183,6 +184,160 @@ export function fetchStats(): Promise<Stats> {
         };
     })();
     return statsCache;
+}
+
+/* ------------------------------- the delegation list ------------------------------- */
+
+export interface DelegationSummary {
+    hash: Hex;
+    delegator: Address;
+    delegate: Address;
+    conditions: Condition[];
+    raw: {enforcer: Address; terms: Hex; args: Hex}[];
+    chainLength: number;
+    /** Every attempt against this authority, newest first - refusals included. */
+    txs: {hash: Hex; ok: boolean; timestamp: string}[];
+    settled: number;
+    refused: number;
+    lastUsed: string;
+    /* Live state, read from the chain at load. null when the RPC shed the read. */
+    disabled: boolean | null;
+    identityLive: boolean | null;
+    available: bigint | null;
+    periodCap: bigint | null;
+}
+
+/**
+ * Every Mapae the chain has ever seen, reconstructed from calldata.
+ *
+ * There is no registry to query and no server to ask - deliberately. A grant is an off-chain
+ * signature, so an unused Mapae exists nowhere but its issuer's browser; the moment one is USED,
+ * the full signed delegation rides in the redemption calldata, refusals included. Grouping those
+ * transactions by delegation hash rebuilds the complete catalogue from primary evidence, which is
+ * exactly the property the product claims: the chain is the only answer to "what authority
+ * exists", and here is that answer, read directly.
+ */
+export async function fetchDelegationList(): Promise<DelegationSummary[]> {
+    const res = await fetch(
+        `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
+    );
+    const data = await res.json();
+    const txs = ((data.items ?? []) as {
+        hash: Hex;
+        status: string;
+        timestamp: string;
+        raw_input?: Hex;
+    }[]).filter((t) => t.raw_input?.startsWith("0xcef6d209"));
+
+    const map = new Map<string, DelegationSummary>();
+    for (const t of txs) {
+        let contexts: Hex[];
+        try {
+            const {args} = decodeFunctionData({abi: managerAbi, data: t.raw_input!});
+            [contexts] = args as [Hex[], Hex[], Hex[]];
+        } catch {
+            continue;
+        }
+        for (const ctx of contexts) {
+            try {
+                const [chain] = decodeAbiParameters(DELEGATION_PARAMS, ctx);
+                const root = chain[chain.length - 1];
+                // The hash excludes the signature, so the same signed authority hashes
+                // identically in every transaction that carries it - that is what makes
+                // grouping by hash mean "the same Mapae".
+                const hash = delegationHash({
+                    delegate: root.delegate,
+                    delegator: root.delegator,
+                    authority: root.authority,
+                    caveats: root.caveats.map((c) => ({...c})),
+                    salt: root.salt,
+                    signature: root.signature,
+                });
+                const entry = map.get(hash);
+                if (entry) {
+                    entry.txs.push({hash: t.hash, ok: t.status === "ok", timestamp: t.timestamp});
+                } else {
+                    map.set(hash, {
+                        hash,
+                        delegator: root.delegator,
+                        delegate: chain[0].delegate,
+                        conditions: decodeConditions(root.caveats.map((c) => ({...c}))),
+                        raw: root.caveats.map((c) => ({...c})),
+                        chainLength: chain.length,
+                        txs: [{hash: t.hash, ok: t.status === "ok", timestamp: t.timestamp}],
+                        settled: 0,
+                        refused: 0,
+                        lastUsed: t.timestamp,
+                        disabled: null,
+                        identityLive: null,
+                        available: null,
+                        periodCap: null,
+                    });
+                }
+            } catch {
+                /* not a decodable context; skip the entry, keep the list */
+            }
+        }
+    }
+
+    const list = [...map.values()];
+    for (const e of list) {
+        e.settled = e.txs.filter((x) => x.ok).length;
+        e.refused = e.txs.length - e.settled;
+        // Blockscout returns newest first; keep that order and take the newest as last-used.
+        e.lastUsed = e.txs[0]?.timestamp ?? e.lastUsed;
+    }
+
+    // Live state per delegation. Whether it is disabled, whether its principal's Dojang still
+    // stands, and how much of this period's budget remains are not in any transaction - they are
+    // now-questions, and only the chain can answer them.
+    await Promise.all(
+        list.map(async (e) => {
+            try {
+                e.disabled = (await client.readContract({
+                    address: addresses.manager,
+                    abi: managerAbi,
+                    functionName: "disabledDelegations",
+                    args: [e.hash],
+                })) as boolean;
+            } catch {
+                /* row renders with unknown state */
+            }
+            const identity = e.conditions.find((c) => c.kind === "identity");
+            if (identity?.kind === "identity") {
+                try {
+                    e.identityLive = await client.readContract({
+                        address: addresses.dojangScroll,
+                        abi: dojangScrollAbi,
+                        functionName: "isVerified",
+                        args: [identity.principal, identity.attesterId],
+                    });
+                } catch {
+                    /* unknown */
+                }
+            }
+            const periodCaveat = e.raw.find(
+                (c) => c.enforcer.toLowerCase() === addresses.periodEnforcer.toLowerCase(),
+            );
+            const period = e.conditions.find((c) => c.kind === "period");
+            if (periodCaveat && period?.kind === "period") {
+                e.periodCap = period.amount;
+                try {
+                    const res2 = (await client.readContract({
+                        address: addresses.periodEnforcer,
+                        abi: periodEnforcerAbi,
+                        functionName: "getAvailableAmount",
+                        args: [e.hash, addresses.manager, periodCaveat.terms],
+                    })) as readonly [bigint, boolean, bigint];
+                    e.available = res2[0];
+                } catch {
+                    /* meter simply not drawn */
+                }
+            }
+        }),
+    );
+
+    return list.sort((a, b) => Date.parse(b.lastUsed) - Date.parse(a.lastUsed));
 }
 
 /* ---------------------------------- tracing ---------------------------------- */
