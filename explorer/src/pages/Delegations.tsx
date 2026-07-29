@@ -110,10 +110,24 @@ export default function Delegations() {
                     )}
                     <span className="ml-auto flex items-center gap-2 text-[11px] text-mute">
                         <span>{t("tx", "delegator")}</span>
-                        <Mono className="!text-[11.5px] text-ink-2">{short(d.delegator, 4)}</Mono>
+                        <span className="inline-flex items-center">
+                            <Mono className="!text-[11.5px] text-ink-2">{short(d.delegator, 4)}</Mono>
+                            <CopyButton
+                                value={d.delegator}
+                                label={t("tx", "copy")}
+                                copiedLabel={t("tx", "copied")}
+                            />
+                        </span>
                         <span>→</span>
                         <span>{t("tx", "delegate")}</span>
-                        <Mono className="!text-[11.5px] text-ink-2">{short(d.delegate, 4)}</Mono>
+                        <span className="inline-flex items-center">
+                            <Mono className="!text-[11.5px] text-ink-2">{short(d.delegate, 4)}</Mono>
+                            <CopyButton
+                                value={d.delegate}
+                                label={t("tx", "copy")}
+                                copiedLabel={t("tx", "copied")}
+                            />
+                        </span>
                     </span>
                 </div>
 
@@ -169,6 +183,8 @@ export default function Delegations() {
                         {t("dlist", "lastUsed")} {relTime(d.lastUsed, lang)}
                     </span>
                     <span className="flex items-center gap-1.5">
+                        {/* Named, so the pills read as destinations rather than as more tags. */}
+                        <span className="text-[11px] text-mute">{t("dlist", "recent")}</span>
                         {d.txs.slice(0, 3).map((x) => (
                             <TxPill key={x.hash} hash={x.hash} ok={x.ok} />
                         ))}
@@ -217,6 +233,8 @@ function compactDate(unix: bigint): string {
     return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`;
 }
 
+/** A destination, and dressed as one: the chevron is what separates "this goes somewhere" from
+ *  the condition chips above, which are the same size and also bordered. */
 function TxPill({hash, ok}: {hash: Hex; ok: boolean}) {
     return (
         <Link
@@ -228,6 +246,15 @@ function TxPill({hash, ok}: {hash: Hex; ok: boolean}) {
             }`}
         >
             {short(hash, 4)}
+            <svg width="9" height="9" viewBox="0 0 16 16" className="opacity-60">
+                <path
+                    d="M6 4l4 4-4 4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    fill="none"
+                    strokeLinecap="round"
+                />
+            </svg>
         </Link>
     );
 }

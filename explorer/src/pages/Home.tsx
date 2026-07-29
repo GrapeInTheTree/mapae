@@ -1,11 +1,20 @@
 import {useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {fetchFeed, fetchStats, type FeedItem, type Stats as StatsData} from "../lib/data";
+import {
+    fetchDelegationList,
+    fetchFeed,
+    fetchStats,
+    type DelegationSummary,
+    type FeedItem,
+    type Stats as StatsData,
+} from "../lib/data";
 import {Card, Mono, StatusPill, relTime} from "../components/ui";
 import {AuthorityFlow} from "../components/AuthorityFlow";
 import {Stats} from "../components/Stats";
 import {useLang} from "../i18n";
 import {short} from "../lib/config";
+import {fmtDuration, fmtToken} from "../lib/policy";
+import * as store from "../lib/store";
 
 /** Real transactions from the live demo. Each one opens the page that explains the system, and
  *  two of the three are refusals - what got stopped is half the point of the ledger. */
@@ -34,12 +43,14 @@ export default function Home() {
     const [stats, setStats] = useState<StatsData | null>(null);
     const [feed, setFeed] = useState<FeedItem[] | null>(null);
     const [feedError, setFeedError] = useState(false);
+    const [dlist, setDlist] = useState<DelegationSummary[] | null>(null);
 
     useEffect(() => {
         fetchStats().then(setStats).catch(() => {});
         fetchFeed()
             .then(setFeed)
             .catch(() => setFeedError(true));
+        fetchDelegationList().then(setDlist).catch(() => {});
     }, []);
 
     const go = () => {
@@ -112,103 +123,112 @@ export default function Home() {
                 <AuthorityFlow />
             </section>
 
-            {/* --------------------------------- ledger -------------------------------- */}
+            {/* ------------------------- the ledger, two columns ------------------------ */}
+            {/* Beryx-style: the two core objects side by side. The left column is the AUTHORITY
+                view (what exists, in what state, how much of it is spent); the right is the EVENT
+                view (what just happened to it). The old layout led with events, which is the less
+                interesting half - an event only means something in terms of the authority it hit. */}
             <section className="mx-auto max-w-6xl px-6 py-12">
-                <div className="mb-3 flex items-baseline justify-between gap-4">
-                    <h2 className="text-[17px] font-semibold text-ink">{t("home", "ledger")}</h2>
-                    <span className="text-[12.5px] text-mute">
-                        {lang === "ko"
-                            ? "거부된 시도도 기록입니다 — 무엇이 막혔는지가 이 원장의 절반입니다"
-                            : "Refusals are records too - what was stopped is half of this ledger"}
-                    </span>
-                </div>
-                <Card>
-                    {feedError ? (
-                        <div className="px-5 py-10 text-center">
-                            <p className="text-[13.5px] text-ink-2">{t("common", "error")}</p>
-                            <p className="mt-1 text-[12.5px] text-mute">{t("common", "errorHint")}</p>
+                <div className="grid items-start gap-6 lg:grid-cols-2">
+                    <div>
+                        <div className="mb-3 flex items-baseline justify-between gap-4">
+                            <h2 className="text-[17px] font-semibold text-ink">
+                                {t("dlist", "title")}
+                            </h2>
+                            <Link
+                                to="/delegations"
+                                className="text-[12.5px] text-mute transition-colors hover:text-bronze-bright"
+                            >
+                                {t("home", "viewAll")} →
+                            </Link>
                         </div>
-                    ) : feed === null ? (
-                        <div className="px-5 py-10 text-center text-[13.5px] text-mute">
-                            {t("common", "loading")}
-                        </div>
-                    ) : feed.length === 0 ? (
-                        <div className="px-5 py-10 text-center text-[13.5px] text-mute">
-                            {t("home", "empty")}
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[520px]">
-                                <thead>
-                                    <tr className="caps border-b border-line text-left text-[12px] text-mute">
-                                        <th className="px-5 py-2.5 font-medium">{t("common", "status")}</th>
-                                        <th className="px-5 py-2.5 font-medium">{t("common", "hash")}</th>
-                                        <th className="hidden px-5 py-2.5 font-medium sm:table-cell">
-                                            {t("tx", "redeemer")}
-                                        </th>
-                                        <th className="px-5 py-2.5 text-right font-medium">
-                                            {t("common", "time")}
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {/* The whole row is the target. Making only the hash clickable
-                                        gives a 120px hit area on a 900px row, which is a miss
-                                        waiting to happen - and the row already reads as one item. */}
-                                    {feed.map((f) => (
-                                        <tr
-                                            key={f.hash}
-                                            onClick={() => nav(`/tx/${f.hash}`)}
-                                            tabIndex={0}
-                                            role="link"
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Enter" || e.key === " ") {
-                                                    e.preventDefault();
-                                                    nav(`/tx/${f.hash}`);
-                                                }
-                                            }}
-                                            className="group cursor-pointer border-b border-line/60 transition-colors last:border-0 hover:bg-surface-2/60 focus:bg-surface-2/60 focus:outline-none"
-                                        >
-                                            <td className="px-5 py-3">
-                                                <StatusPill
-                                                    ok={f.ok}
-                                                    label={f.ok ? t("tx", "allowed") : t("tx", "rejected")}
-                                                />
-                                            </td>
-                                            <td className="px-5 py-3">
-                                                <Mono className="text-bronze-bright group-hover:underline">
-                                                    {short(f.hash, 10)}
-                                                </Mono>
-                                            </td>
-                                            <td className="hidden px-5 py-3 sm:table-cell">
-                                                <Mono className="text-mute">{short(f.from, 6)}</Mono>
-                                            </td>
-                                            <td className="px-5 py-3 text-right text-[13px] text-mute">
-                                                <span className="inline-flex items-center gap-2">
-                                                    {relTime(f.timestamp, lang)}
-                                                    <svg
-                                                        width="12"
-                                                        height="12"
-                                                        viewBox="0 0 16 16"
-                                                        className="opacity-0 transition-opacity group-hover:opacity-60"
-                                                    >
-                                                        <path
-                                                            d="M6 4l4 4-4 4"
-                                                            stroke="currentColor"
-                                                            strokeWidth="1.7"
-                                                            fill="none"
-                                                            strokeLinecap="round"
-                                                        />
-                                                    </svg>
-                                                </span>
-                                            </td>
-                                        </tr>
+                        <Card className="overflow-hidden">
+                            {dlist === null ? (
+                                <div className="px-5 py-10 text-center text-[13.5px] text-mute">
+                                    {t("common", "loading")}
+                                </div>
+                            ) : dlist.length === 0 ? (
+                                <div className="px-5 py-10 text-center text-[13.5px] text-mute">
+                                    {t("dlist", "empty")}
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-line/60">
+                                    {dlist.slice(0, 4).map((d) => (
+                                        <DelegationMini key={d.hash} d={d} />
                                     ))}
-                                </tbody>
-                            </table>
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+
+                    <div>
+                        <div className="mb-3 flex items-baseline justify-between gap-4">
+                            <h2 className="text-[17px] font-semibold text-ink">
+                                {t("home", "ledger")}
+                            </h2>
+                            <span className="hidden text-[12.5px] text-mute sm:inline">
+                                {lang === "ko"
+                                    ? "거부도 기록입니다 — 그게 이 원장의 절반입니다"
+                                    : "Refusals are records too - half of this ledger"}
+                            </span>
                         </div>
-                    )}
-                </Card>
+                        <Card className="overflow-hidden">
+                            {feedError ? (
+                                <div className="px-5 py-10 text-center">
+                                    <p className="text-[13.5px] text-ink-2">{t("common", "error")}</p>
+                                    <p className="mt-1 text-[12.5px] text-mute">
+                                        {t("common", "errorHint")}
+                                    </p>
+                                </div>
+                            ) : feed === null ? (
+                                <div className="px-5 py-10 text-center text-[13.5px] text-mute">
+                                    {t("common", "loading")}
+                                </div>
+                            ) : feed.length === 0 ? (
+                                <div className="px-5 py-10 text-center text-[13.5px] text-mute">
+                                    {t("home", "empty")}
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-line/60">
+                                    {/* The whole row is the target - a 120px hash on a full-width
+                                        row is a miss waiting to happen. */}
+                                    {feed.slice(0, 8).map((f) => (
+                                        <Link
+                                            key={f.hash}
+                                            to={`/tx/${f.hash}`}
+                                            className="group flex items-center gap-4 px-5 py-[13px] transition-colors hover:bg-surface-2/60"
+                                        >
+                                            <StatusPill
+                                                ok={f.ok}
+                                                label={f.ok ? t("tx", "allowed") : t("tx", "rejected")}
+                                            />
+                                            <Mono className="text-bronze-bright group-hover:underline">
+                                                {short(f.hash, 8)}
+                                            </Mono>
+                                            <span className="ml-auto inline-flex items-center gap-2 text-[12.5px] text-mute">
+                                                {relTime(f.timestamp, lang)}
+                                                <svg
+                                                    width="12"
+                                                    height="12"
+                                                    viewBox="0 0 16 16"
+                                                    className="opacity-0 transition-opacity group-hover:opacity-60"
+                                                >
+                                                    <path
+                                                        d="M6 4l4 4-4 4"
+                                                        stroke="currentColor"
+                                                        strokeWidth="1.7"
+                                                        fill="none"
+                                                        strokeLinecap="round"
+                                                    />
+                                                </svg>
+                                            </span>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </Card>
+                    </div>
+                </div>
 
                 <div className="mt-8 text-center">
                     <Link
@@ -221,6 +241,80 @@ export default function Home() {
                 </div>
             </section>
         </div>
+    );
+}
+
+/** One authority, one row: state, cap, how much of it is gone, when it last moved. Clicking
+ *  lands on the full catalogue - the row is a summary, not a page of its own. */
+function DelegationMini({d}: {d: DelegationSummary}) {
+    const {t, lang} = useLang();
+    const mine = store.get(d.hash);
+    const window = d.conditions.find((c) => c.kind === "window");
+    const period = d.conditions.find((c) => c.kind === "period");
+    const expired =
+        window?.kind === "window" &&
+        window.until > 0n &&
+        window.until < BigInt(Math.floor(Date.now() / 1000));
+    const dead = d.disabled || d.identityLive === false || expired;
+
+    const spent = d.available != null && d.periodCap != null ? d.periodCap - d.available : null;
+    const pct =
+        spent != null && d.periodCap && d.periodCap > 0n
+            ? Number((spent * 100n) / d.periodCap)
+            : 0;
+
+    return (
+        <Link
+            to="/delegations"
+            className="group block px-5 py-3 transition-colors hover:bg-surface-2/60"
+        >
+            <div className="flex items-center gap-2.5">
+                <span
+                    className={`h-1.5 w-1.5 shrink-0 rounded-full ${dead ? "bg-reject" : "bg-jade"}`}
+                />
+                {mine ? (
+                    <span className="truncate text-[13px] font-medium text-ink">
+                        {mine.agentName}
+                    </span>
+                ) : (
+                    <Mono className="!text-[12px] text-ink-2">
+                        {short(d.delegator, 4)} → {short(d.delegate, 4)}
+                    </Mono>
+                )}
+                {period?.kind === "period" && (
+                    <span className="tnum shrink-0 text-[12px] text-mute">
+                        {fmtToken(period.token, period.amount)}/{fmtDuration(period.duration, lang)}
+                    </span>
+                )}
+                <span className="ml-auto inline-flex shrink-0 items-center gap-2 text-[12px] text-mute">
+                    <span className="text-jade">{t("dlist", "settledN", {n: d.settled})}</span>
+                    <span className="text-reject">{t("dlist", "refusedN", {n: d.refused})}</span>
+                    <span className="hidden sm:inline">{relTime(d.lastUsed, lang)}</span>
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 16 16"
+                        className="opacity-0 transition-opacity group-hover:opacity-60"
+                    >
+                        <path
+                            d="M6 4l4 4-4 4"
+                            stroke="currentColor"
+                            strokeWidth="1.7"
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    </svg>
+                </span>
+            </div>
+            {spent != null && (
+                <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                        className={`h-full rounded-full ${dead ? "bg-reject/50" : "bg-bronze"}`}
+                        style={{width: `${Math.min(100, Math.max(0, pct))}%`}}
+                    />
+                </div>
+            )}
+        </Link>
     );
 }
 
