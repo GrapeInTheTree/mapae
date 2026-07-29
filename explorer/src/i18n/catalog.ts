@@ -258,7 +258,10 @@ export const en = {
         activityTitle: "Activity",
         activityLede: "Every attempt against the manager - the amount, the payee and the authority it invoked, decoded from calldata. Refusals read exactly as richly as settlements.",
         mapae: "Mapae",
-        identityDead: "Identity revoked",
+        /* Not "revoked": a live isVerified()==false cannot distinguish an attestation that was
+           revoked from one that never existed (the Upbit-demanding demo delegation is the
+           latter), and this label must not claim more than the chain says. */
+        identityDead: "No live Dojang",
         chainOf: "{n}-link chain",
     },
 
@@ -606,7 +609,7 @@ export const ko: Catalog = {
         activityTitle: "사용 기록",
         activityLede: "매니저에 도착한 모든 시도 — 금액, 수취인, 어떤 권한을 썼는지까지 calldata에서 복원합니다. 거부된 시도도 승인만큼 자세히 읽힙니다.",
         mapae: "마패",
-        identityDead: "신원 취소됨",
+        identityDead: "유효한 도장 없음",
         chainOf: "{n}홉 체인",
     },
 
