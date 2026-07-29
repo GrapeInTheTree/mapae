@@ -4,11 +4,11 @@ import Home from "./pages/Home";
 import Tx from "./pages/Tx";
 import Create from "./pages/Create";
 import Permissions from "./pages/Permissions";
-import {Button, Logo} from "./components/ui";
+import {Logo} from "./components/ui";
+import {ConnectButton, ConnectDialog} from "./components/Connect";
 import {client} from "./lib/data";
 import {LangProvider, useLang} from "./i18n";
-import {WalletProvider, useWallet} from "./lib/wallet";
-import {short} from "./lib/config";
+import {WalletProvider} from "./lib/wallet";
 
 function LangToggle() {
     const {lang, setLang} = useLang();
@@ -26,45 +26,6 @@ function LangToggle() {
                 </button>
             ))}
         </div>
-    );
-}
-
-function WalletButton() {
-    const {t} = useLang();
-    const w = useWallet();
-
-    if (!w.available) {
-        return (
-            <span
-                className="hidden text-[12.5px] text-mute sm:inline"
-                title="No injected wallet provider found"
-            >
-                {t("nav", "connect")}
-            </span>
-        );
-    }
-    if (!w.address) {
-        return (
-            <Button variant="ghost" onClick={w.connect} disabled={w.connecting}>
-                {t("nav", "connect")}
-            </Button>
-        );
-    }
-    if (!w.onGiwa) {
-        return (
-            <Button variant="danger" onClick={w.switchToGiwa}>
-                {t("nav", "wrongNetwork")}
-            </Button>
-        );
-    }
-    return (
-        <button
-            onClick={w.disconnect}
-            title={t("nav", "disconnect")}
-            className="rounded-lg border border-line px-2.5 py-1.5 font-mono text-[12.5px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
-        >
-            {short(w.address, 4)}
-        </button>
     );
 }
 
@@ -111,7 +72,7 @@ function Header() {
                         GIWA Sepolia {head !== null ? `#${head.toLocaleString()}` : "…"}
                     </span>
                     <LangToggle />
-                    <WalletButton />
+                    <ConnectButton compact />
                 </div>
             </div>
         </header>
@@ -168,6 +129,8 @@ export default function App() {
                             </Routes>
                         </main>
                         <Footer />
+                        {/* One dialog for the whole app, raised from anywhere. */}
+                        <ConnectDialog />
                     </div>
                 </BrowserRouter>
             </WalletProvider>

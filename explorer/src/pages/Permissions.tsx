@@ -1,31 +1,32 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {Link} from "react-router-dom";
-import {encodeFunctionData, type Address, type Hex} from "viem";
+import {encodeFunctionData, type Hex} from "viem";
 import {accountAbi, managerAbi, periodEnforcerAbi} from "@mapae/abi";
 import {encodeExecutionSingle, encodePermissionContext} from "@mapae/sdk";
 import {MODE_SIMPLE_SINGLE} from "@mapae/protocol";
 
-import {Button, Card, Mono, Paper, Spinner, StatusPill, Tag} from "../components/ui";
+import {Button, Card, Mark, Mono, Spinner, StatusPill, Tag} from "../components/ui";
+import {ConnectButton} from "../components/Connect";
 import {useLang} from "../i18n";
 import {addresses, BLOCKSCOUT, short} from "../lib/config";
 import {client} from "../lib/data";
-import {readableError, useMapaeAccount} from "../lib/account";
+import {readableError, useDojangStatus, useMapaeAccount, useTokenBalance} from "../lib/account";
 import {decodeConditions, fmtDate, fmtToken, renderCondition, type Condition} from "../lib/policy";
 import * as store from "../lib/store";
 import {useWallet} from "../lib/wallet";
+import {TESTNET_FAUCET_ID} from "@mapae/protocol";
 
 /**
  * My Permissions - the control centre, as distinct from the Explorer.
  *
  * The Explorer is an audit surface: it explains what happened, to anyone, after the fact. This is
  * the opposite view of the same system - what I have granted, what it has spent, and the switch
- * that stops it. A person who is nervous about handing an agent money needs somewhere to look
- * that answers "what did I authorise, and how do I take it back", and that place has to be
- * legible in under a minute.
+ * that stops it. Someone nervous about handing an agent money needs one place that answers "what
+ * did I authorise, and how do I take it back" in under a minute.
  *
  * Two truths are joined here. What was ISSUED is off-chain and comes from this browser; what has
- * HAPPENED - disabled or not, spent or not - is read live from the chain every time. Where they
- * disagree, the chain wins, and the UI says which is which.
+ * HAPPENED - disabled or not, spent or not - is read live from the chain on every mount. Where
+ * they disagree the chain wins, and the UI says which is which.
  */
 
 interface Live {
@@ -43,14 +44,17 @@ export default function Permissions() {
     const [busy, setBusy] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
+    const balance = useTokenBalance(addresses.mockKRW, account.address);
+    const {verified} = useDojangStatus(wallet.address ?? null, TESTNET_FAUCET_ID);
+
     const reload = useCallback(() => {
         setItems(store.list(account.address ?? undefined));
     }, [account.address]);
 
     useEffect(reload, [reload]);
 
-    // Live state, per delegation. Read on every mount rather than cached: a kill switch that
-    // shows stale state is worse than one that shows none.
+    // Live state per delegation, re-read on every mount and after every toggle. A kill switch
+    // that shows stale state is worse than one that shows none.
     useEffect(() => {
         if (items.length === 0) return;
         let cancelled = false;
@@ -104,7 +108,7 @@ export default function Permissions() {
         setBusy(m.hash);
         setError(null);
         try {
-            // The delegator is the ACCOUNT, not the owner - so the call is routed through it.
+            // The delegator is the ACCOUNT, not its owner, so the call is routed through it.
             // Calling the manager directly from the owner's address reverts with NotDelegator.
             const inner = encodeFunctionData({
                 abi: managerAbi,
@@ -127,66 +131,44 @@ export default function Permissions() {
         }
     }
 
-    const empty = items.length === 0;
-
     return (
         <div className="mx-auto max-w-4xl px-6 py-10">
-            <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+            <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 className="display text-[36px] text-ink">{t("permissions", "title")}</h1>
+                    <h1 className="display text-[38px] text-ink">{t("permissions", "title")}</h1>
                     <p className="mt-2 text-[14.5px] text-mute">{t("permissions", "lede")}</p>
                 </div>
-                {!empty && (
+                {items.length > 0 && (
                     <Button
                         variant="ghost"
-                        onClick={() =>
-                            store.download(`mapae-permissions.json`, store.exportAll())
-                        }
+                        onClick={() => store.download("mapae-permissions.json", store.exportAll())}
                     >
                         {t("permissions", "export")}
                     </Button>
                 )}
             </header>
 
+            {wallet.address && <AccountBar />}
+
+            {error && (
+                <p className="mb-4 rounded-lg border border-reject-dim bg-reject/10 p-3 text-[13px] text-reject">
+                    {error}
+                </p>
+            )}
+
             {!wallet.address ? (
-                <Paper className="flex flex-wrap items-center justify-between gap-4 p-5">
-                    <p className="text-[14px] text-paper-ink-2">{t("create", "needWallet")}</p>
-                    <Button onClick={wallet.connect} disabled={!wallet.available}>
-                        {t("nav", "connect")}
-                    </Button>
-                </Paper>
-            ) : empty ? (
-                <Card className="p-10 text-center">
-                    <p className="text-[14.5px] text-mute">{t("permissions", "empty")}</p>
-                    <Link
-                        to="/create"
-                        className="mt-3 inline-block text-[14px] text-bronze-bright hover:underline"
-                    >
-                        {t("permissions", "emptyCta")} →
-                    </Link>
-                </Card>
+                <Explainer />
+            ) : items.length === 0 ? (
+                <EmptyState />
             ) : (
                 <>
-                    <div className="mb-4 flex items-center gap-2">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
                         <Tag>{t("permissions", "localOnly")}</Tag>
                         <p className="text-[12.5px] text-mute">{t("permissions", "localOnlyHint")}</p>
                     </div>
-
-                    {error && (
-                        <p className="mb-4 rounded-lg border border-reject-dim bg-reject/10 p-3 text-[13px] text-reject">
-                            {error}
-                        </p>
-                    )}
-
                     <div className="space-y-3">
                         {items.map((m) => (
-                            <MapaeRow
-                                key={m.hash}
-                                m={m}
-                                live={live[m.hash]}
-                                busy={busy === m.hash}
-                                onToggle={toggle}
-                            />
+                            <MapaeRow key={m.hash} m={m} live={live[m.hash]} busy={busy === m.hash} />
                         ))}
                     </div>
                 </>
@@ -194,17 +176,107 @@ export default function Permissions() {
         </div>
     );
 
-    function MapaeRow({
-        m,
-        live: l,
-        busy: isBusy,
-        onToggle,
-    }: {
-        m: store.StoredMapae;
-        live?: Live;
-        busy: boolean;
-        onToggle: (m: store.StoredMapae, disable: boolean) => void;
-    }) {
+    /* ------------------------------ sub-views ------------------------------ */
+
+    /** Visible before anything is connected, so the page is never a lone button on a black field. */
+    function Explainer() {
+        return (
+            <div className="rise overflow-hidden rounded-2xl border border-line bg-surface">
+                <div className="border-b border-line px-7 py-6">
+                    <div className="flex items-center gap-3">
+                        <Mark size={20} />
+                        <h2 className="text-[15px] font-semibold text-ink">
+                            {t("permissions", "howItWorks")}
+                        </h2>
+                    </div>
+                    <ol className="mt-5 space-y-3.5">
+                        {[
+                            t("permissions", "howLine1"),
+                            t("permissions", "howLine2"),
+                            t("permissions", "howLine3"),
+                        ].map((line, i) => (
+                            <li key={i} className="flex gap-3.5">
+                                <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-bronze-dim text-[11px] font-semibold text-bronze">
+                                    {i + 1}
+                                </span>
+                                <p className="text-[13.5px] leading-relaxed text-ink-2">{line}</p>
+                            </li>
+                        ))}
+                    </ol>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-4 px-7 py-5">
+                    <p className="text-[13.5px] text-mute">{t("permissions", "connectToSee")}</p>
+                    <ConnectButton />
+                </div>
+            </div>
+        );
+    }
+
+    function EmptyState() {
+        return (
+            <div className="rise rounded-2xl border border-dashed border-line-strong px-8 py-14 text-center">
+                <Mark size={26} className="mx-auto opacity-25" />
+                <p className="mt-4 text-[15px] text-ink-2">{t("permissions", "empty")}</p>
+                <Link
+                    to="/create"
+                    className="mt-5 inline-flex rounded-lg bg-bronze-solid px-4 py-2.5 text-[14px] font-medium text-paper transition-colors hover:bg-bronze-solid-2"
+                >
+                    {t("permissions", "emptyCta")} →
+                </Link>
+            </div>
+        );
+    }
+
+    /** Everything the control centre needs at a glance: who pays, what it holds, who you are. */
+    function AccountBar() {
+        return (
+            <div className="mb-6 grid gap-3 sm:grid-cols-3">
+                <Card className="px-5 py-4">
+                    <div className="text-[12px] text-mute">{t("permissions", "account")}</div>
+                    {account.address && account.deployed ? (
+                        <a
+                            href={`${BLOCKSCOUT}/address/${account.address}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 block font-mono text-[13.5px] text-ink transition-colors hover:text-bronze-bright"
+                        >
+                            {short(account.address, 6)} ↗
+                        </a>
+                    ) : (
+                        <div className="mt-1 text-[13.5px] text-mute">
+                            {t("permissions", "accountNone")}
+                        </div>
+                    )}
+                </Card>
+                <Card className="px-5 py-4">
+                    <div className="text-[12px] text-mute">{t("permissions", "balance")}</div>
+                    <div className="tnum mt-1 text-[15px] text-ink">
+                        {balance === null ? "—" : fmtToken(addresses.mockKRW, balance)}
+                    </div>
+                </Card>
+                <Card className="px-5 py-4">
+                    <div className="text-[12px] text-mute">{t("permissions", "identity")}</div>
+                    <div className="mt-1 flex items-center gap-1.5 text-[13.5px]">
+                        {verified === null ? (
+                            <span className="text-mute">—</span>
+                        ) : verified ? (
+                            <>
+                                <span className="h-1.5 w-1.5 rounded-full bg-jade" />
+                                <span className="text-jade">{t("permissions", "identityLive")}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span className="h-1.5 w-1.5 rounded-full bg-reject" />
+                                <span className="text-reject">{t("permissions", "identityNone")}</span>
+                            </>
+                        )}
+                    </div>
+                </Card>
+            </div>
+        );
+    }
+
+    function MapaeRow({m, live: l, busy: isBusy}: {m: store.StoredMapae; live?: Live; busy: boolean}) {
         const conditions = useMemo(() => decodeConditions(m.delegation.caveats), [m]);
         const window = conditions.find((c) => c.kind === "window");
         const period = conditions.find((c) => c.kind === "period");
@@ -219,22 +291,28 @@ export default function Permissions() {
               ? {ok: false, label: t("permissions", "expired")}
               : {ok: true, label: t("permissions", "active")};
 
-        const spent =
-            l?.available != null && l.periodCap != null ? l.periodCap - l.available : null;
+        const spent = l?.available != null && l.periodCap != null ? l.periodCap - l.available : null;
+        const pct =
+            spent != null && l?.periodCap && l.periodCap > 0n
+                ? Number((spent * 100n) / l.periodCap)
+                : 0;
+
+        const names: Record<string, string> = {};
+        if (m.merchantName) {
+            const payee = conditions.find((c) => c.kind === "payee");
+            if (payee?.kind === "payee") names[payee.payees[0].toLowerCase()] = m.merchantName;
+        }
 
         return (
-            <Card className="p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
+            <Card className="overflow-hidden">
+                <div className="flex flex-wrap items-start justify-between gap-4 px-5 pt-5">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2.5">
                             <h2 className="text-[15.5px] font-medium text-ink">{m.agentName}</h2>
                             <StatusPill ok={status.ok} label={status.label} />
                         </div>
-                        <Mono className="mt-1 block text-mute">
-                            {short(m.delegation.delegate, 8)}
-                        </Mono>
+                        <Mono className="mt-1 block text-mute">{short(m.delegation.delegate, 8)}</Mono>
                     </div>
-
                     <div className="flex items-center gap-2">
                         <Button
                             variant="ghost"
@@ -253,10 +331,10 @@ export default function Permissions() {
                                 onClick={() => {
                                     if (!l.disabled && !confirm(t("permissions", "confirmDisable")))
                                         return;
-                                    onToggle(m, !l.disabled);
+                                    void toggle(m, !l.disabled);
                                 }}
                             >
-                                {isBusy ? <Spinner inline /> : null}
+                                {isBusy && <Spinner inline />}
                                 {isBusy
                                     ? l.disabled
                                         ? t("permissions", "enabling")
@@ -269,41 +347,35 @@ export default function Permissions() {
                     </div>
                 </div>
 
-                <div className="mt-4 grid gap-x-8 gap-y-2 border-t border-line pt-4 text-[13px] sm:grid-cols-3">
-                    {period?.kind === "period" && (
-                        <>
-                            <Stat
-                                k={t("permissions", "spentThisPeriod")}
-                                v={spent != null ? fmtToken(period.token, spent) : "—"}
+                {/* The spend meter. A number tells you the state; a bar tells you how close you
+                    are to the edge, which is the thing a person actually wants to know. */}
+                {period?.kind === "period" && (
+                    <div className="mt-5 px-5">
+                        <div className="flex items-baseline justify-between text-[12.5px]">
+                            <span className="text-mute">
+                                {t("permissions", "spent")}{" "}
+                                <span className="tnum text-ink-2">
+                                    {spent != null ? fmtToken(period.token, spent) : "—"}
+                                </span>
+                            </span>
+                            <span className="tnum text-mute">
+                                {fmtToken(period.token, period.amount)}
+                            </span>
+                        </div>
+                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+                            <div
+                                className="h-full rounded-full bg-bronze transition-[width] duration-500"
+                                style={{width: `${Math.min(100, Math.max(0, pct))}%`}}
                             />
-                            <Stat
-                                k={t("permissions", "remaining")}
-                                v={
-                                    l?.available != null
-                                        ? fmtToken(period.token, l.available)
-                                        : "—"
-                                }
-                            />
-                        </>
-                    )}
-                    {window?.kind === "window" && window.until > 0n && (
-                        <Stat
-                            k={t("permissions", "validUntil")}
-                            v={fmtDate(window.until, lang)}
-                        />
-                    )}
-                </div>
+                        </div>
+                    </div>
+                )}
 
-                <ul className="mt-4 space-y-1.5 border-t border-line pt-4">
+                <ul className="mt-5 divide-y divide-line/70 border-t border-line">
                     {conditions.map((c: Condition, i) => {
-                        const r = renderCondition(c, t as never, lang, {
-                            [String(m.delegation.delegate).toLowerCase()]: m.agentName,
-                            ...(m.merchantName
-                                ? {[merchantOf(conditions)?.toLowerCase() ?? ""]: m.merchantName}
-                                : {}),
-                        });
+                        const r = renderCondition(c, t as never, lang, names);
                         return (
-                            <li key={i} className="flex gap-3 text-[13px]">
+                            <li key={i} className="flex gap-4 px-5 py-2.5 text-[13px]">
                                 <span className="w-24 shrink-0 text-mute">{r.title}</span>
                                 <span className="text-ink-2">{r.lines[0]}</span>
                             </li>
@@ -311,13 +383,18 @@ export default function Permissions() {
                     })}
                 </ul>
 
-                <div className="mt-3 flex items-center gap-3 text-[12px] text-mute">
+                <div className="flex flex-wrap items-center gap-3 border-t border-line bg-surface-2/40 px-5 py-2.5 text-[12px] text-mute">
                     <span className="font-mono">{short(m.hash, 10)}</span>
+                    {window?.kind === "window" && window.until > 0n && (
+                        <span>
+                            {t("permissions", "validUntil")} {fmtDate(window.until, lang)}
+                        </span>
+                    )}
                     <a
                         href={`${BLOCKSCOUT}/address/${m.delegation.delegator}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="hover:text-ink-2"
+                        className="ml-auto transition-colors hover:text-ink-2"
                     >
                         {t("permissions", "onChain")} ↗
                     </a>
@@ -325,18 +402,4 @@ export default function Permissions() {
             </Card>
         );
     }
-
-    function Stat({k, v}: {k: string; v: string}) {
-        return (
-            <div>
-                <div className="text-[12px] text-mute">{k}</div>
-                <div className="mt-0.5 text-[14px] text-ink tnum">{v}</div>
-            </div>
-        );
-    }
-}
-
-function merchantOf(conditions: Condition[]): Address | undefined {
-    const payee = conditions.find((c) => c.kind === "payee");
-    return payee?.kind === "payee" ? payee.payees[0] : undefined;
 }

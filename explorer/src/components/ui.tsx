@@ -1,4 +1,4 @@
-import type {ReactNode} from "react";
+import {useEffect, useRef, useState, type ReactNode} from "react";
 import {Link} from "react-router-dom";
 import {BLOCKSCOUT, short} from "../lib/config";
 import type {Lang} from "../i18n";
@@ -118,6 +118,15 @@ export function Input({
     );
 }
 
+/**
+ * A listbox rather than a native `<select>`.
+ *
+ * The OS dropdown is drawn by the platform, so on the bone surface it opens as a dark slab with
+ * its own typography and no relationship to anything around it. Since these controls sit on the
+ * one panel where a person decides what authority to grant, the popup has to belong to that
+ * panel. Keyboard behaviour follows the native control: Enter or Space opens, arrows move,
+ * Enter commits, Escape cancels.
+ */
 export function Select<T extends string>({
     value,
     onChange,
@@ -127,22 +136,113 @@ export function Select<T extends string>({
     onChange: (v: T) => void;
     options: {value: T; label: string}[];
 }) {
+    const [open, setOpen] = useState(false);
+    const [active, setActive] = useState(0);
+    const box = useRef<HTMLDivElement>(null);
+    const current = options.find((o) => o.value === value);
+
+    useEffect(() => {
+        if (!open) return;
+        setActive(Math.max(0, options.findIndex((o) => o.value === value)));
+        const onDown = (e: MouseEvent) => {
+            if (!box.current?.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("mousedown", onDown);
+        return () => document.removeEventListener("mousedown", onDown);
+    }, [open, options, value]);
+
+    function onKey(e: React.KeyboardEvent) {
+        if (!open) {
+            if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+                e.preventDefault();
+                setOpen(true);
+            }
+            return;
+        }
+        if (e.key === "Escape") return setOpen(false);
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setActive((i) => Math.min(options.length - 1, i + 1));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setActive((i) => Math.max(0, i - 1));
+        } else if (e.key === "Enter") {
+            e.preventDefault();
+            onChange(options[active].value);
+            setOpen(false);
+        }
+    }
+
     return (
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value as T)}
-            className={`${inputBase} appearance-none bg-[length:14px] bg-[right_0.75rem_center] bg-no-repeat pr-9`}
-            style={{
-                backgroundImage:
-                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%2378736a' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E\")",
-            }}
-        >
-            {options.map((o) => (
-                <option key={o.value} value={o.value}>
-                    {o.label}
-                </option>
-            ))}
-        </select>
+        <div ref={box} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                onKeyDown={onKey}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                className={`${inputBase} flex items-center justify-between text-left ${
+                    open ? "border-bronze-solid bg-paper-2/70" : ""
+                }`}
+            >
+                <span>{current?.label ?? value}</span>
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 16 16"
+                    className={`shrink-0 text-paper-mute transition-transform ${open ? "rotate-180" : ""}`}
+                >
+                    <path
+                        d="M4 6l4 4 4-4"
+                        stroke="currentColor"
+                        strokeWidth="1.7"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            </button>
+
+            {open && (
+                <ul
+                    role="listbox"
+                    className="rise absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-paper-line bg-paper p-1 shadow-2xl shadow-black/30"
+                >
+                    {options.map((o, i) => {
+                        const selected = o.value === value;
+                        return (
+                            <li key={o.value} role="option" aria-selected={selected}>
+                                <button
+                                    type="button"
+                                    onMouseEnter={() => setActive(i)}
+                                    onClick={() => {
+                                        onChange(o.value);
+                                        setOpen(false);
+                                    }}
+                                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[14px] transition-colors ${
+                                        i === active ? "bg-paper-2" : ""
+                                    } ${selected ? "font-medium text-paper-ink" : "text-paper-ink-2"}`}
+                                >
+                                    {o.label}
+                                    {selected && (
+                                        <svg width="14" height="14" viewBox="0 0 16 16" className="text-bronze-solid">
+                                            <path
+                                                d="M3.5 8.5l3 3 6-7"
+                                                stroke="currentColor"
+                                                strokeWidth="1.8"
+                                                fill="none"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                        </svg>
+                                    )}
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
     );
 }
 

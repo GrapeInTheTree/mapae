@@ -5,6 +5,7 @@ import {encodePermissionContext, type Delegation} from "@mapae/sdk";
 import {ROOT_AUTHORITY, TESTNET_FAUCET_ID, UPBIT_KOREA_ID} from "@mapae/protocol";
 
 import {Button, Check, Field, Input, Mark, Paper, Select, Spinner, Steps} from "../components/ui";
+import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
 import {addresses, short} from "../lib/config";
 import {readableError, useDojangStatus, useMapaeAccount} from "../lib/account";
@@ -244,15 +245,22 @@ export default function Create() {
         </div>
     );
 
+    /** Not a blocker: the form below stays usable so a person can see what they would be signing
+     *  before they are asked to connect anything. */
     function ConnectFirst() {
         return (
-            <Paper className="mb-6 flex flex-wrap items-center justify-between gap-4 p-5">
-                <p className="text-[14px] text-paper-ink-2">{t("create", "needWallet")}</p>
-                <Button onClick={wallet.connect} disabled={!wallet.available || wallet.connecting}>
-                    {wallet.connecting ? <Spinner inline /> : null}
-                    {t("nav", "connect")}
-                </Button>
-            </Paper>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface px-5 py-4">
+                <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line-strong">
+                        <Mark size={15} />
+                    </span>
+                    <div>
+                        <p className="text-[13.5px] font-medium text-ink">{t("create", "needWallet")}</p>
+                        <p className="text-[12.5px] text-mute">{t("wallet", "lede")}</p>
+                    </div>
+                </div>
+                <ConnectButton />
+            </div>
         );
     }
 

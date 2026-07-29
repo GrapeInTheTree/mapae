@@ -1,0 +1,4 @@
+# The explorer is a single-page app: /create, /permissions and /tx/0x… are client routes with no
+# file behind them. Without this, a reload or a shared link 404s - which is exactly what a judge
+# following a link from the application would hit.
+/*    /index.html   200
