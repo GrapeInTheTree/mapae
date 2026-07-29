@@ -184,6 +184,7 @@ pnpm trace <any T1 hash>
 | **`VerifiedCodeEnforcer`** | Dojang's Verified Code attestation gates the *redeemer's code hash*: only an audited agent build may spend. The strongest follow-on in the design, ~25 lines on the existing base. |
 | **Attestation query API** | GIWA has no off-chain Dojang query surface ([docs/GAPS.md](docs/GAPS.md)). A Ponder-based index of real-issuer attestations and Mapae redemptions is measured and scoped. |
 | **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. |
+| **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |
 
 ## Documentation
 
