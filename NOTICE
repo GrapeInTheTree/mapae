@@ -1,0 +1,28 @@
+Mapae
+Copyright (c) 2026 GrapeInTheTree
+
+This repository vendors the following files from MetaMask/delegation-framework
+(https://github.com/MetaMask/delegation-framework), licensed MIT AND Apache-2.0,
+Copyright (c) Consensys:
+
+  src/enforcers/CaveatEnforcer.sol
+  src/enforcers/TimestampEnforcer.sol
+  src/enforcers/ERC20PeriodTransferEnforcer.sol
+
+Modifications are limited to: pragma widened from 0.8.23 to ^0.8.29, import paths
+adapted to this repository's layout, and comment-only static-analysis annotations.
+Contract names, storage layouts, terms layouts, revert strings, events, and logic
+are unchanged. Each file's header restates this.
+
+The delegation structures, typehashes, and hook conventions implemented in
+src/MapaeDelegationManager.sol, src/utils/, and src/libraries/ follow the layouts
+defined by the same framework in order to be byte-compatible with it; that code is
+an independent implementation, not a copy.
+
+ERC-7579 mode and execution encodings in src/libraries/{ModeLib,ExecutionLib}.sol
+follow erc7579/erc7579-implementation (MIT).
+
+Dependency libraries (installed as git submodules, not vendored):
+  foundry-rs/forge-std          MIT OR Apache-2.0
+  OpenZeppelin/openzeppelin-contracts  MIT
+  Vectorized/solady             MIT
