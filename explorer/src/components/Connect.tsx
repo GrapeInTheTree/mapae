@@ -205,7 +205,9 @@ export function ConnectButton({compact}: {compact?: boolean}) {
                     : "rounded-lg bg-bronze-solid px-4 py-2.5 text-[14px] font-medium text-paper transition-colors hover:bg-bronze-solid-2 active:translate-y-px"
             }
         >
-            {t("nav", "connect")}
+            {/* The header is chrome and stays in English so its width never changes with the
+                language; an in-page CTA is content and is localised. */}
+            {compact ? "Connect" : t("nav", "connect")}
         </button>
     );
 }

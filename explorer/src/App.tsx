@@ -10,19 +10,22 @@ import {client} from "./lib/data";
 import {LangProvider, useLang} from "./i18n";
 import {WalletProvider} from "./lib/wallet";
 
+/** Both labels are two Latin characters, so the control is the same width in either state and
+ *  the header never reflows when the language changes. */
 function LangToggle() {
     const {lang, setLang} = useLang();
     return (
-        <div className="flex items-center rounded-lg border border-line p-0.5 text-[12px]">
+        <div className="flex items-center rounded-lg border border-line p-0.5 text-[11.5px]">
             {(["en", "ko"] as const).map((l) => (
                 <button
                     key={l}
                     onClick={() => setLang(l)}
-                    className={`rounded-md px-2 py-1 font-medium transition-colors ${
+                    aria-pressed={lang === l}
+                    className={`w-7 rounded-md py-1 text-center font-semibold tracking-wider transition-colors ${
                         lang === l ? "bg-surface-2 text-ink" : "text-mute hover:text-ink-2"
                     }`}
                 >
-                    {l === "en" ? "EN" : "한국어"}
+                    {l === "en" ? "EN" : "KO"}
                 </button>
             ))}
         </div>
@@ -30,7 +33,6 @@ function LangToggle() {
 }
 
 function Header() {
-    const {t} = useLang();
     const [head, setHead] = useState<bigint | null>(null);
 
     useEffect(() => {
@@ -41,7 +43,7 @@ function Header() {
     }, []);
 
     const link = ({isActive}: {isActive: boolean}) =>
-        `relative py-1 text-[13.5px] transition-colors ${
+        `relative py-1 text-[12px] font-semibold uppercase tracking-[0.14em] transition-colors ${
             isActive
                 ? "text-ink after:absolute after:-bottom-[14px] after:left-0 after:h-px after:w-full after:bg-bronze"
                 : "text-mute hover:text-ink-2"
@@ -54,20 +56,26 @@ function Header() {
                     <Logo px={22} />
                 </Link>
 
-                <nav className="flex items-center gap-6">
+                {/* Navigation stays in English in both languages. These are three proper nouns for
+                    places in this app, and translating them changes every label's width, so the
+                    whole header reflows the moment someone switches - the chrome moving is a worse
+                    cost than the labels being English. It is also the convention GIWA's own site
+                    follows. Everything below the header is fully localised. */}
+                <nav className="flex items-center gap-7">
                     <NavLink to="/" end className={link}>
-                        {t("nav", "explorer")}
+                        Explorer
                     </NavLink>
                     <NavLink to="/create" className={link}>
-                        {t("nav", "create")}
+                        Create
                     </NavLink>
                     <NavLink to="/permissions" className={link}>
-                        {t("nav", "permissions")}
+                        Permissions
                     </NavLink>
                 </nav>
 
                 <div className="ml-auto flex items-center gap-3">
-                    <span className="hidden items-center gap-1.5 font-mono text-[12px] text-mute lg:flex">
+                    {/* Tabular figures, so a rising block number does not jitter its neighbours. */}
+                    <span className="tnum hidden items-center gap-1.5 font-mono text-[11.5px] text-mute lg:flex">
                         <span className="h-1.5 w-1.5 rounded-full bg-jade" />
                         GIWA Sepolia {head !== null ? `#${head.toLocaleString()}` : "…"}
                     </span>
