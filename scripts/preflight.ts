@@ -1,7 +1,7 @@
 /**
  * Is this wallet ready to issue a Mapae in the browser?
  *
- *   pnpm preflight 0xYourWalletAddress
+ *   pnpm preflight 0xabc...123     (your own wallet address)
  *
  * The Composer needs four things to be true before a signature is worth anything, and three of
  * them are invisible from inside the browser until you have already committed to a step. This
@@ -17,9 +17,21 @@ import {dojangScrollAbi, erc20Abi, factoryAbi, faucetExtensionAbi} from "../sdk/
 const rpc = process.env.GIWA_SEPOLIA_RPC_URL ?? "https://sepolia-rpc.giwa.io";
 const pub = createPublicClient({chain: giwaSepolia, transport: http(rpc)});
 
-const owner = process.argv[2] as Address | undefined;
+// Accept the address as an argument or from .env, and say something useful when it is neither.
+// The first version printed a placeholder as if it were a command, which is exactly what a
+// hurried reader will paste back.
+const owner = (process.argv[2] ?? process.env.MY_WALLET_ADDRESS) as Address | undefined;
 if (!owner || !/^0x[0-9a-fA-F]{40}$/.test(owner)) {
-    console.error("usage: pnpm preflight 0xYourWalletAddress");
+    console.error(
+        `\n  Pass the wallet you are going to sign with - the one connected in the Composer.\n\n` +
+            `    pnpm preflight 0xabc...123        your own address, 42 characters\n\n` +
+            `  Where to find it:\n` +
+            `    · the header of the explorer, once connected (click it to copy)\n` +
+            `    · MetaMask: account name -> copy address\n` +
+            `    · from a key you hold:  cast wallet address --private-key <key>\n\n` +
+            `  Or set MY_WALLET_ADDRESS in .env and run \`pnpm preflight\` with no argument.\n` +
+            (process.argv[2] ? `\n  (got "${process.argv[2]}", which is not an address)\n` : "\n"),
+    );
     process.exit(1);
 }
 
