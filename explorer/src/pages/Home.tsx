@@ -129,10 +129,11 @@ export default function Home() {
                 view (what just happened to it). The old layout led with events, which is the less
                 interesting half - an event only means something in terms of the authority it hit. */}
             <section className="mx-auto max-w-6xl px-6 py-12">
-                {/* items-stretch + flex columns: the two cards are always exactly the same
-                    height, whatever their row counts. Inside the left card the rows share the
-                    surplus (each is flex-1), so two Mapae get generous rows instead of a card
-                    with a hole in it; both cards pin an informative footer to the bottom edge. */}
+                {/* items-stretch + flex columns: the two outer frames are always exactly the
+                    same height, and every row in BOTH cards is the same fixed 54px - rows that
+                    stretched to fill made the two sides read as different components. When one
+                    side has fewer rows the gap simply stays empty above its footer; an honest
+                    blank beats rows of two different sizes. */}
                 <div className="grid items-stretch gap-6 lg:grid-cols-2">
                     <div className="flex flex-col">
                         <div className="mb-3 flex items-baseline justify-between gap-4">
@@ -156,13 +157,13 @@ export default function Home() {
                                     {t("dlist", "empty")}
                                 </div>
                             ) : (
-                                <div className="flex flex-1 flex-col divide-y divide-line/60">
-                                    {dlist.slice(0, 5).map((d) => (
+                                <div className="divide-y divide-line/60">
+                                    {dlist.slice(0, 6).map((d) => (
                                         <DelegationMini key={d.hash} d={d} />
                                     ))}
                                 </div>
                             )}
-                            <div className="border-t border-line bg-surface-2/40 px-5 py-2.5">
+                            <div className="mt-auto border-t border-line bg-surface-2/40 px-5 py-2.5">
                                 <p className="text-[11.5px] leading-relaxed text-mute">
                                     {t("dlist", "boundaryShort")}
                                 </p>
@@ -198,14 +199,14 @@ export default function Home() {
                                     {t("home", "empty")}
                                 </div>
                             ) : (
-                                <div className="flex flex-1 flex-col divide-y divide-line/60">
+                                <div className="divide-y divide-line/60">
                                     {/* The whole row is the target - a 120px hash on a full-width
                                         row is a miss waiting to happen. */}
-                                    {feed.slice(0, 8).map((f) => (
+                                    {feed.slice(0, 6).map((f) => (
                                         <Link
                                             key={f.hash}
                                             to={`/tx/${f.hash}`}
-                                            className="group flex flex-1 items-center gap-4 px-5 py-2.5 transition-colors hover:bg-surface-2/60"
+                                            className="group flex h-[54px] items-center gap-4 px-5 transition-colors hover:bg-surface-2/60"
                                         >
                                             <StatusPill
                                                 ok={f.ok}
@@ -235,7 +236,7 @@ export default function Home() {
                                     ))}
                                 </div>
                             )}
-                            <div className="border-t border-line bg-surface-2/40 px-5 py-2.5 text-right">
+                            <div className="mt-auto border-t border-line bg-surface-2/40 px-5 py-2.5 text-right">
                                 <a
                                     href={`${BLOCKSCOUT}/address/${addresses.manager}`}
                                     target="_blank"
@@ -268,9 +269,8 @@ export default function Home() {
  * on the full catalogue - the row is a summary, not a page of its own.
  *
  * Everything right of the address sits in fixed-width, right-aligned columns, so 승인/거부/시각
- * line up down the card instead of drifting with each row's digit count. The row itself is
- * flex-1: when there are only two Mapae the rows share the card's height and breathe, rather
- * than huddling at the top of a half-empty box.
+ * line up down the card instead of drifting with each row's digit count. The height is the same
+ * fixed 54px as the activity rows opposite - the two cards must read as one system.
  */
 function DelegationMini({d}: {d: DelegationSummary}) {
     const {t, lang} = useLang();
@@ -292,7 +292,7 @@ function DelegationMini({d}: {d: DelegationSummary}) {
     return (
         <Link
             to="/delegations"
-            className="group flex flex-1 flex-col justify-center px-5 py-3 transition-colors hover:bg-surface-2/60"
+            className="group flex h-[54px] flex-col justify-center px-5 transition-colors hover:bg-surface-2/60"
         >
             <div className="flex items-center gap-2.5">
                 <span
