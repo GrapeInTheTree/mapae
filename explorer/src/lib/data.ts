@@ -20,7 +20,8 @@ import {
     managerAbi,
     periodEnforcerAbi,
 } from "@mapae/abi";
-import {addresses, giwaSepolia, ISSUERS, BLOCKSCOUT} from "./config";
+import {addresses, giwaSepolia, BLOCKSCOUT} from "./config";
+import {decodeConditions, type Condition} from "./policy";
 import snapshot from "../data/snapshot.json";
 
 export const client = createPublicClient({chain: giwaSepolia, transport: http()});
@@ -58,115 +59,36 @@ const DELEGATION_PARAMS = [
     },
 ] as const;
 
-export interface DecodedCaveat {
-    enforcer: Address;
-    kind: "identity" | "period" | "payee" | "window" | "humanloop" | "unknown";
-    title: string;
-    lines: string[];
-}
-
 export interface DecodedDelegation {
     delegate: Address;
     delegator: Address;
     authority: Hex;
     salt: bigint;
-    caveats: DecodedCaveat[];
+    /** Decoded through the SDK codec, so this page and the Composer agree by construction. */
+    conditions: Condition[];
     raw: {enforcer: Address; terms: Hex; args: Hex}[];
+    /** True for the deepest link - the one whose account pays and whose rules always apply. */
+    isRoot: boolean;
 }
 
-function hexToBigint(h: string): bigint {
-    return BigInt(h);
-}
-
-export function decodeCaveat(enforcer: Address, terms: Hex): DecodedCaveat {
-    const e = enforcer.toLowerCase();
-    const body = terms.slice(2);
-    try {
-        if (e === addresses.dojangEnforcer.toLowerCase()) {
-            const attesterId = `0x${body.slice(0, 64)}`;
-            const principal = `0x${body.slice(64, 104)}` as Address;
-            const issuer = ISSUERS[attesterId];
-            return {
-                enforcer,
-                kind: "identity",
-                title: "신원 — 도장 검증",
-                lines: [
-                    `위임자 본인: ${principal}`,
-                    `요구 발급자: ${issuer ? issuer.nameKo : attesterId.slice(0, 18) + "…"}`,
-                    "결제 순간마다 attestation 유효성을 다시 읽습니다",
-                ],
-            };
-        }
-        if (e === addresses.periodEnforcer.toLowerCase()) {
-            const amount = hexToBigint(`0x${body.slice(40, 104)}`);
-            const duration = hexToBigint(`0x${body.slice(104, 168)}`);
-            const days = Number(duration) / 86_400;
-            return {
-                enforcer,
-                kind: "period",
-                title: "한도 — 기간당 상한",
-                lines: [
-                    `₩${amount.toLocaleString("ko-KR")} / ${days === 1 ? "1일" : `${days}일`}`,
-                    "기간이 지나면 초기화, 남은 한도는 이월되지 않습니다",
-                ],
-            };
-        }
-        if (e === addresses.payeeEnforcer.toLowerCase()) {
-            const count = body.length / 40;
-            const payees: string[] = [];
-            for (let i = 0; i < count; i++) payees.push(`0x${body.slice(i * 40, i * 40 + 40)}`);
-            return {
-                enforcer,
-                kind: "payee",
-                title: `수취인 — 허용 목록 ${count}곳`,
-                lines: payees.map((p) => p),
-            };
-        }
-        if (e === addresses.timestampEnforcer.toLowerCase()) {
-            const before = hexToBigint(`0x${body.slice(32, 64)}`);
-            return {
-                enforcer,
-                kind: "window",
-                title: "기한",
-                lines: [
-                    before === 0n
-                        ? "만료 없음"
-                        : `${new Date(Number(before) * 1000).toLocaleString("ko-KR")} 까지`,
-                ],
-            };
-        }
-        if (addresses.verifiedCodeEnforcer && e === addresses.verifiedCodeEnforcer.toLowerCase()) {
-            const attesterId = `0x${body.slice(0, 64)}`;
-            const domain = new TextDecoder().decode(
-                Uint8Array.from(body.slice(64).match(/.{2}/g)?.map((b) => parseInt(b, 16)) ?? []),
-            );
-            const issuer = ISSUERS[attesterId];
-            return {
-                enforcer,
-                kind: "humanloop",
-                title: "사람 확인 — 실시간 인증",
-                lines: [
-                    `도메인: ${domain}`,
-                    `발급자: ${issuer ? issuer.nameKo : attesterId.slice(0, 18) + "…"}`,
-                    "결제마다 유효한 오프체인 확인(OTP)이 있어야 합니다",
-                ],
-            };
-        }
-    } catch {
-        /* fall through to unknown */
-    }
-    return {enforcer, kind: "unknown", title: "조건", lines: [terms.slice(0, 40) + "…"]};
-}
-
+/** A permission context, decoded whole. Leaf first, root last, exactly as it is redeemed.
+ *
+ *  Showing only the leaf would be actively misleading: a re-delegation can narrow what it
+ *  received but never widen it, so the conditions that actually bound a payment are the UNION of
+ *  every link's. A page that displayed only the child would omit the root's limit, which is
+ *  usually the one that matters. */
 export function decodeContext(context: Hex): DecodedDelegation[] {
     const [chain] = decodeAbiParameters(DELEGATION_PARAMS, context);
-    return chain.map((d) => ({
+    return chain.map((d, i) => ({
         delegate: d.delegate,
         delegator: d.delegator,
         authority: d.authority,
         salt: d.salt,
-        caveats: d.caveats.map((c) => decodeCaveat(c.enforcer, c.terms)),
+        conditions: decodeConditions(
+            d.caveats.map((c) => ({enforcer: c.enforcer, terms: c.terms, args: c.args})),
+        ),
         raw: d.caveats.map((c) => ({enforcer: c.enforcer, terms: c.terms, args: c.args})),
+        isRoot: i === chain.length - 1,
     }));
 }
 
@@ -281,7 +203,13 @@ export interface Trace {
     redeemer: Address;
     /** Decoded reason, failures only. */
     rejection?: string;
+    /** Every link of the redeemed context, leaf first. Empty if this is not a redemption. */
+    chain: DecodedDelegation[];
+    /** The deepest link: whose account pays, and whose conditions can never be widened. */
     delegation?: DecodedDelegation;
+    /** How many permission contexts this one transaction redeemed. A batch settles atomically,
+     *  so a single refusal anywhere rolls all of them back. */
+    batchSize: number;
     delegationHash?: Hex;
     /** The transfer this redemption performed (or attempted). */
     payment?: {token: Address; to: Address; amount: bigint};
@@ -338,6 +266,8 @@ export async function traceTx(hash: Hex): Promise<Trace> {
         ok,
         blockNumber: receipt.blockNumber,
         redeemer: tx.from,
+        chain: [],
+        batchSize: 0,
     };
 
     // The delegation itself comes from CALLDATA, so failed payments decode just as richly as
@@ -345,8 +275,9 @@ export async function traceTx(hash: Hex): Promise<Trace> {
     try {
         const {args} = decodeFunctionData({abi: managerAbi, data: tx.input});
         const [contexts, , execs] = args as [Hex[], Hex[], Hex[]];
-        const chain = decodeContext(contexts[0]);
-        trace.delegation = chain[chain.length - 1]; // root: whose money, whose rules
+        trace.batchSize = contexts.length;
+        trace.chain = decodeContext(contexts[0]);
+        trace.delegation = trace.chain[trace.chain.length - 1]; // root: whose money, whose rules
         const exec = execs[0];
         const token = `0x${exec.slice(2, 42)}` as Address;
         const callData = exec.slice(2 + 40 + 64);
