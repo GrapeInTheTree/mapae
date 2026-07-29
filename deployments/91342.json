@@ -9,5 +9,6 @@
   "MockKRW": "0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B",
   "TimestampEnforcer": "0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02",
   "chainId": 91342,
-  "deployBlock": 31935476
+  "deployBlock": 31935476,
+  "VerifiedCodeEnforcer": "0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e"
 }

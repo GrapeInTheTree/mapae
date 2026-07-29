@@ -57,7 +57,37 @@ contract MockDojangScroll is IDojangScroll, IDojangVerifierErrors {
         return r.uid;
     }
 
-    function isVerifiedCode(bytes32, string calldata, bytes32) external pure returns (bool) {
-        return false;
+    /* ------------------------------ Verified Code ------------------------------ */
+
+    struct CodeRecord {
+        bool exists;
+        uint64 expirationTime; // 0 = never expires
+        uint64 revocationTime; // 0 = not revoked
+    }
+
+    mapping(bytes32 codeHash => mapping(bytes32 domainKey => mapping(bytes32 attesterId => CodeRecord)))
+        internal codeRecords;
+
+    function issueCode(bytes32 codeHash, string calldata domain, bytes32 attesterId, uint64 expirationTime)
+        external
+    {
+        codeRecords[codeHash][keccak256(bytes(domain))][attesterId] =
+            CodeRecord({exists: true, expirationTime: expirationTime, revocationTime: 0});
+    }
+
+    function revokeCode(bytes32 codeHash, string calldata domain, bytes32 attesterId) external {
+        codeRecords[codeHash][keccak256(bytes(domain))][attesterId].revocationTime = uint64(block.timestamp);
+    }
+
+    function isVerifiedCode(bytes32 codeHash, string calldata domain, bytes32 attesterId)
+        external
+        view
+        returns (bool)
+    {
+        CodeRecord memory r = codeRecords[codeHash][keccak256(bytes(domain))][attesterId];
+        if (!r.exists) return false;
+        if (r.expirationTime != 0 && r.expirationTime <= uint64(block.timestamp)) return false;
+        if (r.revocationTime != 0) return false;
+        return true;
     }
 }

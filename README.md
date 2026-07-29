@@ -51,6 +51,7 @@ GIWA Sepolia (chain 91342), block 31,935,436. Every contract is source-verified 
 | `AllowedPayeeEnforcer` | [`0x7eF0…1bD1`](https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1) | Restricts the transfer *recipient*, not merely the target |
 | `ERC20PeriodTransferEnforcer` | [`0xE33b…C892`](https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892) | MetaMask's audited period cap, vendored unmodified |
 | `TimestampEnforcer` | [`0x2911…cc02`](https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02) | MetaMask's time window, vendored unmodified |
+| `VerifiedCodeEnforcer` | [`0x1C64…650e`](https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e) | Human-in-the-loop tier: redeems only while a live off-chain confirmation stands |
 | `MockKRW` | [`0x8bd7…4F2B`](https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B) | Testnet stand-in for a KRW stablecoin. Zero decimals, no value |
 
 ## The contribution
@@ -181,7 +182,7 @@ pnpm trace <any T1 hash>
 | | |
 |---|---|
 | **EIP-7702 path** | Verified active on GIWA by behavioural test. The principal's EOA becomes the delegator directly — the Upbit-attested address itself holds the delegation, no account contract. The enforcer already accepts this shape (`principal == delegator`). |
-| **`VerifiedCodeEnforcer`** | Dojang's Verified Code attestation gates the *redeemer's code hash*: only an audited agent build may spend. The strongest follow-on in the design, ~25 lines on the existing base. |
+| **Graduated autonomy** | `VerifiedCodeEnforcer` is deployed and verified: Dojang's Verified Code attests an *off-chain human confirmation* (OTP-style, under a service domain), so high-value delegations can require a person in the loop per confirmation window while small ones run unattended — the historical mapae tiers, as caveats. Awaiting the first Verified Code issuer integration for a live flow; today only Upbit issues them, through its own channel. |
 | **Attestation query API** | GIWA has no off-chain Dojang query surface ([docs/GAPS.md](docs/GAPS.md)). A Ponder-based index of real-issuer attestations and Mapae redemptions is measured and scoped. |
 | **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. |
 | **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |
