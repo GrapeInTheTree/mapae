@@ -57,6 +57,9 @@ contract AllowedPayeeEnforcer is CaveatEnforcer {
     /// @dev Split from {beforeHook} to keep each frame under the stack limit with via_ir off
     ///      (deliberately off: it breaks Blockscout verification).
     function _extractPayee(bytes calldata _executionCallData) private pure returns (address payee_) {
+        // partial destructure: this gate constrains
+        // the RECIPIENT inside callData; target and value are other enforcers' concerns.
+        // slither-disable-next-line unused-return
         (,, bytes calldata callData_) = _executionCallData.decodeSingle();
 
         if (callData_.length != 68) revert InvalidExecutionLength(callData_.length);

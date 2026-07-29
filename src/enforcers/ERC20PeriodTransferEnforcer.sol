@@ -3,7 +3,8 @@ pragma solidity ^0.8.29;
 
 // Vendored from MetaMask/delegation-framework src/enforcers/ERC20PeriodTransferEnforcer.sol
 // (MIT AND Apache-2.0). Modifications: pragma widened from 0.8.23, import paths adapted. Contract
-// name, storage layout, terms layout, revert strings, events and logic are unchanged - this is
+// name, storage layout, terms layout, revert strings, events and logic are unchanged (one
+// comment-only slither annotation added) - this is
 // their audited spend-tracking enforcer running unmodified on the Mapae manager, which is possible
 // precisely because its state is keyed by (msg.sender, delegationHash) and therefore
 // manager-agnostic. Do not "improve" this file; byte-faithful vendoring IS the point.
@@ -131,6 +132,9 @@ contract ERC20PeriodTransferEnforcer is CaveatEnforcer {
         bytes32 _delegationHash,
         address _redeemer
     ) private {
+        // partial destructure, upstream-faithful:
+        // value is unused because an ERC20 transfer carries no native value.
+        // slither-disable-next-line unused-return
         (address target_,, bytes calldata callData_) = _executionCallData.decodeSingle();
 
         require(callData_.length == 68, "ERC20PeriodTransferEnforcer:invalid-execution-length");

@@ -1,38 +1,81 @@
 name: CI
 
-permissions: {}
+permissions:
+  contents: read
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
 env:
   FOUNDRY_PROFILE: ci
+  GIWA_SEPOLIA_RPC_URL: https://sepolia-rpc.giwa.io
 
 jobs:
-  check:
-    name: Foundry project
+  contracts:
+    name: Contracts
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v5
         with:
-          persist-credentials: false
           submodules: recursive
 
-      - name: Install Foundry
-        uses: foundry-rs/foundry-toolchain@v1
+      - uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Show Forge version
-        run: forge --version
-
-      - name: Run Forge fmt
+      - name: Format
         run: forge fmt --check
 
-      - name: Run Forge build
+      - name: Build
         run: forge build --sizes
 
-      - name: Run Forge tests
-        run: forge test -vvv
+      - name: Unit and integration tests (fuzz 5000, invariants 1000x256)
+        run: forge test --no-match-path 'test/fork/*'
+
+  fork:
+    name: Fork tests against live Dojang
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+
+      # Pinned at block 31909542 against GIWA Sepolia's public RPC. The endpoint load-balances
+      # across backends that sometimes fail under load, so this job is retried once.
+      - name: Fork tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 2
+          command: forge test --match-path 'test/fork/*'
+
+  byte-parity:
+    name: Cross-language byte parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate Solidity fixtures and assert the SDK reproduces them
+        run: |
+          forge script script/GenFixtures.s.sol
+          pnpm tsx sdk/test/encoding.test.ts
+
+      - name: Typecheck
+        run: pnpm tsc --noEmit

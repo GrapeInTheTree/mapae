@@ -50,7 +50,9 @@ contract GenFixtures is Script {
         // is chain-independent: name "Mapae", version "1", chainId 91342, a fixed address.
         bytes32 domainSeparator = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(
+                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                ),
                 keccak256(bytes("Mapae")),
                 keccak256(bytes("1")),
                 uint256(91_342),

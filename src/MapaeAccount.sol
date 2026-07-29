@@ -108,6 +108,9 @@ contract MapaeAccount is IDeleGatorCore, IMapaeAccount, IERC1271 {
         internal
         returns (bytes[] memory returnData)
     {
+        // partial destructure: selector and payload
+        // are irrelevant to the shape guard; only callType and execType decide admission.
+        // slither-disable-next-line unused-return
         (CallType callType_, ExecType execType_,,) = ModeLib.decode(_mode);
 
         if (CallType.unwrap(callType_) != CallType.unwrap(CALLTYPE_SINGLE)) {
@@ -120,6 +123,11 @@ contract MapaeAccount is IDeleGatorCore, IMapaeAccount, IERC1271 {
         (address target_, uint256 value_, bytes calldata callData_) =
             ExecutionLib.decodeSingle(_executionCalldata);
 
+        // Executing arbitrary calls with value
+        // is this contract's purpose - it is an account. Both entrypoints are gated: `execute`
+        // to the immutable owner, `executeFromExecutor` to the delegation manager, which has
+        // already validated the signature chain and run every caveat before reaching here.
+        // slither-disable-next-line arbitrary-send-eth
         (bool ok_, bytes memory ret_) = target_.call{value: value_}(callData_);
         if (!ok_) {
             // Bubble the callee's revert data so a failed transfer is diagnosable, rather than

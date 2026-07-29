@@ -111,6 +111,11 @@ contract MapaeDelegationManager is IERC7710, EIP712, ReentrancyGuardTransient {
             // The root delegator's account performs the execution: funds always leave the account
             // that granted the authority, never an intermediate delegate's.
             Delegation[] memory ds_ = batchDelegations_[b];
+            // The account's return data is for callers
+            // who need it, not for the manager: success is signalled by not reverting
+            // (EXECTYPE_TRY, which swallows failure, is refused by the account). Matches
+            // MetaMask's manager, which also discards it.
+            // slither-disable-next-line unused-return
             IDeleGatorCore(ds_[ds_.length - 1].delegator)
                 .executeFromExecutor(ModeCode.wrap(_modes[b]), _executionCallDatas[b]);
 
