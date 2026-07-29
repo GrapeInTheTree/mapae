@@ -535,7 +535,7 @@ export default function Create() {
                     {meta.desc}
                 </p>
                 <div className="mt-auto pt-3">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-mute/80">
+                    <div className="caps text-[10px] font-semibold text-mute/80">
                         {t("create", "presetIncludes")}
                     </div>
                     <div className="mt-1.5 flex flex-wrap gap-1">
@@ -733,7 +733,7 @@ export default function Create() {
                 </div>
 
                 <div className="mt-7 border-t border-line pt-4">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+                    <p className="caps mb-2 text-[11px] font-semibold text-mute">
                         {t("create", "comingNext")}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -920,7 +920,7 @@ export default function Create() {
                         {rs.map((r, i) => (
                             <div key={i}>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-bronze-solid">
+                                    <span className="caps text-[11px] font-semibold text-bronze-solid">
                                         {r.title}
                                     </span>
                                 </div>

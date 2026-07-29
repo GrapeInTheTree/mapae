@@ -369,9 +369,12 @@ export const ko: Catalog = {
     },
 
     home: {
-        eyebrow: "책임 원장",
+        /* Not "책임 원장": next to a person-noun, 원장 flips to its homonym (the director), and
+           the compound reads as bureaucracy besides. Naming the PLACE keeps the ledger meaning
+           without the word. */
+        eyebrow: "책임이 기록되는 곳",
         title: "권한을, 보이게",
-        lede: "GIWA 위의 모든 위임 결제를 권한을 준 사람부터 받은 곳까지 추적합니다. 거부된 결제는 그 이유까지.",
+        lede: "GIWA의 모든 위임 결제를, 허락한 사람부터 받은 곳까지 추적합니다. 거부된 결제는 그 이유까지.",
         search: "트랜잭션·계정·에이전트·위임 검색",
         searchHint: "트랜잭션 해시를 붙여넣으면 처음부터 끝까지 추적합니다",
         ledger: "실시간 권한 원장",

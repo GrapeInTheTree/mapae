@@ -54,7 +54,7 @@ export default function Home() {
                 A ledger is a place you arrive at with something to look up, so the field is the
                 widest element on the page rather than a control tucked into a corner. */}
             <section className="mx-auto max-w-4xl px-6 pt-20 pb-12 text-center">
-                <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-bronze">
+                <p className="caps text-[11.5px] font-semibold text-bronze">
                     {t("home", "eyebrow")}
                 </p>
                 <h1 className="display mt-4 text-[46px] text-ink sm:text-[58px]">
@@ -140,7 +140,7 @@ export default function Home() {
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[520px]">
                                 <thead>
-                                    <tr className="border-b border-line text-left text-[12px] uppercase tracking-wider text-mute">
+                                    <tr className="caps border-b border-line text-left text-[12px] text-mute">
                                         <th className="px-5 py-2.5 font-medium">{t("common", "status")}</th>
                                         <th className="px-5 py-2.5 font-medium">{t("common", "hash")}</th>
                                         <th className="hidden px-5 py-2.5 font-medium sm:table-cell">

@@ -76,7 +76,7 @@ export function Stats({stats}: {stats: StatsData | null}) {
                                     }`}
                                 />
                             )}
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-mute">
+                            <span className="caps text-[11px] font-semibold text-mute">
                                 {f.label}
                             </span>
                         </div>

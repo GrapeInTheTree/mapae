@@ -105,12 +105,37 @@ html[lang="ko"] code {
     font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Caps labels - eyebrows, section titles, table heads, fact keys.
+ *
+ * Wide tracking is what makes a small Latin label read as chrome instead of as a word. The same
+ * tracking applied to Hangul shatters it into syllable confetti: Hangul blocks are already
+ * near-square and evenly set, so "책임 원장" at 0.18em becomes "책 임 원 장". One class carries
+ * the label style and the document language decides how far the letters sit apart. Weight and
+ * size stay at the call site; this class owns only the two properties that must differ by script.
+ *
+ * Unlayered CSS outranks Tailwind's layered utilities, so a stray tracking-* on the same element
+ * loses to this on purpose - uniformity is the point of a label system.
+ */
+.caps {
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+html[lang="ko"] .caps {
+    letter-spacing: 0.045em;
+}
+
 /* The display face, used only for the one headline that names the page. */
 .display {
     font-family: var(--font-serif);
     font-weight: 400;
     letter-spacing: -0.02em;
     line-height: 1.05;
+}
+/* The Latin serif is tightened; Noto Serif KR is not - Hangul carries no excess sidebearing to
+   claw back, and negative tracking makes adjacent blocks collide. */
+html[lang="ko"] .display {
+    letter-spacing: 0;
 }
 
 @keyframes rise {

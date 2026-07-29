@@ -274,7 +274,7 @@ export function Toggle({
 export function FormSection({title, children}: {title: string; children: ReactNode}) {
     return (
         <section>
-            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+            <h3 className="caps mb-3 text-[11px] font-semibold text-mute">
                 {title}
             </h3>
             <div className="space-y-4">{children}</div>

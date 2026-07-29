@@ -114,7 +114,7 @@ export default function Tx() {
                     <div className="mt-5">
                         {/* Names the tense: a refused amount never moved, and the page must not
                             let a large figure imply that it did. */}
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
+                        <div className="caps text-[11px] font-semibold text-mute">
                             {trace.ok ? t("tx", "settledAmount") : t("tx", "attempted")}
                         </div>
                         <div className="tnum mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -179,7 +179,7 @@ export default function Tx() {
                 {!trace.ok && trace.rejection && (
                     <div className="mt-5 overflow-hidden rounded-xl border border-reject-dim bg-reject/[0.06]">
                         <div className="px-5 py-4">
-                            <div className="text-[11px] font-semibold uppercase tracking-wider text-reject/80">
+                            <div className="caps text-[11px] font-semibold text-reject/80">
                                 {t("tx", "whyRefused")}
                             </div>
                             <p className="mt-2 text-[15px] leading-relaxed text-ink">
@@ -209,7 +209,7 @@ export default function Tx() {
 
             {/* -------------------------------- the chain ---------------------------- */}
             <div className="mb-7">
-                <h2 className="text-[12px] font-medium uppercase tracking-widest text-mute">
+                <h2 className="caps text-[12px] font-medium text-mute">
                     {t("tx", "title")}
                 </h2>
                 <p className="mt-1.5 text-[12.5px] text-mute">{t("tx", "traceDirection")}</p>
@@ -566,7 +566,7 @@ export default function Tx() {
 function Fact({k, v}: {k: string; v: ReactNode}) {
     return (
         <div className="px-4 py-3">
-            <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] whitespace-nowrap text-mute">
+            <div className="caps text-[10.5px] font-semibold whitespace-nowrap text-mute">
                 {k}
             </div>
             <div className="tnum mt-1 text-[13px] whitespace-nowrap text-ink-2">{v}</div>
