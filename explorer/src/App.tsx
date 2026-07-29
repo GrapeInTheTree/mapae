@@ -1,39 +1,117 @@
 import {useEffect, useState} from "react";
-import {BrowserRouter, Link, Route, Routes} from "react-router-dom";
+import {BrowserRouter, Link, NavLink, Route, Routes} from "react-router-dom";
 import Home from "./pages/Home";
 import Tx from "./pages/Tx";
-import {Mark} from "./components/ui";
+import Create from "./pages/Create";
+import Permissions from "./pages/Permissions";
+import {Button, Logo} from "./components/ui";
 import {client} from "./lib/data";
+import {LangProvider, useLang} from "./i18n";
+import {WalletProvider, useWallet} from "./lib/wallet";
+import {short} from "./lib/config";
+
+function LangToggle() {
+    const {lang, setLang} = useLang();
+    return (
+        <div className="flex items-center rounded-lg border border-line p-0.5 text-[12px]">
+            {(["en", "ko"] as const).map((l) => (
+                <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`rounded-md px-2 py-1 font-medium transition-colors ${
+                        lang === l ? "bg-surface-2 text-ink" : "text-mute hover:text-ink-2"
+                    }`}
+                >
+                    {l === "en" ? "EN" : "한국어"}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function WalletButton() {
+    const {t} = useLang();
+    const w = useWallet();
+
+    if (!w.available) {
+        return (
+            <span
+                className="hidden text-[12.5px] text-mute sm:inline"
+                title="No injected wallet provider found"
+            >
+                {t("nav", "connect")}
+            </span>
+        );
+    }
+    if (!w.address) {
+        return (
+            <Button variant="ghost" onClick={w.connect} disabled={w.connecting}>
+                {t("nav", "connect")}
+            </Button>
+        );
+    }
+    if (!w.onGiwa) {
+        return (
+            <Button variant="danger" onClick={w.switchToGiwa}>
+                {t("nav", "wrongNetwork")}
+            </Button>
+        );
+    }
+    return (
+        <button
+            onClick={w.disconnect}
+            title={t("nav", "disconnect")}
+            className="rounded-lg border border-line px-2.5 py-1.5 font-mono text-[12.5px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+        >
+            {short(w.address, 4)}
+        </button>
+    );
+}
 
 function Header() {
+    const {t} = useLang();
     const [head, setHead] = useState<bigint | null>(null);
+
     useEffect(() => {
         const tick = () => client.getBlockNumber().then(setHead).catch(() => {});
         tick();
-        const t = setInterval(tick, 5000);
-        return () => clearInterval(t);
+        const id = setInterval(tick, 6000);
+        return () => clearInterval(id);
     }, []);
 
+    const link = ({isActive}: {isActive: boolean}) =>
+        `relative py-1 text-[13.5px] transition-colors ${
+            isActive
+                ? "text-ink after:absolute after:-bottom-[14px] after:left-0 after:h-px after:w-full after:bg-bronze"
+                : "text-mute hover:text-ink-2"
+        }`;
+
     return (
-        <header className="sticky top-0 z-10 border-b border-line bg-bg/85 backdrop-blur-md">
-            <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-                <Link to="/" className="flex items-center gap-3">
-                    <Mark />
-                    <div className="leading-tight">
-                        <div className="text-[15.5px] font-semibold tracking-tight text-ink">
-                            Mapae <span className="text-bronze-bright">Explorer</span>
-                        </div>
-                        <div className="text-[11.5px] text-mute">위임 결제의 책임 원장</div>
-                    </div>
+        <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
+            <div className="mx-auto flex max-w-6xl items-center gap-8 px-6 py-3.5">
+                <Link to="/" className="shrink-0">
+                    <Logo px={22} />
                 </Link>
-                <div className="flex items-center gap-3 text-[12.5px]">
-                    <span className="rounded-full border border-line bg-surface px-2.5 py-1 text-ink-2">
-                        GIWA Sepolia
-                    </span>
-                    <span className="hidden items-center gap-1.5 font-mono text-mute sm:flex">
+
+                <nav className="flex items-center gap-6">
+                    <NavLink to="/" end className={link}>
+                        {t("nav", "explorer")}
+                    </NavLink>
+                    <NavLink to="/create" className={link}>
+                        {t("nav", "create")}
+                    </NavLink>
+                    <NavLink to="/permissions" className={link}>
+                        {t("nav", "permissions")}
+                    </NavLink>
+                </nav>
+
+                <div className="ml-auto flex items-center gap-3">
+                    <span className="hidden items-center gap-1.5 font-mono text-[12px] text-mute lg:flex">
                         <span className="h-1.5 w-1.5 rounded-full bg-jade" />
-                        {head !== null ? `#${head.toLocaleString()}` : "…"}
+                        GIWA Sepolia {head !== null ? `#${head.toLocaleString()}` : "…"}
                     </span>
+                    <LangToggle />
+                    <WalletButton />
                 </div>
             </div>
         </header>
@@ -41,14 +119,17 @@ function Header() {
 }
 
 function Footer() {
+    const {t, lang} = useLang();
     return (
-        <footer className="border-t border-line">
-            <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-[12.5px] text-mute">
-                <span>
-                    마패 — 범위가 새겨진 위임. 조선의 마패는 위조할 수 있었지만, 이것은 위조할 수
-                    없습니다.
+        <footer className="mt-20 border-t border-line">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-[12.5px] text-mute">
+                <span className="max-w-md leading-relaxed">
+                    {lang === "ko"
+                        ? "조선의 마패는 위조할 수 있었습니다. 이것은 쓰일 때마다 중심을 다시 얻어야 합니다."
+                        : "A real mapae could be forged, because it was only an object. This one has to earn its centre every time it is used."}
                 </span>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-5">
+                    <span className="hidden md:inline">{t("brand", "pitch")}</span>
                     <a
                         href="https://github.com/GrapeInTheTree/mapae"
                         target="_blank"
@@ -73,17 +154,23 @@ function Footer() {
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">
-                    <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/tx/:hash" element={<Tx />} />
-                    </Routes>
-                </main>
-                <Footer />
-            </div>
-        </BrowserRouter>
+        <LangProvider>
+            <WalletProvider>
+                <BrowserRouter>
+                    <div className="flex min-h-screen flex-col">
+                        <Header />
+                        <main className="flex-1">
+                            <Routes>
+                                <Route path="/" element={<Home />} />
+                                <Route path="/create" element={<Create />} />
+                                <Route path="/permissions" element={<Permissions />} />
+                                <Route path="/tx/:hash" element={<Tx />} />
+                            </Routes>
+                        </main>
+                        <Footer />
+                    </div>
+                </BrowserRouter>
+            </WalletProvider>
+        </LangProvider>
     );
 }

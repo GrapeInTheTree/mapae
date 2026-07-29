@@ -10,7 +10,7 @@ import {
     type Address,
     type Hex,
 } from "viem";
-import {ROOT_AUTHORITY} from "./constants.js";
+import {ROOT_AUTHORITY} from "./protocol.js";
 
 /** Mirror of `src/utils/Types.sol` - field order is load-bearing for ABI encoding. */
 export interface Caveat {

@@ -28,18 +28,13 @@ export const addresses = {
 
 export const deployBlock = BigInt(deployments.deployBlock);
 
-/** keccak256("dojang.dojangattesterids.upbitkorea") - derivation pinned by the fork suite. */
-export const UPBIT_KOREA_ID =
-    "0xd99b42e778498aa3c9c1f6a012359130252780511687a35982e8e52735453034" as const;
-
-/** keccak256("dojang.dojangattesterids.testnetfaucet") */
-export const TESTNET_FAUCET_ID =
-    "0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678" as const;
-
-/** bytes32(type(uint256).max) - marks a root delegation. */
-export const ROOT_AUTHORITY =
-    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" as const;
-
-/** Simple single call, default (revert-on-failure) semantics: the zero mode word. */
-export const MODE_SIMPLE_SINGLE =
-    "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+/** Protocol constants are pure and live in `protocol.ts`; re-exported here so existing importers
+ *  keep working. Import them from `protocol.js` directly in any code that must run in a browser -
+ *  this module reaches for a deployment JSON and `process.env`, which that code should not. */
+export {
+    ANY_DELEGATE,
+    MODE_SIMPLE_SINGLE,
+    ROOT_AUTHORITY,
+    TESTNET_FAUCET_ID,
+    UPBIT_KOREA_ID,
+} from "./protocol.js";

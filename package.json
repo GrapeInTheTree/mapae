@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "fixtures": "forge script script/GenFixtures.s.sol && tsx sdk/test/encoding.test.ts",
+    "fixtures": "forge script script/GenFixtures.s.sol && tsx sdk/test/encoding.test.ts && tsx sdk/test/policy.test.ts",
     "demo": "tsx scripts/demo.ts",
     "trace": "tsx scripts/trace.ts"
   },

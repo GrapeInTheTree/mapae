@@ -77,5 +77,11 @@ jobs:
           forge script script/GenFixtures.s.sol
           pnpm tsx sdk/test/encoding.test.ts
 
+      # The sentence a person reads before signing is generated from the same structure as the
+      # bytes they sign. If encode and decode ever stop being inverses, a user can be shown a
+      # permission that is not the one they granted.
+      - name: Assert the policy codec is a pair of inverses
+        run: pnpm tsx sdk/test/policy.test.ts
+
       - name: Typecheck
         run: pnpm tsc --noEmit

@@ -7,8 +7,13 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     resolve: {
         alias: {
-            // The one SDK module reused verbatim: pure viem ABIs, no env, no JSON imports.
+            // SDK modules reused verbatim: pure viem, no env, no JSON imports. The delegation
+            // module is the reference encoder, pinned byte-for-byte against Solidity by
+            // sdk/test/encoding.test.ts - the Composer signs with the same code the demo does.
             "@mapae/abi": fileURLToPath(new URL("../sdk/src/abi.ts", import.meta.url)),
+            "@mapae/sdk": fileURLToPath(new URL("../sdk/src/delegation.ts", import.meta.url)),
+            "@mapae/protocol": fileURLToPath(new URL("../sdk/src/protocol.ts", import.meta.url)),
+            "@mapae/policy": fileURLToPath(new URL("../sdk/src/policy.ts", import.meta.url)),
         },
     },
     server: {

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 310 64" role="img" aria-labelledby="title">
+  <title id="title">Mapae</title>
+  <g fill="#E9E4DA">
+    <path d="M13 5 25 14.8v34.4L13 59Z"/>
+    <path d="M51 5 39 14.8v34.4L51 59Z"/>
+    <circle cx="32" cy="32" r="2.2"/>
+    <path d="M88 51V13h6l14 20 14-20h6v38h-6V23l-14 19-14-19v28Zm55 0 16-38h6l16 38h-7l-4-10h-16l-4 10Zm13-16h12l-6-14Zm40 16V13h15c10 0 16 5 16 14s-6 14-16 14h-9v10Zm6-16h9c6 0 10-3 10-8s-4-8-10-8h-9Zm34 16 16-38h6l16 38h-7l-4-10h-16l-4 10Zm13-16h12l-6-14Zm40 16V13h27v6h-21v10h19v6h-19v10h22v6Z"/>
+  </g>
+</svg>

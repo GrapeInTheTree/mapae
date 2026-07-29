@@ -1,31 +1,61 @@
 @import "tailwindcss";
 
 @theme {
-    /* Bronze plate on lacquer black - the material language of the mapae itself. */
-    --color-bg: #0a0a0c;
-    --color-surface: #131316;
-    --color-surface-2: #1a1a1f;
-    --color-line: #26262c;
-    --color-line-strong: #34343c;
+    /* ---------------------------------------------------------------------- *
+     * Brand system. Three colours carry the identity; everything else is a
+     * shade derived from them and exists only to keep text legible.
+     *
+     *   Ink Black       #11100E   the ledger, the record, the default
+     *   Warm Bone       #E9E4DA   the inversion - paper you sign on
+     *   Oxidized Bronze #8A5A35   the seal, used only where authority is
+     *                             granted, spent, or refused
+     *
+     * The palette does one job: separate what HAPPENED from what you DO. The
+     * dark canvas is the ledger, a record of things already settled. Anything
+     * that takes an action from you - issuing a permission, signing, revoking -
+     * sits on bone, the way a document you are about to sign sits on a desk.
+     * Bronze is never decoration; if it is on screen, authority is at stake.
+     * ---------------------------------------------------------------------- */
 
-    --color-ink: #f0efec;
-    --color-ink-2: #b9b8b3;
-    --color-mute: #83828b;
+    --color-bg: #11100e;
+    --color-surface: #191815;
+    --color-surface-2: #211f1c;
+    --color-line: #2b2925;
+    --color-line-strong: #3a3731;
 
-    --color-bronze: #c9995c;
-    --color-bronze-bright: #e3b87f;
-    --color-bronze-dim: #8a6a40;
+    --color-ink: #e9e4da;
+    --color-ink-2: #b3aea3;
+    --color-mute: #817c73;
+
+    /* Warm Bone: the acting surface. Paper, not screen. */
+    --color-paper: #e9e4da;
+    --color-paper-2: #ded8cb;
+    --color-paper-line: #c9c2b2;
+    --color-paper-ink: #11100e;
+    --color-paper-ink-2: #46433c;
+    --color-paper-mute: #78736a;
+
+    /* Oxidized Bronze and the tints legible against ink black. */
+    --color-bronze: #b98450;
+    --color-bronze-bright: #d9ab77;
+    --color-bronze-dim: #6b452a;
+    --color-bronze-solid: #8a5a35;
+    --color-bronze-solid-2: #74492a;
 
     /* Verdigris - aged bronze patina - marks what is alive. */
     --color-jade: #4cbd9a;
     --color-jade-dim: #2a6b58;
+    --color-jade-paper: #1d7a5f;
 
     --color-reject: #e5484d;
     --color-reject-dim: #7f2e31;
+    --color-reject-paper: #b4292e;
 
-    --font-sans: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
-    --font-serif: "Noto Serif KR", serif;
-    --font-mono: "JetBrains Mono", ui-monospace, monospace;
+    --color-warn: #d99a3c;
+
+    --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-serif: "Iowan Old Style", "Apple Garamond", "Noto Serif KR", Georgia, serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html {
@@ -33,6 +63,7 @@ html {
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 body {
@@ -47,4 +78,41 @@ body {
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--color-line-strong) transparent;
+}
+
+/* Numerals in tables must line up; addresses and amounts are read by column. */
+.tnum {
+    font-variant-numeric: tabular-nums;
+}
+
+/* The display face, used only for the one headline that names the page. */
+.display {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+}
+
+@keyframes rise {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.rise {
+    animation: rise 0.28s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rise {
+        animation: none;
+    }
+    * {
+        transition-duration: 0.01ms !important;
+    }
 }

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The Split Seal. Two halves of one seal - principal and agent - with the delegation
+       between them, and the point where it is pressed at the crossing. -->
+  <rect width="64" height="64" rx="12" fill="#11100E"/>
+  <path d="M13 5 L25 14.8 L25 49.2 L13 59 Z" fill="#E9E4DA"/>
+  <path d="M51 5 L39 14.8 L39 49.2 L51 59 Z" fill="#E9E4DA"/>
+  <circle cx="32" cy="32" r="2.6" fill="#E9E4DA"/>
+</svg>
