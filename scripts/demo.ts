@@ -23,6 +23,7 @@
  *   - polls every state transition (attest/revoke/disable/enable) until VISIBLE before any
  *     dependent step.
  */
+import "./env.js";
 import {mkdirSync, writeFileSync} from "node:fs";
 import {
     createPublicClient,

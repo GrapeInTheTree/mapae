@@ -15,6 +15,7 @@
  *
  * Requires .env: AGENT_PRIVATE_KEY, matching the Agent address you typed into the Composer.
  */
+import "./env.js";
 import {
     createPublicClient,
     createWalletClient,

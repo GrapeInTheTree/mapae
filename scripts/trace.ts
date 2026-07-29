@@ -16,6 +16,7 @@
  * an auditor, a counterparty or an insurer actually asks: WHICH VERIFIED PERSON AUTHORISED THIS,
  * UNDER WHAT LIMITS, AND IS THEIR IDENTITY STILL VALID?
  */
+import "./env.js";
 import {createPublicClient, http, parseEventLogs, formatUnits} from "viem";
 import {addresses, giwaSepolia, UPBIT_KOREA_ID, TESTNET_FAUCET_ID} from "../sdk/src/constants.js";
 import {

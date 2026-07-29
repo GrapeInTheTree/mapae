@@ -10,6 +10,7 @@
  *
  * Read-only: it sends nothing and needs no key.
  */
+import "./env.js";
 import {createPublicClient, formatEther, http, type Address} from "viem";
 import {addresses, giwaSepolia, TESTNET_FAUCET_ID} from "../sdk/src/constants.js";
 import {dojangScrollAbi, erc20Abi, factoryAbi, faucetExtensionAbi} from "../sdk/src/abi.js";

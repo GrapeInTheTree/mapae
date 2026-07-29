@@ -16,6 +16,7 @@
  *   - the facilitator rejects an over-cap settlement with a decoded on-chain reason, having
  *     evaluated no policy itself - verification IS simulation of the delegation manager.
  */
+import "./env.js";
 import assert from "node:assert/strict";
 import {appendFileSync} from "node:fs";
 import {createPublicClient, http, keccak256, toHex, type Address, type Hex} from "viem";

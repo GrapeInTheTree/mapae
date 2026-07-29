@@ -19,6 +19,7 @@
  * Costs: one account-creation tx if the account does not exist, one redemption, one disable,
  * one refused redemption. Dust.
  */
+import "./env.js";
 import {
     createPublicClient,
     createWalletClient,
@@ -27,6 +28,8 @@ import {
     formatEther,
     hashTypedData,
     http,
+    keccak256,
+    toHex,
     type Address,
     type Hex,
 } from "viem";
@@ -212,7 +215,10 @@ say(true, "account funded", `${krw.toLocaleString()} mKRW`);
 
 /* ------------- 4. the delegation, built the way the UI builds it -------- */
 
-const merchant = "0x8acd1cb7f7bD5aE7D0b2e94a3aE05eF0Fe4Aa617" as Address;
+// Derived exactly as scripts/demo.ts does, rather than pasted. Typing an address out by hand is
+// how the first attempt produced one whose EIP-55 checksum did not match - the very failure the
+// Composer's address field was taught to warn about.
+const merchant = privateKeyToAccount(keccak256(toHex("mapae-demo-merchant"))).address;
 const now = BigInt(Math.floor(Date.now() / 1000));
 
 // Same order and shape as explorer/src/lib/presets.ts buildConditions().
