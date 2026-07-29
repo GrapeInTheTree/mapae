@@ -47,7 +47,7 @@ export function Button({
         "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[14px] font-medium transition-all disabled:cursor-not-allowed disabled:opacity-45";
     const styles = {
         bronze: "bg-bronze-solid text-paper hover:bg-bronze-solid-2 active:translate-y-px",
-        paper: "border border-paper-line bg-paper-2/60 text-paper-ink hover:bg-paper-2 active:translate-y-px",
+        paper: "border border-line-strong bg-surface-2 text-ink hover:border-bronze-dim active:translate-y-px",
         ghost: "border border-line text-ink-2 hover:border-line-strong hover:text-ink",
         danger: "border border-reject-dim bg-reject/10 text-reject hover:bg-reject/20",
     }[variant];
@@ -78,17 +78,25 @@ export function Field({
     return (
         <label className="block">
             <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                <span className="text-[13px] font-medium text-paper-ink-2">{label}</span>
+                <span className="text-[13px] font-medium text-ink-2">{label}</span>
                 {suffix}
             </div>
             {children}
-            {hint && <p className="mt-1.5 text-[12px] leading-relaxed text-paper-mute">{hint}</p>}
+            {hint && <p className="mt-1.5 text-[12px] leading-relaxed text-mute">{hint}</p>}
         </label>
     );
 }
 
+/**
+ * Controls live on the dark surface, never on bone.
+ *
+ * Bone is reserved for the one thing on a screen that is being CREATED - the Mapae itself, the
+ * document under review, the receipt. Filling in a form is using a tool, not signing a document,
+ * so the tools stay on the workbench. Keeping bone to a single element per screen is what makes
+ * it read as material rather than as a background colour.
+ */
 const inputBase =
-    "w-full rounded-lg border border-paper-line bg-paper-2/40 px-3 py-2.5 text-[14px] text-paper-ink outline-none transition-colors placeholder:text-paper-mute focus:border-bronze-solid focus:bg-paper-2/70";
+    "w-full rounded-lg border border-line bg-surface-2/70 px-3 py-2.5 text-[14px] text-ink outline-none transition-colors placeholder:text-mute focus:border-bronze-dim focus:bg-surface-2";
 
 export function Input({
     value,
@@ -139,17 +147,17 @@ export function AmountInput({
 }) {
     return (
         <div
-            className={`${inputBase} flex items-center gap-1.5 focus-within:border-bronze-solid focus-within:bg-paper-2/70`}
+            className={`${inputBase} flex items-center gap-1.5 focus-within:border-bronze-dim focus-within:bg-surface-2`}
         >
-            {prefix && <span className="shrink-0 text-paper-mute">{prefix}</span>}
+            {prefix && <span className="shrink-0 text-mute">{prefix}</span>}
             <input
                 value={value === 0n ? "" : value.toLocaleString("en-US")}
                 inputMode="numeric"
                 placeholder="0"
                 onChange={(e) => onChange(BigInt(e.target.value.replace(/[^0-9]/g, "") || "0"))}
-                className="tnum w-full min-w-0 bg-transparent text-[15px] font-medium outline-none placeholder:text-paper-mute"
+                className="tnum w-full min-w-0 bg-transparent text-[15px] font-medium outline-none placeholder:text-mute"
             />
-            {suffix && <span className="shrink-0 text-[12.5px] text-paper-mute">{suffix}</span>}
+            {suffix && <span className="shrink-0 text-[12.5px] text-mute">{suffix}</span>}
         </div>
     );
 }
@@ -178,8 +186,8 @@ export function AddressInput({
 }) {
     return (
         <div
-            className={`${inputBase} flex items-center gap-2 focus-within:border-bronze-solid focus-within:bg-paper-2/70 ${
-                valid === false ? "border-reject-paper" : ""
+            className={`${inputBase} flex items-center gap-2 focus-within:border-bronze-dim focus-within:bg-surface-2 ${
+                valid === false ? "border-reject-dim" : ""
             }`}
         >
             <input
@@ -188,10 +196,10 @@ export function AddressInput({
                 autoComplete="off"
                 placeholder={placeholder}
                 onChange={(e) => onChange(e.target.value.trim())}
-                className="w-full min-w-0 bg-transparent font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-paper-mute"
+                className="w-full min-w-0 bg-transparent font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-mute"
             />
             {valid === true ? (
-                <svg width="15" height="15" viewBox="0 0 16 16" className="shrink-0 text-jade-paper">
+                <svg width="15" height="15" viewBox="0 0 16 16" className="shrink-0 text-jade">
                     <path
                         d="M3.5 8.5l3 3 6-7"
                         stroke="currentColor"
@@ -205,7 +213,7 @@ export function AddressInput({
                 <button
                     type="button"
                     onClick={() => navigator.clipboard.readText().then((v) => onChange(v.trim())).catch(() => {})}
-                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-paper-mute transition-colors hover:bg-paper-2 hover:text-paper-ink"
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-mute transition-colors hover:bg-line hover:text-ink"
                 >
                     {pasteLabel}
                 </button>
@@ -218,7 +226,7 @@ export function AddressInput({
 export function FormSection({title, children}: {title: string; children: ReactNode}) {
     return (
         <section>
-            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
                 {title}
             </h3>
             <div className="space-y-4">{children}</div>
@@ -290,7 +298,7 @@ export function Select<T extends string>({
                 aria-haspopup="listbox"
                 aria-expanded={open}
                 className={`${inputBase} flex items-center justify-between text-left ${
-                    open ? "border-bronze-solid bg-paper-2/70" : ""
+                    open ? "border-bronze-dim bg-surface-2" : ""
                 }`}
             >
                 <span>{current?.label ?? value}</span>
@@ -298,7 +306,7 @@ export function Select<T extends string>({
                     width="14"
                     height="14"
                     viewBox="0 0 16 16"
-                    className={`shrink-0 text-paper-mute transition-transform ${open ? "rotate-180" : ""}`}
+                    className={`shrink-0 text-mute transition-transform ${open ? "rotate-180" : ""}`}
                 >
                     <path
                         d="M4 6l4 4 4-4"
@@ -314,7 +322,7 @@ export function Select<T extends string>({
             {open && (
                 <ul
                     role="listbox"
-                    className="rise absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-paper-line bg-paper p-1 shadow-2xl shadow-black/30"
+                    className="rise absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-line-strong bg-surface-2 p-1 shadow-2xl shadow-black/60"
                 >
                     {options.map((o, i) => {
                         const selected = o.value === value;
@@ -328,12 +336,12 @@ export function Select<T extends string>({
                                         setOpen(false);
                                     }}
                                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[14px] transition-colors ${
-                                        i === active ? "bg-paper-2" : ""
-                                    } ${selected ? "font-medium text-paper-ink" : "text-paper-ink-2"}`}
+                                        i === active ? "bg-line" : ""
+                                    } ${selected ? "font-medium text-ink" : "text-ink-2"}`}
                                 >
                                     {o.label}
                                     {selected && (
-                                        <svg width="14" height="14" viewBox="0 0 16 16" className="text-bronze-solid">
+                                        <svg width="14" height="14" viewBox="0 0 16 16" className="text-bronze">
                                             <path
                                                 d="M3.5 8.5l3 3 6-7"
                                                 stroke="currentColor"

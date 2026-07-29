@@ -6,6 +6,7 @@ import {ROOT_AUTHORITY, TESTNET_FAUCET_ID, UPBIT_KOREA_ID} from "@mapae/protocol
 
 import {
     AddressInput,
+    Card,
     AmountInput,
     Button,
     Check,
@@ -337,28 +338,36 @@ export default function Create() {
 
     function CreateAccountFirst({account: a}: {account: ReturnType<typeof useMapaeAccount>}) {
         return (
-            <Paper className="mb-6 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="max-w-xl">
-                        <p className="text-[14px] font-medium text-paper-ink">
-                            {t("create", "needAccount")}
-                        </p>
-                        <p className="mt-1.5 text-[13px] leading-relaxed text-paper-mute">
-                            {t("create", "accountHint")}
-                        </p>
-                        {a.address && (
-                            <p className="mt-2 font-mono text-[12px] text-paper-mute">{a.address}</p>
-                        )}
-                        {a.error && (
-                            <p className="mt-2 text-[13px] text-reject-paper">{a.error}</p>
-                        )}
+            <div className="mb-6 rounded-xl border border-line bg-surface px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line-strong">
+                            <Mark size={15} />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="text-[13.5px] font-medium text-ink">
+                                {t("create", "needAccount")}
+                            </p>
+                            <p className="truncate text-[12.5px] text-mute">
+                                {a.address ? (
+                                    <span className="font-mono">{short(a.address, 10)}</span>
+                                ) : (
+                                    t("create", "accountHint")
+                                )}
+                            </p>
+                        </div>
                     </div>
                     <Button onClick={a.create} disabled={a.creating || !wallet.onGiwa}>
                         {a.creating ? <Spinner inline /> : null}
                         {a.creating ? t("create", "creatingAccount") : t("create", "createAccount")}
                     </Button>
                 </div>
-            </Paper>
+                {a.error && <p className="mt-2.5 text-[12.5px] text-reject">{a.error}</p>}
+                {/* The identity/funds split is worth explaining once, quietly, not in a slab. */}
+                <p className="mt-2.5 border-t border-line pt-2.5 text-[12px] leading-relaxed text-mute">
+                    {t("create", "accountHint")}
+                </p>
+            </div>
         );
     }
 
@@ -518,7 +527,7 @@ export default function Create() {
                   : lang === "ko" ? "30일" : "30 days";
 
         return (
-            <Paper className="p-7">
+            <Card className="p-7">
                 <div className="space-y-7">
                     <FormSection title={t("create", "groupAgent")}>
                         {fields.includes("agentName") && (
@@ -552,7 +561,7 @@ export default function Create() {
                         )}
                     </FormSection>
 
-                    <div className="h-px bg-paper-line" />
+                    <div className="h-px bg-line" />
 
                     <FormSection title={t("create", "groupLimits")}>
                         {fields.includes("merchant") && (
@@ -620,7 +629,7 @@ export default function Create() {
                         )}
                     </FormSection>
 
-                    <div className="h-px bg-paper-line" />
+                    <div className="h-px bg-line" />
 
                     <FormSection title={t("create", "groupIdentity")}>
                         <Field label={t("create", "issuer")}>
@@ -643,22 +652,22 @@ export default function Create() {
                     </FormSection>
                 </div>
 
-                <div className="mt-7 border-t border-paper-line pt-4">
-                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
+                <div className="mt-7 border-t border-line pt-4">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-mute">
                         {t("create", "comingNext")}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                         {COMING_NEXT.map((c) => (
                             <span
                                 key={c.id}
-                                className="rounded-md border border-paper-line px-2 py-0.5 text-[11.5px] text-paper-mute"
+                                className="rounded-md border border-line px-2 py-0.5 text-[11.5px] text-mute"
                             >
                                 {lang === "ko" ? c.ko : c.en}
                             </span>
                         ))}
                     </div>
                 </div>
-            </Paper>
+            </Card>
         );
     }
 

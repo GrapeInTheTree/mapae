@@ -48,20 +48,23 @@ export default function Home() {
     return (
         <div>
             {/* --------------------------------- hero --------------------------------- */}
-            <section className="mx-auto max-w-6xl px-6 pt-16 pb-10">
+            {/* Centred, with the search running the full width of the column.
+                A ledger is a place you arrive at with something to look up, so the field is the
+                widest element on the page rather than a control tucked into a corner. */}
+            <section className="mx-auto max-w-4xl px-6 pt-20 pb-12 text-center">
                 <p className="text-[11.5px] font-semibold uppercase tracking-[0.18em] text-bronze">
                     {t("home", "eyebrow")}
                 </p>
-                <h1 className="display mt-4 max-w-3xl text-[46px] text-ink sm:text-[58px]">
+                <h1 className="display mt-4 text-[46px] text-ink sm:text-[58px]">
                     {t("home", "title")}
                     <span className="text-bronze">.</span>
                 </h1>
-                <p className="mt-5 max-w-2xl text-[15.5px] leading-relaxed text-ink-2">
+                <p className="mx-auto mt-5 max-w-2xl text-[15.5px] leading-relaxed text-ink-2">
                     {t("home", "lede")}
                 </p>
 
-                <div className="mt-9 flex max-w-3xl items-center gap-0 rounded-xl border border-line-strong bg-surface p-1.5 transition-colors focus-within:border-bronze-dim">
-                    <svg width="18" height="18" viewBox="0 0 18 18" className="ml-3 shrink-0">
+                <div className="mt-9 flex items-center rounded-xl border border-line-strong bg-surface p-1.5 transition-colors focus-within:border-bronze-dim">
+                    <svg width="18" height="18" viewBox="0 0 18 18" className="ml-3.5 shrink-0">
                         <circle cx="8" cy="8" r="5.5" fill="none" stroke="var(--color-mute)" strokeWidth="1.6" />
                         <path d="M12.2 12.2L16 16" stroke="var(--color-mute)" strokeWidth="1.6" strokeLinecap="round" />
                     </svg>
@@ -71,17 +74,17 @@ export default function Home() {
                         onKeyDown={(e) => e.key === "Enter" && go()}
                         placeholder={t("home", "search")}
                         spellCheck={false}
-                        className="w-full bg-transparent px-3 py-2.5 font-mono text-[13.5px] text-ink placeholder:font-sans placeholder:text-mute focus:outline-none"
+                        className="w-full bg-transparent px-3.5 py-3 text-left font-mono text-[13.5px] text-ink placeholder:font-sans placeholder:text-mute focus:outline-none"
                     />
                     <button
                         onClick={go}
-                        className="shrink-0 rounded-lg bg-bronze-solid px-4 py-2.5 text-[14px] font-medium text-paper transition-colors hover:bg-bronze-solid-2"
+                        className="shrink-0 rounded-lg bg-bronze-solid px-5 py-3 text-[14px] font-medium text-paper transition-colors hover:bg-bronze-solid-2"
                     >
                         {lang === "ko" ? "추적" : "Trace"}
                     </button>
                 </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                     <span className="text-[12.5px] text-mute">
                         {lang === "ko" ? "라이브 예시" : "Live examples"}
                     </span>
@@ -97,14 +100,14 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* -------------------------------- stats --------------------------------- */}
+            {/* --------------------------------- stats --------------------------------- */}
             <section className="mx-auto max-w-6xl px-6">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <Card className="divide-y divide-line sm:grid sm:grid-cols-4 sm:divide-x sm:divide-y-0">
                     <Stat label={t("home", "statActive")} value={stats?.delegations} />
                     <Stat label={t("home", "statSettled")} value={stats?.redemptions} tone="jade" />
                     <Stat label={t("home", "statBlocked")} value={stats?.rejections} tone="reject" />
                     <Stat label={t("home", "statPrincipals")} value={stats?.principals} />
-                </div>
+                </Card>
                 {stats && (
                     <p className="mt-2.5 text-right text-[11.5px] text-mute">
                         {lang === "ko"
@@ -213,16 +216,16 @@ export default function Home() {
 
 function Stat({label, value, tone}: {label: string; value?: number; tone?: "jade" | "reject"}) {
     return (
-        <Card className="px-5 py-4">
+        <div className="px-6 py-5">
             <div className="text-[12.5px] text-mute">{label}</div>
             <div
-                className={`tnum mt-1 text-[26px] font-semibold tracking-tight ${
+                className={`tnum mt-1 text-[28px] font-semibold tracking-tight ${
                     tone === "jade" ? "text-jade" : tone === "reject" ? "text-reject" : "text-ink"
                 }`}
             >
                 {value === undefined ? "—" : value.toLocaleString()}
             </div>
-        </Card>
+        </div>
     );
 }
 
