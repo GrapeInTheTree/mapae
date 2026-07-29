@@ -2,9 +2,9 @@ import {useEffect, useState, type ReactNode} from "react";
 import {useParams} from "react-router-dom";
 import type {Hex} from "viem";
 import {traceTx, type DecodedDelegation, type Trace} from "../lib/data";
-import {Card, Check, ExtLink, Mono, Spinner, StatusPill, Tag} from "../components/ui";
+import {Card, Check, CopyButton, ExtLink, Mono, Spinner, StatusPill, Tag} from "../components/ui";
 import {useLang} from "../i18n";
-import {short} from "../lib/config";
+import {BLOCKSCOUT, short} from "../lib/config";
 import {fmtToken, issuerIsReal, issuerName, renderCondition} from "../lib/policy";
 
 /**
@@ -79,9 +79,16 @@ export default function Tx() {
             <div className="mb-10">
                 <div className="flex flex-wrap items-center gap-3">
                     <StatusPill ok={trace.ok} label={trace.ok ? t("tx", "allowed") : t("tx", "rejected")} />
-                    <ExtLink path={`/tx/${trace.hash}`}>
-                        <Mono>{short(trace.hash, 10)} ↗</Mono>
-                    </ExtLink>
+                    <span className="inline-flex items-center gap-1">
+                        <ExtLink path={`/tx/${trace.hash}`}>
+                            <Mono>{short(trace.hash, 10)} ↗</Mono>
+                        </ExtLink>
+                        <CopyButton
+                            value={trace.hash}
+                            label={t("tx", "copy")}
+                            copiedLabel={t("tx", "copied")}
+                        />
+                    </span>
                     {trace.batchSize > 1 && (
                         <Tag tone="bronze">
                             {lang === "ko"
@@ -96,6 +103,12 @@ export default function Tx() {
                         {fmtToken(trace.payment.token, trace.payment.amount)}
                         <span className="mx-3 text-[20px] text-mute">→</span>
                         <Mono className="!text-[16px] text-ink-2">{short(trace.payment.to, 8)}</Mono>
+                        <CopyButton
+                            value={trace.payment.to}
+                            label={t("tx", "copy")}
+                            copiedLabel={t("tx", "copied")}
+                            className="ml-1 align-middle"
+                        />
                     </div>
                 )}
 
@@ -118,11 +131,14 @@ export default function Tx() {
             </div>
 
             {/* -------------------------------- the chain ---------------------------- */}
-            <h2 className="mb-6 text-[12px] font-medium uppercase tracking-widest text-mute">
-                {t("tx", "title")}
-            </h2>
+            <div className="mb-7">
+                <h2 className="text-[12px] font-medium uppercase tracking-widest text-mute">
+                    {t("tx", "title")}
+                </h2>
+                <p className="mt-1.5 text-[12.5px] text-mute">{t("tx", "traceDirection")}</p>
+            </div>
 
-            <Step n={next()} title={t("tx", "payment")}>
+            <Step n={next()} title={t("tx", "payment")} question={t("tx", "q1")}>
                 <Card className="px-4 py-1.5">
                     <Row k={t("tx", "redeemer")} v={<Mono>{short(trace.redeemer, 8)}</Mono>} />
                     <Row k={t("tx", "block")} v={<Mono>{trace.blockNumber.toString()}</Mono>} />
@@ -137,7 +153,7 @@ export default function Tx() {
                 is the direction authority actually travels: a person grants, an agent passes part
                 of it on. Numbering follows the same direction, so link 1 is always the origin. */}
             {trace.chain.length > 0 && (
-                <Step n={next()} title={t("tx", "delegation")}>
+                <Step n={next()} title={t("tx", "delegation")} question={t("tx", "q2")}>
                     <div className="space-y-3">
                         {[...trace.chain].reverse().map((link, i) => (
                             <Link key={i} link={link} index={i} total={trace.chain.length} />
@@ -154,7 +170,7 @@ export default function Tx() {
             )}
 
             {usedAccount && trace.delegation && (
-                <Step n={next()} title={t("tx", "account")}>
+                <Step n={next()} title={t("tx", "account")} question={t("tx", "q3")}>
                     <Card className="px-4 py-1.5">
                         <Row
                             k="MapaeAccount"
@@ -182,7 +198,7 @@ export default function Tx() {
             )}
 
             {id && (
-                <Step n={next()} title={t("tx", "principal")} last={!att}>
+                <Step n={next()} title={t("tx", "principal")} question={t("tx", "q4")} last={!att}>
                     <Card className="px-4 py-1.5">
                         <Row k={t("tx", "principal")} v={<Mono>{short(id.principal, 8)}</Mono>} />
                         <Row
@@ -224,7 +240,7 @@ export default function Tx() {
             )}
 
             {att && id && (
-                <Step n={next()} title={t("tx", "attestation")} last>
+                <Step n={next()} title={t("tx", "attestation")} question={t("tx", "q5")} last>
                     <Card className="px-4 py-1.5">
                         <Row k={t("tx", "uid")} v={<Mono>{short(att.uid, 10)}</Mono>} />
                         <Row k={lang === "ko" ? "발급" : "Issued"} v={fmtStamp(att.issuedAt, lang)} />
@@ -279,7 +295,10 @@ export default function Tx() {
         index: number;
         total: number;
     }) {
-        const conditions = link.conditions.map((c) => renderCondition(c, t as never, lang));
+        const conditions = link.conditions.map((c, i) => ({
+            ...renderCondition(c, t as never, lang),
+            enforcer: link.raw[i]?.enforcer,
+        }));
         return (
             <Card className="px-4 py-3.5">
                 <div className="mb-2.5 flex flex-wrap items-center gap-2">
@@ -302,32 +321,71 @@ export default function Tx() {
                         {lang === "ko" ? "조건 없음 — 무제한 위임" : "No conditions - unbounded"}
                     </p>
                 ) : (
-                    <div className="grid gap-2 sm:grid-cols-2">
-                        {conditions.map((c, i) => (
-                            <div
-                                key={i}
-                                className={`rounded-lg border bg-surface-2 px-3.5 py-3 ${
-                                    c.kind === "identity" || c.kind === "humanloop"
-                                        ? "border-bronze-dim/60"
-                                        : "border-line-strong"
-                                }`}
-                            >
-                                <div className="text-[12.5px] font-semibold text-ink">{c.title}</div>
-                                {c.lines.map((l, j) => (
+                    <>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {conditions.map((c, i) => {
+                                const headline = c.kind === "identity" || c.kind === "humanloop";
+                                return (
                                     <div
-                                        key={j}
-                                        className={
-                                            j === 0
-                                                ? "mt-1 text-[12.5px] text-ink-2"
-                                                : "mt-0.5 text-[11.5px] leading-relaxed text-mute"
-                                        }
+                                        key={i}
+                                        className={`flex flex-col rounded-lg border px-3.5 py-3 ${
+                                            headline
+                                                ? "border-bronze-dim bg-bronze/[0.07]"
+                                                : "border-line-strong bg-surface-2"
+                                        }`}
                                     >
-                                        {l}
+                                        <div className="flex items-start justify-between gap-2">
+                                            <span
+                                                className={`text-[12.5px] font-semibold ${
+                                                    headline ? "text-bronze-bright" : "text-ink"
+                                                }`}
+                                            >
+                                                {c.title}
+                                            </span>
+                                            {headline && (
+                                                <span className="shrink-0 rounded border border-bronze-dim px-1.5 py-px text-[10px] text-bronze">
+                                                    {t("tx", "contribution")}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {c.lines.map((l, j) => (
+                                            <div
+                                                key={j}
+                                                className={
+                                                    j === 0
+                                                        ? "mt-1 text-[12.5px] text-ink-2"
+                                                        : "mt-0.5 text-[11.5px] leading-relaxed text-mute"
+                                                }
+                                            >
+                                                {l}
+                                            </div>
+                                        ))}
+                                        {c.enforcer && (
+                                            <div className="mt-2.5 flex items-center gap-1 border-t border-line pt-2 text-[10.5px] text-mute">
+                                                <span className="shrink-0">{t("tx", "enforcedBy")}</span>
+                                                <a
+                                                    href={`${BLOCKSCOUT}/address/${c.enforcer}`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="truncate font-mono transition-colors hover:text-bronze-bright"
+                                                >
+                                                    {short(c.enforcer, 6)} ↗
+                                                </a>
+                                                <CopyButton
+                                                    value={c.enforcer}
+                                                    label={t("tx", "copy")}
+                                                    copiedLabel={t("tx", "copied")}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
+                                );
+                            })}
+                        </div>
+                        <p className="mt-2.5 text-[11.5px] leading-relaxed text-mute">
+                            {t("tx", "enforcedNote")}
+                        </p>
+                    </>
                 )}
             </Card>
         );
@@ -347,22 +405,29 @@ function fmtStamp(unix: number, lang: "en" | "ko"): string {
 function Step({
     n,
     title,
+    question,
     children,
     last = false,
 }: {
     n: number;
     title: string;
+    /** What this step answers. The sequence is a traceback, which is not obvious from headings
+     *  alone - naming the question makes the direction legible at a glance. */
+    question?: string;
     children: ReactNode;
     last?: boolean;
 }) {
     return (
         <div className="relative pl-12">
-            {!last && <div className="absolute top-9 bottom-0 left-[15px] w-px bg-line" />}
+            {!last && <div className="absolute top-10 bottom-0 left-[15px] w-px bg-line" />}
             <div className="absolute top-1 left-0 flex h-8 w-8 items-center justify-center rounded-full border border-bronze-dim bg-surface font-serif text-[14px] font-bold text-bronze">
                 {n}
             </div>
-            <div className="pb-8">
-                <h3 className="mb-2.5 pt-1.5 text-[15px] font-semibold text-ink">{title}</h3>
+            <div className="pb-9">
+                <div className="mb-3 pt-1">
+                    <h3 className="text-[15px] font-semibold text-ink">{title}</h3>
+                    {question && <p className="mt-0.5 text-[12.5px] text-mute">{question}</p>}
+                </div>
                 {children}
             </div>
         </div>

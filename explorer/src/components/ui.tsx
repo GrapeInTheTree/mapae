@@ -484,6 +484,56 @@ export function Steps({
 
 /* --------------------------------- atoms ---------------------------------- */
 
+/**
+ * Copy, without leaving the page.
+ *
+ * Every hash and address here is something a reader will want to paste somewhere else - into
+ * Blockscout, into a terminal, into a message asking someone what happened. Truncating them for
+ * legibility and then making them un-copyable is the worst of both.
+ */
+export function CopyButton({
+    value,
+    label,
+    copiedLabel,
+    className = "",
+}: {
+    value: string;
+    label: string;
+    copiedLabel: string;
+    className?: string;
+}) {
+    const [done, setDone] = useState(false);
+    return (
+        <button
+            type="button"
+            title={label}
+            aria-label={label}
+            onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                void navigator.clipboard.writeText(value);
+                setDone(true);
+                setTimeout(() => setDone(false), 1400);
+            }}
+            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-mute transition-colors hover:bg-surface-2 hover:text-ink ${className}`}
+        >
+            {done ? (
+                <>
+                    <svg width="11" height="11" viewBox="0 0 16 16" className="text-jade">
+                        <path d="M3.5 8.5l3 3 6-7" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {copiedLabel}
+                </>
+            ) : (
+                <svg width="11" height="11" viewBox="0 0 16 16">
+                    <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M10.5 5.5V4a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+                </svg>
+            )}
+        </button>
+    );
+}
+
 export function Mono({children, className = ""}: {children: ReactNode; className?: string}) {
     return <span className={`font-mono text-[13px] ${className}`}>{children}</span>;
 }

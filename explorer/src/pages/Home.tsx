@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {fetchFeed, fetchStats, type FeedItem, type Stats as StatsData} from "../lib/data";
-import {Card, Mono, StatusPill, TxLink, relTime} from "../components/ui";
+import {Card, Mono, StatusPill, relTime} from "../components/ui";
 import {AuthorityFlow} from "../components/AuthorityFlow";
 import {Stats} from "../components/Stats";
 import {useLang} from "../i18n";
@@ -152,10 +152,22 @@ export default function Home() {
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    {/* The whole row is the target. Making only the hash clickable
+                                        gives a 120px hit area on a 900px row, which is a miss
+                                        waiting to happen - and the row already reads as one item. */}
                                     {feed.map((f) => (
                                         <tr
                                             key={f.hash}
-                                            className="border-b border-line/60 transition-colors last:border-0 hover:bg-surface-2/60"
+                                            onClick={() => nav(`/tx/${f.hash}`)}
+                                            tabIndex={0}
+                                            role="link"
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                    e.preventDefault();
+                                                    nav(`/tx/${f.hash}`);
+                                                }
+                                            }}
+                                            className="group cursor-pointer border-b border-line/60 transition-colors last:border-0 hover:bg-surface-2/60 focus:bg-surface-2/60 focus:outline-none"
                                         >
                                             <td className="px-5 py-3">
                                                 <StatusPill
@@ -164,13 +176,31 @@ export default function Home() {
                                                 />
                                             </td>
                                             <td className="px-5 py-3">
-                                                <TxLink hash={f.hash} />
+                                                <Mono className="text-bronze-bright group-hover:underline">
+                                                    {short(f.hash, 10)}
+                                                </Mono>
                                             </td>
                                             <td className="hidden px-5 py-3 sm:table-cell">
                                                 <Mono className="text-mute">{short(f.from, 6)}</Mono>
                                             </td>
                                             <td className="px-5 py-3 text-right text-[13px] text-mute">
-                                                {relTime(f.timestamp, lang)}
+                                                <span className="inline-flex items-center gap-2">
+                                                    {relTime(f.timestamp, lang)}
+                                                    <svg
+                                                        width="12"
+                                                        height="12"
+                                                        viewBox="0 0 16 16"
+                                                        className="opacity-0 transition-opacity group-hover:opacity-60"
+                                                    >
+                                                        <path
+                                                            d="M6 4l4 4-4 4"
+                                                            stroke="currentColor"
+                                                            strokeWidth="1.7"
+                                                            fill="none"
+                                                            strokeLinecap="round"
+                                                        />
+                                                    </svg>
+                                                </span>
                                             </td>
                                         </tr>
                                     ))}
