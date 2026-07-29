@@ -1,10 +1,23 @@
 import {useMemo, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {isAddress, type Address, type Hex} from "viem";
+import {getAddress, isAddress, type Address, type Hex} from "viem";
 import {encodePermissionContext, type Delegation} from "@mapae/sdk";
 import {ROOT_AUTHORITY, TESTNET_FAUCET_ID, UPBIT_KOREA_ID} from "@mapae/protocol";
 
-import {Button, Check, Field, Input, Mark, Paper, Select, Spinner, Steps} from "../components/ui";
+import {
+    AddressInput,
+    AmountInput,
+    Button,
+    Check,
+    Field,
+    FormSection,
+    Input,
+    Mark,
+    Paper,
+    Select,
+    Spinner,
+    Steps,
+} from "../components/ui";
 import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
 import {addresses, short} from "../lib/config";
@@ -12,6 +25,8 @@ import {readableError, useDojangStatus, useMapaeAccount} from "../lib/account";
 import {
     decodeCondition,
     encodeConditions,
+    fmtDate,
+    fmtDuration,
     fmtToken,
     issuerName,
     renderCondition,
@@ -74,19 +89,70 @@ export default function Create() {
         form.issuer,
     );
 
-    const agentOk = form.agent !== "" && isAddress(form.agent);
-    const merchantOk = form.merchant !== "" && isAddress(form.merchant);
+    /**
+     * Syntactic validity, not checksum validity.
+     *
+     * viem's `isAddress` is strict by default: a MIXED-CASE address whose EIP-55 checksum does
+     * not match is reported invalid, and so is an all-uppercase one. Those are addresses the
+     * chain accepts perfectly well, and rejecting them here would block someone who copied an
+     * address correctly from a source that mangled its casing.
+     *
+     * So validity is loose and the checksum is surfaced as a WARNING instead. That is what
+     * EIP-55 is for - catching a transcription error, not gating an address. An all-lowercase
+     * address carries no checksum information at all and must pass silently.
+     */
+    const agentOk = form.agent !== "" && isAddress(form.agent, {strict: false});
+    const merchantOk = form.merchant !== "" && isAddress(form.merchant, {strict: false});
+    const badChecksum = (v: string) =>
+        v !== "" &&
+        isAddress(v, {strict: false}) &&
+        /[a-f]/.test(v.slice(2)) &&
+        /[A-F]/.test(v.slice(2)) &&
+        !isAddress(v, {strict: true});
     const amountOk = form.amount > 0n;
     const formOk = agentOk && merchantOk && amountOk && form.agentName.trim().length > 0;
 
+    /** What stands between here and a signature, in order. A disabled control that will not say
+     *  why is the commonest way a form loses someone; this is shown on the button itself. */
+    const blocked: string | null = !wallet.address
+        ? t("create", "blockedWallet")
+        : !account.deployed
+          ? t("create", "blockedAccount")
+          : form.agentName.trim().length === 0
+            ? t("create", "blockedName")
+            : !agentOk
+              ? t("create", "blockedAgent")
+              : !merchantOk
+                ? t("create", "blockedMerchant")
+                : !amountOk
+                  ? t("create", "blockedAmount")
+                  : null;
+
+    /**
+     * Built as soon as the FORM is complete, not once a wallet is connected.
+     *
+     * The point of this screen is that a person can see exactly what they would be granting
+     * before they are asked to connect anything. Requiring an account first meant the summary sat
+     * empty through the whole decision and only appeared after it had been made. The principal is
+     * only read back at signing time, so a placeholder here changes nothing that is displayed -
+     * `sign()` still refuses without a real account and a real wallet.
+     */
+    const PREVIEW_PRINCIPAL = "0x0000000000000000000000000000000000000000" as Address;
     const conditions: Condition[] | null = useMemo(() => {
-        if (!formOk || !account.address) return null;
+        if (!formOk) return null;
         try {
-            return buildConditions(form, wallet.address as Address, Date.now());
+            // Canonicalise before encoding: the signed terms carry the checksummed form no
+            // matter how the address was pasted.
+            const normalised = {
+                ...form,
+                agent: getAddress(form.agent as string),
+                merchant: getAddress(form.merchant as string),
+            };
+            return buildConditions(normalised, (wallet.address ?? PREVIEW_PRINCIPAL) as Address, Date.now());
         } catch {
             return null;
         }
-    }, [form, formOk, account.address, wallet.address]);
+    }, [form, formOk, wallet.address]);
 
     const rendered = useMemo(
         () =>
@@ -110,7 +176,7 @@ export default function Create() {
             }
 
             const unsigned: Delegation = {
-                delegate: form.agent as Address,
+                delegate: getAddress(form.agent as string),
                 delegator: account.address,
                 authority: ROOT_AUTHORITY as Hex,
                 caveats: encodeConditions(conditions),
@@ -222,23 +288,28 @@ export default function Create() {
                     </div>
                     <p className="mb-6 text-[13px] text-mute">{t("create", "presetHint")}</p>
 
-                    <div className="grid gap-6 lg:grid-cols-[1.05fr_1fr]">
+                    <div className="grid items-start gap-6 lg:grid-cols-[1fr_420px]">
                         <PolicyForm
                             form={form}
                             set={set}
                             fields={p.fields}
-                            agentOk={agentOk || form.agent === ""}
-                            merchantOk={merchantOk || form.merchant === ""}
+                            agentValid={form.agent === "" ? null : agentOk}
+                            merchantValid={form.merchant === "" ? null : merchantOk}
+                            agentChecksumWarn={badChecksum(form.agent)}
+                            merchantChecksumWarn={badChecksum(form.merchant)}
                         />
-                        <Preview
-                            form={form}
-                            rendered={rendered}
-                            accountAddress={account.address}
-                            verified={verified}
-                            checking={checkingIdentity}
-                            ready={Boolean(conditions)}
-                            onReview={() => setStage("review")}
-                        />
+                        {/* Sticky: the thing being composed should not scroll away from the
+                            controls composing it. */}
+                        <div className="lg:sticky lg:top-24">
+                            <Preview
+                                form={form}
+                                rendered={rendered}
+                                verified={verified}
+                                checking={checkingIdentity}
+                                blocked={blocked}
+                                onReview={() => setStage("review")}
+                            />
+                        </div>
                     </div>
                 </>
             )}
@@ -426,42 +497,142 @@ export default function Create() {
         form: f,
         set: setF,
         fields,
-        agentOk: aOk,
-        merchantOk: mOk,
+        agentValid,
+        merchantValid,
+        agentChecksumWarn,
+        merchantChecksumWarn,
     }: {
         form: PresetForm;
         set: <K extends keyof PresetForm>(k: K, v: PresetForm[K]) => void;
         fields: (keyof PresetForm)[];
-        agentOk: boolean;
-        merchantOk: boolean;
+        agentValid: boolean | null;
+        merchantValid: boolean | null;
+        agentChecksumWarn: boolean;
+        merchantChecksumWarn: boolean;
     }) {
+        const periodLabel =
+            f.period === 86_400n
+                ? lang === "ko" ? "하루" : "day"
+                : f.period === 604_800n
+                  ? lang === "ko" ? "한 주" : "week"
+                  : lang === "ko" ? "30일" : "30 days";
+
         return (
-            <Paper className="p-6">
-                <h2 className="mb-5 text-[15px] font-semibold text-paper-ink">
-                    {t("create", "policyDetails")}
-                </h2>
-                <div className="space-y-4">
-                    {fields.includes("agentName") && (
-                        <Field label={t("create", "agentName")}>
-                            <Input
-                                value={f.agentName}
-                                onChange={(v) => setF("agentName", v)}
-                                placeholder={lang === "ko" ? "예: 데이터 에이전트" : "e.g. Data Agent"}
+            <Paper className="p-7">
+                <div className="space-y-7">
+                    <FormSection title={t("create", "groupAgent")}>
+                        {fields.includes("agentName") && (
+                            <Field label={t("create", "agentName")}>
+                                <Input
+                                    value={f.agentName}
+                                    onChange={(v) => setF("agentName", v)}
+                                    placeholder={lang === "ko" ? "예: 데이터 에이전트" : "e.g. Data Agent"}
+                                />
+                            </Field>
+                        )}
+                        {fields.includes("agent") && (
+                            <Field
+                                label={t("create", "agentAddress")}
+                                suffix={
+                                    agentValid === false ? (
+                                        <span className="text-[12px] text-reject-paper">
+                                            {t("create", "invalidAddress")}
+                                        </span>
+                                    ) : undefined
+                                }
+                                hint={agentChecksumWarn ? t("create", "checksumWarn") : undefined}
+                            >
+                                <AddressInput
+                                    value={f.agent}
+                                    valid={agentValid}
+                                    onChange={(v) => setF("agent", v as Address)}
+                                    pasteLabel={t("create", "paste")}
+                                />
+                            </Field>
+                        )}
+                    </FormSection>
+
+                    <div className="h-px bg-paper-line" />
+
+                    <FormSection title={t("create", "groupLimits")}>
+                        {fields.includes("merchant") && (
+                            <Field
+                                label={t("create", "merchant")}
+                                hint={
+                                    merchantChecksumWarn
+                                        ? t("create", "checksumWarn")
+                                        : t("create", "merchantHint")
+                                }
+                                suffix={
+                                    merchantValid === false ? (
+                                        <span className="text-[12px] text-reject-paper">
+                                            {t("create", "invalidAddress")}
+                                        </span>
+                                    ) : undefined
+                                }
+                            >
+                                <AddressInput
+                                    value={f.merchant}
+                                    valid={merchantValid}
+                                    onChange={(v) => setF("merchant", v as Address)}
+                                    pasteLabel={t("create", "paste")}
+                                />
+                            </Field>
+                        )}
+                        <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr]">
+                            {fields.includes("amount") && (
+                                <Field label={t("create", "perPeriod")}>
+                                    <AmountInput
+                                        value={f.amount}
+                                        onChange={(v) => setF("amount", v)}
+                                        prefix="₩"
+                                        suffix={t("create", "perPeriodSuffix", {period: periodLabel})}
+                                    />
+                                </Field>
+                            )}
+                            {fields.includes("period") && (
+                                <Field label={t("create", "period")}>
+                                    <Select
+                                        value={f.period.toString()}
+                                        onChange={(v) => setF("period", BigInt(v))}
+                                        options={[
+                                            {value: "86400", label: lang === "ko" ? "하루" : "Day"},
+                                            {value: "604800", label: lang === "ko" ? "한 주" : "Week"},
+                                            {value: "2592000", label: lang === "ko" ? "30일" : "30 days"},
+                                        ]}
+                                    />
+                                </Field>
+                            )}
+                        </div>
+                        {fields.includes("validDays") && (
+                            <Field label={t("create", "duration")}>
+                                <Select
+                                    value={String(f.validDays)}
+                                    onChange={(v) => setF("validDays", Number(v))}
+                                    options={[
+                                        {value: "7", label: lang === "ko" ? "7일" : "7 days"},
+                                        {value: "30", label: lang === "ko" ? "30일" : "30 days"},
+                                        {value: "90", label: lang === "ko" ? "90일" : "90 days"},
+                                        {value: "365", label: lang === "ko" ? "1년" : "1 year"},
+                                    ]}
+                                />
+                            </Field>
+                        )}
+                    </FormSection>
+
+                    <div className="h-px bg-paper-line" />
+
+                    <FormSection title={t("create", "groupIdentity")}>
+                        <Field label={t("create", "issuer")}>
+                            <Select
+                                value={f.issuer}
+                                onChange={(v) => setF("issuer", v as Hex)}
+                                options={[
+                                    {value: TESTNET_FAUCET_ID, label: issuerName(TESTNET_FAUCET_ID, lang)},
+                                    {value: UPBIT_KOREA_ID, label: issuerName(UPBIT_KOREA_ID, lang)},
+                                ]}
                             />
                         </Field>
-                    )}
-                    {fields.includes("agent") && (
-                        <Field label={t("create", "agentAddress")}>
-                            <Input
-                                mono
-                                value={f.agent}
-                                invalid={!aOk}
-                                onChange={(v) => setF("agent", v as Address)}
-                                placeholder="0x…"
-                            />
-                        </Field>
-                    )}
-                    {fields.includes("token") && (
                         <Field label={t("create", "asset")}>
                             <Select
                                 value={f.token}
@@ -469,72 +640,11 @@ export default function Create() {
                                 options={[{value: addresses.mockKRW, label: "mKRW"}]}
                             />
                         </Field>
-                    )}
-                    {fields.includes("merchant") && (
-                        <Field label={t("create", "merchant")} hint={t("create", "merchantHint")}>
-                            <Input
-                                mono
-                                value={f.merchant}
-                                invalid={!mOk}
-                                onChange={(v) => setF("merchant", v as Address)}
-                                placeholder="0x…"
-                            />
-                        </Field>
-                    )}
-                    <div className="grid grid-cols-2 gap-3">
-                        {fields.includes("amount") && (
-                            <Field label={t("create", "perPeriod")}>
-                                <Input
-                                    inputMode="numeric"
-                                    value={f.amount.toString()}
-                                    onChange={(v) =>
-                                        setF("amount", BigInt(v.replace(/[^0-9]/g, "") || "0"))
-                                    }
-                                />
-                            </Field>
-                        )}
-                        {fields.includes("period") && (
-                            <Field label={t("create", "period")}>
-                                <Select
-                                    value={f.period.toString()}
-                                    onChange={(v) => setF("period", BigInt(v))}
-                                    options={[
-                                        {value: "86400", label: lang === "ko" ? "하루" : "Day"},
-                                        {value: "604800", label: lang === "ko" ? "한 주" : "Week"},
-                                        {value: "2592000", label: lang === "ko" ? "30일" : "30 days"},
-                                    ]}
-                                />
-                            </Field>
-                        )}
-                    </div>
-                    {fields.includes("validDays") && (
-                        <Field label={t("create", "duration")}>
-                            <Select
-                                value={String(f.validDays)}
-                                onChange={(v) => setF("validDays", Number(v))}
-                                options={[
-                                    {value: "7", label: lang === "ko" ? "7일" : "7 days"},
-                                    {value: "30", label: lang === "ko" ? "30일" : "30 days"},
-                                    {value: "90", label: lang === "ko" ? "90일" : "90 days"},
-                                    {value: "365", label: lang === "ko" ? "1년" : "1 year"},
-                                ]}
-                            />
-                        </Field>
-                    )}
-                    <Field label={t("create", "issuer")}>
-                        <Select
-                            value={f.issuer}
-                            onChange={(v) => setF("issuer", v as Hex)}
-                            options={[
-                                {value: TESTNET_FAUCET_ID, label: issuerName(TESTNET_FAUCET_ID, lang)},
-                                {value: UPBIT_KOREA_ID, label: issuerName(UPBIT_KOREA_ID, lang)},
-                            ]}
-                        />
-                    </Field>
+                    </FormSection>
                 </div>
 
-                <div className="mt-6 border-t border-paper-line pt-4">
-                    <p className="mb-2 text-[12px] font-medium text-paper-mute">
+                <div className="mt-7 border-t border-paper-line pt-4">
+                    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
                         {t("create", "comingNext")}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
@@ -552,85 +662,95 @@ export default function Create() {
         );
     }
 
+    /**
+     * The panel is the permission, not a table about it.
+     *
+     * A grid of dashes teaches nobody what they are about to grant. As the form fills, this
+     * writes the authority out as one sentence - the same sentence the review step shows and the
+     * same structure the bytes are built from - so the thing being composed is legible the whole
+     * way through rather than only at the end.
+     */
     function Preview({
         form: f,
         rendered: rs,
-        accountAddress,
         verified: isVerified,
         checking,
-        ready,
+        blocked: reason,
         onReview,
     }: {
         form: PresetForm;
         rendered: ReturnType<typeof renderCondition>[];
-        accountAddress: Address | null;
         verified: boolean | null;
         checking: boolean;
-        ready: boolean;
+        blocked: string | null;
         onReview: () => void;
     }) {
+        const merchantLabel = f.merchantName || (f.merchant ? short(String(f.merchant), 6) : "");
+        const periodLabel = fmtDuration(f.period, lang);
+        const until = fmtDate(
+            BigInt(Math.floor(Date.now() / 1000) + f.validDays * 86_400),
+            lang,
+        );
+
         return (
-            <Paper className="h-fit p-6">
-                <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-[15px] font-semibold text-paper-ink">
+            <Paper className="overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-paper-line px-6 py-4">
+                    <h2 className="text-[14px] font-semibold text-paper-ink">
                         {t("create", "yourMapae")}
                     </h2>
                     {checking ? (
                         <span className="text-[12px] text-paper-mute">{t("create", "checking")}</span>
                     ) : isVerified === true ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-jade-paper/12 px-2.5 py-1 text-[12px] font-medium text-jade-paper">
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-jade-paper/12 px-2.5 py-1 text-[11.5px] font-medium text-jade-paper">
                             <span className="h-1.5 w-1.5 rounded-full bg-jade-paper" />
                             {t("create", "verified")}
                         </span>
                     ) : null}
                 </div>
 
-                <dl className="mt-5 space-y-2.5">
-                    <PreviewRow k={t("create", "agent")} v={f.agentName || "—"} />
-                    <PreviewRow
-                        k={t("create", "account")}
-                        v={accountAddress ? short(accountAddress, 6) : "—"}
-                        mono
-                    />
-                    <PreviewRow k={t("create", "asset")} v={fmtToken(f.token, f.amount)} />
-                    <PreviewRow
-                        k={t("create", "merchant")}
-                        v={f.merchant ? f.merchantName || short(String(f.merchant), 6) : "—"}
-                        mono={!f.merchantName}
-                    />
-                </dl>
+                <div className="px-6 py-5">
+                    {rs.length === 0 ? (
+                        <p className="py-6 text-center text-[13px] leading-relaxed text-paper-mute">
+                            {t("create", "summaryEmpty")}
+                        </p>
+                    ) : (
+                        <>
+                            <p className="text-[14.5px] leading-relaxed text-paper-ink">
+                                {t("create", "sentence", {
+                                    agent: f.agentName,
+                                    merchant: merchantLabel,
+                                    amount: fmtToken(f.token, f.amount),
+                                    period: periodLabel,
+                                    until,
+                                    issuer: issuerName(f.issuer, lang),
+                                })}
+                            </p>
+                            <div className="mt-5 space-y-2 border-t border-paper-line pt-4">
+                                {rs.map((r, i) => (
+                                    <Check key={i} ok paper>
+                                        {r.lines[0]}
+                                    </Check>
+                                ))}
+                            </div>
+                        </>
+                    )}
 
-                {rs.length > 0 && (
-                    <div className="mt-5 space-y-2 border-t border-paper-line pt-5">
-                        {rs.map((r, i) => (
-                            <Check key={i} ok paper>
-                                {r.lines[0]}
-                            </Check>
-                        ))}
-                    </div>
-                )}
+                    {isVerified === false && (
+                        <p className="mt-5 rounded-lg border border-warn/40 bg-warn/10 p-3 text-[12.5px] leading-relaxed text-paper-ink-2">
+                            {t("create", "notVerified")}
+                        </p>
+                    )}
+                </div>
 
-                {isVerified === false && (
-                    <p className="mt-5 rounded-lg border border-warn/40 bg-warn/10 p-3 text-[12.5px] leading-relaxed text-paper-ink-2">
-                        {t("create", "notVerified")}
+                <div className="border-t border-paper-line bg-paper-2/40 px-6 py-5">
+                    <Button className="w-full" onClick={onReview} disabled={Boolean(reason)}>
+                        {reason ?? `${t("create", "reviewSign")} →`}
+                    </Button>
+                    <p className="mt-2.5 text-center text-[11.5px] text-paper-mute">
+                        {t("create", "gasFree")}
                     </p>
-                )}
-
-                <Button className="mt-6 w-full" onClick={onReview} disabled={!ready}>
-                    {t("create", "reviewSign")} →
-                </Button>
+                </div>
             </Paper>
-        );
-    }
-
-    function PreviewRow({k, v, mono}: {k: string; v: string; mono?: boolean}) {
-        return (
-            <div className="flex items-baseline justify-between gap-4">
-                <dt className="text-[13px] text-paper-mute">{k}</dt>
-                <dd className={`text-[13.5px] text-paper-ink ${mono ? "font-mono text-[12.5px]" : ""}`}>
-                    {v}
-                </dd>
-            </div>
         );
     }
 

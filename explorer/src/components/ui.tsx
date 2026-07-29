@@ -119,6 +119,114 @@ export function Input({
 }
 
 /**
+ * An amount, shown the way money is written.
+ *
+ * The signed terms are an integer in base units, but nobody reads 50000 and sees fifty thousand
+ * won. Digits are grouped as they are typed and the currency mark sits inside the field, so the
+ * number in the input and the number in the summary are recognisably the same quantity. State
+ * stays a bigint throughout; only the display is formatted.
+ */
+export function AmountInput({
+    value,
+    onChange,
+    prefix,
+    suffix,
+}: {
+    value: bigint;
+    onChange: (v: bigint) => void;
+    prefix?: string;
+    suffix?: string;
+}) {
+    return (
+        <div
+            className={`${inputBase} flex items-center gap-1.5 focus-within:border-bronze-solid focus-within:bg-paper-2/70`}
+        >
+            {prefix && <span className="shrink-0 text-paper-mute">{prefix}</span>}
+            <input
+                value={value === 0n ? "" : value.toLocaleString("en-US")}
+                inputMode="numeric"
+                placeholder="0"
+                onChange={(e) => onChange(BigInt(e.target.value.replace(/[^0-9]/g, "") || "0"))}
+                className="tnum w-full min-w-0 bg-transparent text-[15px] font-medium outline-none placeholder:text-paper-mute"
+            />
+            {suffix && <span className="shrink-0 text-[12.5px] text-paper-mute">{suffix}</span>}
+        </div>
+    );
+}
+
+/**
+ * An address field that says whether what you pasted is one.
+ *
+ * A mistyped address here is not a form error to be discovered later - it is a permission signed
+ * toward an address that will never be able to use it, or a merchant allowlist that permits the
+ * wrong recipient forever. Validity is shown as you type, and paste is offered because nobody
+ * types forty hex characters.
+ */
+export function AddressInput({
+    value,
+    onChange,
+    valid,
+    placeholder = "0x…",
+    pasteLabel,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    /** null while empty - neither right nor wrong yet. */
+    valid: boolean | null;
+    placeholder?: string;
+    pasteLabel: string;
+}) {
+    return (
+        <div
+            className={`${inputBase} flex items-center gap-2 focus-within:border-bronze-solid focus-within:bg-paper-2/70 ${
+                valid === false ? "border-reject-paper" : ""
+            }`}
+        >
+            <input
+                value={value}
+                spellCheck={false}
+                autoComplete="off"
+                placeholder={placeholder}
+                onChange={(e) => onChange(e.target.value.trim())}
+                className="w-full min-w-0 bg-transparent font-mono text-[13px] outline-none placeholder:font-sans placeholder:text-paper-mute"
+            />
+            {valid === true ? (
+                <svg width="15" height="15" viewBox="0 0 16 16" className="shrink-0 text-jade-paper">
+                    <path
+                        d="M3.5 8.5l3 3 6-7"
+                        stroke="currentColor"
+                        strokeWidth="1.9"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ) : value === "" ? (
+                <button
+                    type="button"
+                    onClick={() => navigator.clipboard.readText().then((v) => onChange(v.trim())).catch(() => {})}
+                    className="shrink-0 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium text-paper-mute transition-colors hover:bg-paper-2 hover:text-paper-ink"
+                >
+                    {pasteLabel}
+                </button>
+            ) : null}
+        </div>
+    );
+}
+
+/** A labelled group, so a long form reads as three decisions rather than nine inputs. */
+export function FormSection({title, children}: {title: string; children: ReactNode}) {
+    return (
+        <section>
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-paper-mute">
+                {title}
+            </h3>
+            <div className="space-y-4">{children}</div>
+        </section>
+    );
+}
+
+/**
  * A listbox rather than a native `<select>`.
  *
  * The OS dropdown is drawn by the platform, so on the bone surface it opens as a dark slab with
