@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "checkedAt": "2026-07-29T08:39:08.730Z",
+  "workspace": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp",
+  "finalPptx": "/Users/ahn_euijin/mapae/mapae_gasok_phase2_pitch_ko.pptx",
+  "starterPptx": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp/template-starter.pptx",
+  "mapPath": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp/template-frame-map.json",
+  "starterLayoutDir": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp/template-starter-layout",
+  "finalLayoutDir": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp/qa-render",
+  "editDir": "/Users/ahn_euijin/mapae/pitch-deck-v3-tmp",
+  "issueCount": 0,
+  "issues": []
+}

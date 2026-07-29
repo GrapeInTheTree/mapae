@@ -1,0 +1,606 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/i107q5of",
+    "id": "i107q5of",
+    "slide": 5,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundColor": "#0A0B0A",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light",
+      "Courier New"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dgbulwnm",
+      "id": "2",
+      "name": "Text 0",
+      "bbox": [
+        76.8,
+        48,
+        1123.2,
+        28.8
+      ],
+      "geometry": "rect",
+      "text": "// THE GAP",
+      "textPreview": "// THE GAP",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "// THE GAP"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "// THE GAP",
+          "runs": [
+            {
+              "index": 1,
+              "text": "// THE GAP",
+              "fontSize": 14,
+              "typeface": "Courier New",
+              "color": "#C89253"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cf2tcr61",
+      "id": "3",
+      "name": "Text 1",
+      "bbox": [
+        86.4,
+        144,
+        432,
+        172.8
+      ],
+      "geometry": "rect",
+      "text": "38",
+      "textPreview": "38",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "38"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "38",
+          "runs": [
+            {
+              "index": 1,
+              "text": "38",
+              "fontSize": 146.67,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/z2tcnm5s",
+      "id": "4",
+      "name": "Text 2",
+      "bbox": [
+        91.2,
+        321.6,
+        480,
+        76.8
+      ],
+      "geometry": "rect",
+      "text": "MetaMask delegation-framework의\n감사된 조건 검사기",
+      "textPreview": "MetaMask delegation-framework의 | 감사된 조건 검사기",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "MetaMask delegation-framework의"
+          },
+          {
+            "index": 2,
+            "text": "감사된 조건 검사기"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "MetaMask delegation-framework의",
+          "runs": [
+            {
+              "index": 1,
+              "text": "MetaMask delegation-framework의",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "감사된 조건 검사기",
+          "runs": [
+            {
+              "index": 1,
+              "text": "감사된 조건 검사기",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yhkbe1o7",
+      "id": "5",
+      "name": "Text 3",
+      "bbox": [
+        91.2,
+        412.8,
+        480,
+        76.8
+      ],
+      "geometry": "rect",
+      "text": "금액 · 기간 · 스트리밍 · 허용 타겟\n허용 메서드 · 시간 범위 · 호출 횟수",
+      "textPreview": "금액 · 기간 · 스트리밍 · 허용 타겟 | 허용 메서드 · 시간 범위 · 호출 횟수",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "금액 · 기간 · 스트리밍 · 허용 타겟"
+          },
+          {
+            "index": 2,
+            "text": "허용 메서드 · 시간 범위 · 호출 횟수"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "금액 · 기간 · 스트리밍 · 허용 타겟",
+          "runs": [
+            {
+              "index": 1,
+              "text": "금액 · 기간 · 스트리밍 · 허용 타겟",
+              "fontSize": 16,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "허용 메서드 · 시간 범위 · 호출 횟수",
+          "runs": [
+            {
+              "index": 1,
+              "text": "허용 메서드 · 시간 범위 · 호출 횟수",
+              "fontSize": 16,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l4bupwny",
+      "id": "6",
+      "name": "Shape 4",
+      "bbox": [
+        628.8,
+        148.8,
+        0,
+        345.6
+      ],
+      "geometry": "line",
+      "lineColor": "#2B2E31",
+      "lineWidth": 1.33
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/032tgr6d",
+      "id": "7",
+      "name": "Text 5",
+      "bbox": [
+        686.4,
+        144,
+        432,
+        172.8
+      ],
+      "geometry": "rect",
+      "text": "0",
+      "textPreview": "0",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "0"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "0",
+          "runs": [
+            {
+              "index": 1,
+              "text": "0",
+              "fontSize": 146.67,
+              "typeface": "Arial",
+              "color": "#C89253",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/n6dcr65o",
+      "id": "8",
+      "name": "Text 6",
+      "bbox": [
+        691.2,
+        321.6,
+        480,
+        48
+      ],
+      "geometry": "rect",
+      "text": "그중 신원을 조건으로 거는 것",
+      "textPreview": "그중 신원을 조건으로 거는 것",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "그중 신원을 조건으로 거는 것"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "그중 신원을 조건으로 거는 것",
+          "runs": [
+            {
+              "index": 1,
+              "text": "그중 신원을 조건으로 거는 것",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#D8D4CC"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m5kbi1oj",
+      "id": "9",
+      "name": "Text 7",
+      "bbox": [
+        691.2,
+        412.8,
+        480,
+        76.8
+      ],
+      "geometry": "rect",
+      "text": "얼마까지, 언제까지, 어디에는 있다\n누가 위임했는가만 없다",
+      "textPreview": "얼마까지, 언제까지, 어디에는 있다 | 누가 위임했는가만 없다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "얼마까지, 언제까지, 어디에는 있다"
+          },
+          {
+            "index": 2,
+            "text": "누가 위임했는가만 없다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "얼마까지, 언제까지, 어디에는 있다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "얼마까지, 언제까지, 어디에는 있다",
+              "fontSize": 16,
+              "typeface": "Arial",
+              "color": "#D8D4CC"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "누가 위임했는가만 없다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "누가 위임했는가만 없다",
+              "fontSize": 16,
+              "typeface": "Arial",
+              "color": "#D8D4CC"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w32dkbuh",
+      "id": "10",
+      "name": "Text 8",
+      "bbox": [
+        86.4,
+        528,
+        1113.6,
+        48
+      ],
+      "geometry": "rect",
+      "text": "다른 체인에는 게이트할 신원이 없기 때문이다",
+      "textPreview": "다른 체인에는 게이트할 신원이 없기 때문이다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "다른 체인에는 게이트할 신원이 없기 때문이다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "다른 체인에는 게이트할 신원이 없기 때문이다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "다른 체인에는 게이트할 신원이 없기 때문이다",
+              "fontSize": 22.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

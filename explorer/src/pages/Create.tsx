@@ -1,7 +1,12 @@
 import {useMemo, useState} from "react";
 import {Link, useNavigate} from "react-router-dom";
 import {getAddress, isAddress, type Address, type Hex} from "viem";
-import {encodePermissionContext, type Delegation} from "@mapae/sdk";
+import {
+    DELEGATION_TYPES,
+    delegationDomain,
+    encodePermissionContext,
+    type Delegation,
+} from "@mapae/sdk";
 import {ROOT_AUTHORITY, TESTNET_FAUCET_ID, UPBIT_KOREA_ID} from "@mapae/protocol";
 
 import {
@@ -21,7 +26,7 @@ import {
 } from "../components/ui";
 import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
-import {addresses, short} from "../lib/config";
+import {addresses, giwaSepolia, short} from "../lib/config";
 import {readableError, useDojangStatus, useMapaeAccount} from "../lib/account";
 import {
     decodeCondition,
@@ -185,29 +190,17 @@ export default function Create() {
                 signature: "0x",
             };
 
-            // The OWNER signs; the manager validates through the account's ERC-1271. Same digest
-            // the demo script and the Go facilitator compute, from the same SDK module.
+            // The OWNER signs; the manager validates through the account's ERC-1271.
+            //
+            // Domain and types come from the SDK, never from a copy kept here. The SDK's
+            // definitions are the ones pinned byte-for-byte against Solidity by the fixture
+            // test; a second hand-written copy in this file would be pinned to nothing, and if
+            // the two ever drifted a person would sign a payload that verifies nowhere - with
+            // every test still green, because the tests only ever saw the SDK.
             const signature = await wallet.walletClient.signTypedData({
                 account: wallet.address,
-                domain: {
-                    name: "Mapae",
-                    version: "1",
-                    chainId: 91_342,
-                    verifyingContract: addresses.manager,
-                },
-                types: {
-                    Caveat: [
-                        {name: "enforcer", type: "address"},
-                        {name: "terms", type: "bytes"},
-                    ],
-                    Delegation: [
-                        {name: "delegate", type: "address"},
-                        {name: "delegator", type: "address"},
-                        {name: "authority", type: "bytes32"},
-                        {name: "caveats", type: "Caveat[]"},
-                        {name: "salt", type: "uint256"},
-                    ],
-                },
+                domain: delegationDomain(giwaSepolia.id, addresses.manager),
+                types: DELEGATION_TYPES,
                 primaryType: "Delegation",
                 message: {
                     delegate: unsigned.delegate,

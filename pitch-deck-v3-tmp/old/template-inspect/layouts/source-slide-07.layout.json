@@ -1,0 +1,783 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/gnmp4jqx",
+    "id": "gnmp4jqx",
+    "slide": 7,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundColor": "#0A0B0A",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light",
+      "Courier New"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cb2tkvap",
+      "id": "2",
+      "name": "Text 0",
+      "bbox": [
+        76.8,
+        48,
+        1123.2,
+        28.8
+      ],
+      "geometry": "rect",
+      "text": "// WHAT WE BUILT",
+      "textPreview": "// WHAT WE BUILT",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "// WHAT WE BUILT"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "// WHAT WE BUILT",
+          "runs": [
+            {
+              "index": 1,
+              "text": "// WHAT WE BUILT",
+              "fontSize": 14,
+              "typeface": "Courier New",
+              "color": "#C89253"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dcbud0ra",
+      "id": "3",
+      "name": "Text 1",
+      "bbox": [
+        76.8,
+        91.2,
+        1123.2,
+        86.4
+      ],
+      "geometry": "rect",
+      "text": "그 하나를 만들었다",
+      "textPreview": "그 하나를 만들었다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "그 하나를 만들었다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "그 하나를 만들었다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "그 하나를 만들었다",
+              "fontSize": 45.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ydkbm5sv",
+      "id": "4",
+      "name": "Shape 2",
+      "bbox": [
+        76.8,
+        201.6,
+        1123.2,
+        144
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#1E2124",
+      "lineColor": "#2B2E31",
+      "lineWidth": 1
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zedcfa9g",
+      "id": "5",
+      "name": "Text 3",
+      "bbox": [
+        120,
+        225.6,
+        672,
+        48
+      ],
+      "geometry": "rect",
+      "text": "DojangVerifiedEnforcer",
+      "textPreview": "DojangVerifiedEnforcer",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "DojangVerifiedEnforcer"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "DojangVerifiedEnforcer",
+          "runs": [
+            {
+              "index": 1,
+              "text": "DojangVerifiedEnforcer",
+              "fontSize": 29.33,
+              "typeface": "Courier New",
+              "color": "#E3BC85"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kzmdova1",
+      "id": "6",
+      "name": "Text 4",
+      "bbox": [
+        120,
+        280.32,
+        1008,
+        43.2
+      ],
+      "geometry": "rect",
+      "text": "결제 실행 직전, 이 위임을 한 사람이 지금 이 순간 도장을 갖고 있는지 확인한다",
+      "textPreview": "결제 실행 직전, 이 위임을 한 사람이 지금 이 순간 도장을 갖고 있는지 확인한다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결제 실행 직전, 이 위임을 한 사람이 지금 이 순간 도장을 갖고 있는지 확인한다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결제 실행 직전, 이 위임을 한 사람이 지금 이 순간 도장을 갖고 있는지 확인한다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "결제 실행 직전, 이 위임을 한 사람이 지금 이 순간 도장을 갖고 있는지 확인한다",
+              "fontSize": 19.33,
+              "typeface": "Arial",
+              "color": "#D8D4CC"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l0vuh0rm",
+      "id": "7",
+      "name": "Shape 5",
+      "bbox": [
+        76.8,
+        369.6,
+        345.6,
+        139.2
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#16181A",
+      "lineColor": "#2B2E31",
+      "lineWidth": 1
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/eh0ba1sr",
+      "id": "8",
+      "name": "Text 6",
+      "bbox": [
+        107.52,
+        391.68,
+        288,
+        43.2
+      ],
+      "geometry": "rect",
+      "text": "발급이 아니라 사용 시점에 검사",
+      "textPreview": "발급이 아니라 사용 시점에 검사",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "발급이 아니라 사용 시점에 검사"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "발급이 아니라 사용 시점에 검사",
+          "runs": [
+            {
+              "index": 1,
+              "text": "발급이 아니라 사용 시점에 검사",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fi9c369c",
+      "id": "9",
+      "name": "Text 7",
+      "bbox": [
+        107.52,
+        439.68,
+        288,
+        57.6
+      ],
+      "geometry": "rect",
+      "text": "취소와 만료가 즉시 반영된다",
+      "textPreview": "취소와 만료가 즉시 반영된다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "취소와 만료가 즉시 반영된다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "취소와 만료가 즉시 반영된다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "취소와 만료가 즉시 반영된다",
+              "fontSize": 15.33,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/baxkjqlk",
+      "id": "10",
+      "name": "Shape 8",
+      "bbox": [
+        460.8,
+        369.6,
+        345.6,
+        139.2
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#16181A",
+      "lineColor": "#2B2E31",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a9ojq5kz",
+      "id": "11",
+      "name": "Text 9",
+      "bbox": [
+        491.52,
+        391.68,
+        288,
+        43.2
+      ],
+      "geometry": "rect",
+      "text": "발행자를 terms에 담는다",
+      "textPreview": "발행자를 terms에 담는다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "발행자를 terms에 담는다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "발행자를 terms에 담는다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "발행자를 terms에 담는다",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xcz2l03q",
+      "id": "12",
+      "name": "Text 10",
+      "bbox": [
+        491.52,
+        439.68,
+        288,
+        57.6
+      ],
+      "geometry": "rect",
+      "text": "어느 기관의 도장을 요구할지 위임자가 정한다",
+      "textPreview": "어느 기관의 도장을 요구할지 위임자가 정한다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "어느 기관의 도장을 요구할지 위임자가 정한다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "어느 기관의 도장을 요구할지 위임자가 정한다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "어느 기관의 도장을 요구할지 위임자가 정한다",
+              "fontSize": 15.33,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cbq1sv25",
+      "id": "13",
+      "name": "Shape 11",
+      "bbox": [
+        844.8,
+        369.6,
+        345.6,
+        139.2
+      ],
+      "geometry": "roundRect",
+      "fillColor": "#16181A",
+      "lineColor": "#2B2E31",
+      "lineWidth": 1
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/n6x0fqlo",
+      "id": "14",
+      "name": "Text 12",
+      "bbox": [
+        875.52,
+        391.68,
+        288,
+        43.2
+      ],
+      "geometry": "rect",
+      "text": "재위임해도 넓어지지 않는다",
+      "textPreview": "재위임해도 넓어지지 않는다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "재위임해도 넓어지지 않는다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "재위임해도 넓어지지 않는다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "재위임해도 넓어지지 않는다",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/25ojml43",
+      "id": "15",
+      "name": "Text 13",
+      "bbox": [
+        875.52,
+        439.68,
+        288,
+        57.6
+      ],
+      "geometry": "rect",
+      "text": "자식 위임은 부모 범위를 넘을 수 없다",
+      "textPreview": "자식 위임은 부모 범위를 넘을 수 없다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "자식 위임은 부모 범위를 넘을 수 없다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "자식 위임은 부모 범위를 넘을 수 없다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "자식 위임은 부모 범위를 넘을 수 없다",
+              "fontSize": 15.33,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p8fih03e",
+      "id": "16",
+      "name": "Text 14",
+      "bbox": [
+        76.8,
+        537.6,
+        1123.2,
+        38.4
+      ],
+      "geometry": "rect",
+      "text": "나머지 37개는 그대로 가져다 쓴다 — 우리는 표준을 발명하지 않는다",
+      "textPreview": "나머지 37개는 그대로 가져다 쓴다 — 우리는 표준을 발명하지 않는다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "나머지 37개는 그대로 가져다 쓴다 — 우리는 표준을 발명하지 않는다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "나머지 37개는 그대로 가져다 쓴다 — 우리는 표준을 발명하지 않는다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "나머지 37개는 그대로 가져다 쓴다 — 우리는 표준을 발명하지 않는다",
+              "fontSize": 17.33,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

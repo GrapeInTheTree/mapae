@@ -1,0 +1,847 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/hgzapcr6",
+    "id": "hgzapcr6",
+    "slide": 13,
+    "layoutId": "/ppt/slideLayouts/slideLayout1.xml",
+    "layoutName": "DEFAULT",
+    "masterLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+    "backgroundColor": "#0A0B0A",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "Office",
+    "colors": {
+      "accent1": "#4472C4",
+      "accent2": "#ED7D31",
+      "accent3": "#A5A5A5",
+      "accent4": "#FFC000",
+      "accent5": "#5B9BD5",
+      "accent6": "#70AD47",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#44546A",
+      "lt2": "#E7E6E6",
+      "hlink": "#0563C1",
+      "folHlink": "#954F72"
+    },
+    "fontScheme": {
+      "name": "Office",
+      "majorFont": {
+        "latinTypeface": "Calibri Light"
+      },
+      "minorFont": {
+        "latinTypeface": "Calibri"
+      }
+    },
+    "typefaces": [
+      "Arial",
+      "Calibri",
+      "Calibri Light",
+      "Courier New"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "/ppt/slideLayouts/slideLayout1.xml",
+      "name": "DEFAULT",
+      "parentLayoutId": "/ppt/slideMasters/slideMaster1.xml",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "/ppt/slideMasters/slideMaster1.xml",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q50nydsj",
+      "id": "2",
+      "name": "Text 0",
+      "bbox": [
+        76.8,
+        48,
+        1123.2,
+        28.8
+      ],
+      "geometry": "rect",
+      "text": "// SCOPE DISCIPLINE",
+      "textPreview": "// SCOPE DISCIPLINE",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "// SCOPE DISCIPLINE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "// SCOPE DISCIPLINE",
+          "runs": [
+            {
+              "index": 1,
+              "text": "// SCOPE DISCIPLINE",
+              "fontSize": 14,
+              "typeface": "Courier New",
+              "color": "#C89253"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bq9orito",
+      "id": "3",
+      "name": "Text 1",
+      "bbox": [
+        76.8,
+        91.2,
+        1123.2,
+        86.4
+      ],
+      "geometry": "rect",
+      "text": "만들지 않은 것",
+      "textPreview": "만들지 않은 것",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "만들지 않은 것"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "만들지 않은 것",
+          "runs": [
+            {
+              "index": 1,
+              "text": "만들지 않은 것",
+              "fontSize": 45.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o3i5w3ad",
+      "id": "4",
+      "name": "Text 2",
+      "bbox": [
+        81.6,
+        206.4,
+        403.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "지갑",
+      "textPreview": "지갑",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "지갑"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "지갑",
+          "runs": [
+            {
+              "index": 1,
+              "text": "지갑",
+              "fontSize": 21.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p4r6p8by",
+      "id": "5",
+      "name": "Text 3",
+      "bbox": [
+        508.8,
+        209.28,
+        691.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "기와 월렛을 쓴다",
+      "textPreview": "기와 월렛을 쓴다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "기와 월렛을 쓴다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "기와 월렛을 쓴다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "기와 월렛을 쓴다",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/21gnuts7",
+      "id": "6",
+      "name": "Text 4",
+      "bbox": [
+        81.6,
+        266.88,
+        403.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "스테이블코인",
+      "textPreview": "스테이블코인",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "스테이블코인"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "스테이블코인",
+          "runs": [
+            {
+              "index": 1,
+              "text": "스테이블코인",
+              "fontSize": 21.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/32ponyts",
+      "id": "7",
+      "name": "Text 5",
+      "bbox": [
+        508.8,
+        269.76,
+        691.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "원화 스테이블을 기다린다",
+      "textPreview": "원화 스테이블을 기다린다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원화 스테이블을 기다린다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원화 스테이블을 기다린다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "원화 스테이블을 기다린다",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gzy5s3a1",
+      "id": "8",
+      "name": "Text 6",
+      "bbox": [
+        81.6,
+        327.36,
+        403.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "번들러 · 페이마스터",
+      "textPreview": "번들러 · 페이마스터",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "번들러 · 페이마스터"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "번들러 · 페이마스터",
+          "runs": [
+            {
+              "index": 1,
+              "text": "번들러 · 페이마스터",
+              "fontSize": 21.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1076lobm",
+      "id": "9",
+      "name": "Text 7",
+      "bbox": [
+        508.8,
+        330.24,
+        691.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "기와 인프라를 소비한다",
+      "textPreview": "기와 인프라를 소비한다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "기와 인프라를 소비한다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "기와 인프라를 소비한다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "기와 인프라를 소비한다",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hcfy9k3u",
+      "id": "10",
+      "name": "Text 8",
+      "bbox": [
+        81.6,
+        387.84,
+        403.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "위임 표준",
+      "textPreview": "위임 표준",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "위임 표준"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "위임 표준",
+          "runs": [
+            {
+              "index": 1,
+              "text": "위임 표준",
+              "fontSize": 21.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gb6x0zm9",
+      "id": "11",
+      "name": "Text 9",
+      "bbox": [
+        508.8,
+        390.72,
+        691.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "ERC-7710 / 7715를 채택한다",
+      "textPreview": "ERC-7710 / 7715를 채택한다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ERC-7710 / 7715를 채택한다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ERC-7710 / 7715를 채택한다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "ERC-7710 / 7715를 채택한다",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vaxg7ulo",
+      "id": "12",
+      "name": "Text 10",
+      "bbox": [
+        81.6,
+        448.32,
+        403.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "ERC-8004 레지스트리",
+      "textPreview": "ERC-8004 레지스트리",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ERC-8004 레지스트리"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ERC-8004 레지스트리",
+          "runs": [
+            {
+              "index": 1,
+              "text": "ERC-8004 레지스트리",
+              "fontSize": 21.33,
+              "typeface": "Arial",
+              "color": "#F4F1EC",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u9ofyp43",
+      "id": "13",
+      "name": "Text 11",
+      "bbox": [
+        508.8,
+        451.2,
+        691.2,
+        40.32
+      ],
+      "geometry": "rect",
+      "text": "비어 있는 배포는 기여가 아니다",
+      "textPreview": "비어 있는 배포는 기여가 아니다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "비어 있는 배포는 기여가 아니다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "비어 있는 배포는 기여가 아니다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "비어 있는 배포는 기여가 아니다",
+              "fontSize": 18.67,
+              "typeface": "Arial",
+              "color": "#82807A"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t8fy5k3i",
+      "id": "14",
+      "name": "Text 12",
+      "bbox": [
+        76.8,
+        518.4,
+        1123.2,
+        76.8
+      ],
+      "geometry": "rect",
+      "text": "자산 불가지론으로 설계했고 맨몸 ERC-20으로 실증했다\n원화 스테이블 출시 시 주소 교체 외에 프로토콜 변경이 필요 없다",
+      "textPreview": "자산 불가지론으로 설계했고 맨몸 ERC-20으로 실증했다 | 원화 스테이블 출시 시 주소 교체 외에 프로토콜 변경이 필요 없다",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 24,
+        "typeface": "Calibri",
+        "color": "tx1",
+        "alignment": "left",
+        "verticalAlignment": "middle",
+        "wrap": "square",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "자산 불가지론으로 설계했고 맨몸 ERC-20으로 실증했다"
+          },
+          {
+            "index": 2,
+            "text": "원화 스테이블 출시 시 주소 교체 외에 프로토콜 변경이 필요 없다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "자산 불가지론으로 설계했고 맨몸 ERC-20으로 실증했다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "자산 불가지론으로 설계했고 맨몸 ERC-20으로 실증했다",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#E3BC85"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "원화 스테이블 출시 시 주소 교체 외에 프로토콜 변경이 필요 없다",
+          "runs": [
+            {
+              "index": 1,
+              "text": "원화 스테이블 출시 시 주소 교체 외에 프로토콜 변경이 필요 없다",
+              "fontSize": 18,
+              "typeface": "Arial",
+              "color": "#E3BC85"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ]
+    }
+  ],
+  "composeRuns": []
+}

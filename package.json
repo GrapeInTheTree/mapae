@@ -7,7 +7,8 @@
     "demo": "tsx scripts/demo.ts",
     "trace": "tsx scripts/trace.ts",
     "preflight": "tsx scripts/preflight.ts",
-    "redeem": "tsx scripts/redeem.ts"
+    "redeem": "tsx scripts/redeem.ts",
+    "verify-signing": "tsx scripts/verify-signing.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
