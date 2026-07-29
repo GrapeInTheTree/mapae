@@ -2,7 +2,7 @@ import {useEffect, useState} from "react";
 import {Link} from "react-router-dom";
 import type {Hex} from "viem";
 import {fetchDelegationList, type DelegationSummary} from "../lib/data";
-import {Card, CopyButton, Mono, Spinner, StatusPill, Tag, relTime} from "../components/ui";
+import {Card, CopyButton, Mono, Pagination, Spinner, StatusPill, Tag, relTime} from "../components/ui";
 import {useLang} from "../i18n";
 import {short} from "../lib/config";
 import {fmtDuration, fmtToken, issuerName, type Condition} from "../lib/policy";
@@ -21,10 +21,13 @@ import * as store from "../lib/store";
  * server, no stored copy - which is the claim the whole system makes about itself.
  */
 
+const PER_PAGE = 8;
+
 export default function Delegations() {
     const {t, lang} = useLang();
     const [list, setList] = useState<DelegationSummary[] | null>(null);
     const [failed, setFailed] = useState(false);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         fetchDelegationList()
@@ -58,11 +61,21 @@ export default function Delegations() {
                     {t("dlist", "empty")}
                 </div>
             ) : (
-                <div className="space-y-3">
-                    {list.map((d) => (
-                        <Row key={d.hash} d={d} />
-                    ))}
-                </div>
+                <>
+                    <div className="space-y-3">
+                        {list.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((d) => (
+                            <Row key={d.hash} d={d} />
+                        ))}
+                    </div>
+                    <Pagination
+                        page={page}
+                        pages={Math.ceil(list.length / PER_PAGE)}
+                        onPage={(p) => {
+                            setPage(p);
+                            window.scrollTo({top: 0});
+                        }}
+                    />
+                </>
             )}
         </div>
     );

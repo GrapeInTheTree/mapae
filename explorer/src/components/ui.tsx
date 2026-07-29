@@ -530,6 +530,75 @@ export function Steps({
     );
 }
 
+/**
+ * Page numbers, windowed: first and last always visible, a two-wide window around the current
+ * page, ellipses where pages are elided. Client-side - both catalogues already hold the full
+ * fetched list, so a page turn costs nothing and never hits the RPC.
+ */
+export function Pagination({
+    page,
+    pages,
+    onPage,
+}: {
+    page: number;
+    pages: number;
+    onPage: (p: number) => void;
+}) {
+    if (pages <= 1) return null;
+
+    const items: (number | "…")[] = [];
+    for (let p = 1; p <= pages; p++) {
+        if (p === 1 || p === pages || Math.abs(p - page) <= 1) {
+            items.push(p);
+        } else if (items[items.length - 1] !== "…") {
+            items.push("…");
+        }
+    }
+
+    const btn =
+        "flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] transition-colors";
+    return (
+        <nav className="mt-5 flex items-center justify-center gap-1" aria-label="pagination">
+            <button
+                onClick={() => onPage(page - 1)}
+                disabled={page === 1}
+                aria-label="previous page"
+                className={`${btn} border border-line text-ink-2 enabled:hover:border-line-strong enabled:hover:text-ink disabled:opacity-35`}
+            >
+                ‹
+            </button>
+            {items.map((it, i) =>
+                it === "…" ? (
+                    <span key={`e${i}`} className="px-1.5 text-[13px] text-mute">
+                        …
+                    </span>
+                ) : (
+                    <button
+                        key={it}
+                        onClick={() => onPage(it)}
+                        aria-current={it === page ? "page" : undefined}
+                        className={`${btn} tnum ${
+                            it === page
+                                ? "bg-bronze-solid font-medium text-paper"
+                                : "border border-line text-ink-2 hover:border-line-strong hover:text-ink"
+                        }`}
+                    >
+                        {it}
+                    </button>
+                ),
+            )}
+            <button
+                onClick={() => onPage(page + 1)}
+                disabled={page === pages}
+                aria-label="next page"
+                className={`${btn} border border-line text-ink-2 enabled:hover:border-line-strong enabled:hover:text-ink disabled:opacity-35`}
+            >
+                ›
+            </button>
+        </nav>
+    );
+}
+
 /* --------------------------------- atoms ---------------------------------- */
 
 /**

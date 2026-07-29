@@ -131,9 +131,10 @@ export default function Home() {
             <section className="mx-auto max-w-6xl px-6 py-12">
                 {/* items-stretch + flex columns: the two outer frames are always exactly the
                     same height, and every row in BOTH cards is the same fixed 54px - rows that
-                    stretched to fill made the two sides read as different components. When one
-                    side has fewer rows the gap simply stays empty above its footer; an honest
-                    blank beats rows of two different sizes. */}
+                    stretched to fill made the two sides read as different components. Ten rows
+                    are visible (540px); anything beyond scrolls INSIDE the card, so the frame
+                    never grows and the two sides never disagree. When one side has fewer rows
+                    the gap simply stays empty above its footer. */}
                 <div className="grid items-stretch gap-6 lg:grid-cols-2">
                     <div className="flex flex-col">
                         <div className="mb-3 flex items-baseline justify-between gap-4">
@@ -157,8 +158,8 @@ export default function Home() {
                                     {t("dlist", "empty")}
                                 </div>
                             ) : (
-                                <div className="divide-y divide-line/60">
-                                    {dlist.slice(0, 6).map((d) => (
+                                <div className="max-h-[540px] divide-y divide-line/60 overflow-y-auto">
+                                    {dlist.slice(0, 25).map((d) => (
                                         <DelegationMini key={d.hash} d={d} />
                                     ))}
                                 </div>
@@ -176,11 +177,12 @@ export default function Home() {
                             <h2 className="text-[17px] font-semibold text-ink">
                                 {t("home", "ledger")}
                             </h2>
-                            <span className="hidden text-[12.5px] text-mute sm:inline">
-                                {lang === "ko"
-                                    ? "거부도 기록입니다 — 그게 이 원장의 절반입니다"
-                                    : "Refusals are records too - half of this ledger"}
-                            </span>
+                            <Link
+                                to="/activity"
+                                className="text-[12.5px] text-mute transition-colors hover:text-bronze-bright"
+                            >
+                                {t("home", "viewAll")} →
+                            </Link>
                         </div>
                         <Card className="flex flex-1 flex-col overflow-hidden">
                             {feedError ? (
@@ -199,10 +201,10 @@ export default function Home() {
                                     {t("home", "empty")}
                                 </div>
                             ) : (
-                                <div className="divide-y divide-line/60">
+                                <div className="max-h-[540px] divide-y divide-line/60 overflow-y-auto">
                                     {/* The whole row is the target - a 120px hash on a full-width
                                         row is a miss waiting to happen. */}
-                                    {feed.slice(0, 6).map((f) => (
+                                    {feed.slice(0, 25).map((f) => (
                                         <Link
                                             key={f.hash}
                                             to={`/tx/${f.hash}`}

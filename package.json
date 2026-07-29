@@ -8,6 +8,7 @@
     "trace": "tsx scripts/trace.ts",
     "preflight": "tsx scripts/preflight.ts",
     "redeem": "tsx scripts/redeem.ts",
+    "fleet": "tsx scripts/fleet.ts",
     "verify-signing": "tsx scripts/verify-signing.ts",
     "check-verified": "tsx scripts/check-verified.ts"
   },

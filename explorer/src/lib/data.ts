@@ -186,6 +186,73 @@ export function fetchStats(): Promise<Stats> {
     return statsCache;
 }
 
+/* --------------------------------- the activity list --------------------------------- */
+
+export interface ActivityItem {
+    hash: Hex;
+    ok: boolean;
+    timestamp: string;
+    from: Address;
+    /** The transfer this attempt carried, decoded from calldata - present for refusals too. */
+    payment?: {token: Address; to: Address; amount: bigint};
+    delegationHash?: Hex;
+    batch: number;
+}
+
+/** The feed with its meaning attached: every attempt against the manager, with the amount, the
+ *  payee and the authority it invoked - all recovered from calldata, so a refused attempt is as
+ *  legible as a settled one. */
+export async function fetchActivity(): Promise<ActivityItem[]> {
+    const res = await fetch(
+        `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
+    );
+    const data = await res.json();
+    const txs = ((data.items ?? []) as {
+        hash: Hex;
+        status: string;
+        timestamp: string;
+        from: {hash: Address};
+        raw_input?: Hex;
+    }[]).filter((t) => t.raw_input?.startsWith("0xcef6d209"));
+
+    return txs.map((t) => {
+        const item: ActivityItem = {
+            hash: t.hash,
+            ok: t.status === "ok",
+            timestamp: t.timestamp,
+            from: t.from.hash,
+            batch: 0,
+        };
+        try {
+            const {args} = decodeFunctionData({abi: managerAbi, data: t.raw_input!});
+            const [contexts, , execs] = args as [Hex[], Hex[], Hex[]];
+            item.batch = contexts.length;
+            const [chain] = decodeAbiParameters(DELEGATION_PARAMS, contexts[0]);
+            const root = chain[chain.length - 1];
+            item.delegationHash = delegationHash({
+                delegate: root.delegate,
+                delegator: root.delegator,
+                authority: root.authority,
+                caveats: root.caveats.map((c) => ({...c})),
+                salt: root.salt,
+                signature: root.signature,
+            });
+            const exec = execs[0];
+            const callData = exec.slice(2 + 40 + 64);
+            if (callData.startsWith("a9059cbb")) {
+                item.payment = {
+                    token: `0x${exec.slice(2, 42)}` as Address,
+                    to: `0x${callData.slice(8 + 24, 8 + 64)}` as Address,
+                    amount: BigInt(`0x${callData.slice(8 + 64, 8 + 128)}`),
+                };
+            }
+        } catch {
+            /* undecodable input: the row still shows status, hash and time */
+        }
+        return item;
+    });
+}
+
 /* ------------------------------- the delegation list ------------------------------- */
 
 export interface DelegationSummary {
