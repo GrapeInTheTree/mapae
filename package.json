@@ -5,7 +5,9 @@
   "scripts": {
     "fixtures": "forge script script/GenFixtures.s.sol && tsx sdk/test/encoding.test.ts && tsx sdk/test/policy.test.ts",
     "demo": "tsx scripts/demo.ts",
-    "trace": "tsx scripts/trace.ts"
+    "trace": "tsx scripts/trace.ts",
+    "preflight": "tsx scripts/preflight.ts",
+    "redeem": "tsx scripts/redeem.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
