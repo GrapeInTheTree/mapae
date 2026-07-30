@@ -22,6 +22,7 @@ export const addresses = {
     verifiedCodeEnforcer: (deployments as Record<string, unknown>).VerifiedCodeEnforcer as `0x${string}`,
     mockKRW: deployments.MockKRW as `0x${string}`,
     dojangScroll: deployments.DojangScroll as `0x${string}`,
+    giwaFaucetExtension: deployments.GiwaFaucetExtension as `0x${string}`,
     eas: "0x4200000000000000000000000000000000000021" as `0x${string}`,
     attesterBook: "0xDA282E89244424E297Ce8e78089B54D043FB28B6" as `0x${string}`,
 } as const;

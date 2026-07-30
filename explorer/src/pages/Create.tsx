@@ -28,7 +28,7 @@ import {
 import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
 import {addresses, giwaSepolia, short} from "../lib/config";
-import {readableError, useDojangStatus, useMapaeAccount} from "../lib/account";
+import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount} from "../lib/account";
 import {
     decodeCondition,
     encodeConditions,
@@ -122,10 +122,11 @@ export default function Create() {
     const set = <K extends keyof PresetForm>(k: K, v: PresetForm[K]) =>
         setForm((f) => ({...f, [k]: v}));
 
-    const {verified, loading: checkingIdentity} = useDojangStatus(
+    const {verified, loading: checkingIdentity, refresh: refreshIdentity} = useDojangStatus(
         wallet.address ?? null,
         form.issuer,
     );
+    const dojang = useIssueDojang();
 
     /**
      * Syntactic validity, not checksum validity.
@@ -906,9 +907,35 @@ export default function Create() {
                     )}
 
                     {isVerified === false && (
-                        <p className="mt-5 rounded-lg border border-warn/40 bg-warn/10 p-3 text-[12.5px] leading-relaxed text-paper-ink-2">
-                            {t("create", "notVerified")}
-                        </p>
+                        <div className="mt-5 rounded-lg border border-warn/40 bg-warn/10 p-3">
+                            <p className="text-[12.5px] leading-relaxed text-paper-ink-2">
+                                {t("create", "notVerified")}
+                            </p>
+                            {/* Only the testnet issuer is self-service; an Upbit Dojang cannot be
+                                clicked into existence, and offering the button there would be a
+                                lie the chain immediately exposes. */}
+                            {f.issuer === TESTNET_FAUCET_ID && (
+                                <div className="mt-2.5 border-t border-warn/30 pt-2.5">
+                                    <button
+                                        onClick={async () => {
+                                            if (await dojang.issue()) refreshIdentity();
+                                        }}
+                                        disabled={dojang.issuing || !wallet.onGiwa}
+                                        className="rounded-lg bg-bronze-solid px-3 py-1.5 text-[12.5px] font-medium text-paper transition-colors hover:bg-bronze-solid-2 disabled:opacity-50"
+                                    >
+                                        {dojang.issuing
+                                            ? t("create", "gettingDojang")
+                                            : t("create", "getDojang")}
+                                    </button>
+                                    <span className="ml-2.5 text-[11.5px] text-paper-mute">
+                                        {t("create", "getDojangHint")}
+                                    </span>
+                                    {dojang.error && (
+                                        <p className="mt-1.5 text-[12px] text-reject-paper">{dojang.error}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 

@@ -10,7 +10,7 @@ import {ConnectButton} from "../components/Connect";
 import {useLang} from "../i18n";
 import {addresses, BLOCKSCOUT, short} from "../lib/config";
 import {client} from "../lib/data";
-import {readableError, useDojangStatus, useMapaeAccount, useTokenBalance} from "../lib/account";
+import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount, useTokenBalance} from "../lib/account";
 import {decodeConditions, fmtDate, fmtToken, renderCondition, type Condition} from "../lib/policy";
 import * as store from "../lib/store";
 import {useWallet} from "../lib/wallet";
@@ -45,7 +45,8 @@ export default function Permissions() {
     const [error, setError] = useState<string | null>(null);
 
     const balance = useTokenBalance(addresses.mockKRW, account.address);
-    const {verified} = useDojangStatus(wallet.address ?? null, TESTNET_FAUCET_ID);
+    const {verified, refresh: refreshIdentity} = useDojangStatus(wallet.address ?? null, TESTNET_FAUCET_ID);
+    const dojang = useIssueDojang();
 
     const reload = useCallback(() => {
         setItems(store.list(account.address ?? undefined));
@@ -271,6 +272,20 @@ export default function Permissions() {
                             </>
                         )}
                     </div>
+                    {verified === false && (
+                        <button
+                            onClick={async () => {
+                                if (await dojang.issue()) refreshIdentity();
+                            }}
+                            disabled={dojang.issuing || !wallet.onGiwa}
+                            className="mt-2 rounded-md border border-bronze-dim px-2.5 py-1 text-[11.5px] font-medium text-bronze-bright transition-colors hover:bg-bronze/10 disabled:opacity-50"
+                        >
+                            {dojang.issuing ? t("create", "gettingDojang") : t("create", "getDojang")}
+                        </button>
+                    )}
+                    {dojang.error && (
+                        <p className="mt-1.5 text-[11.5px] text-reject">{dojang.error}</p>
+                    )}
                 </Card>
             </div>
         );

@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from "react";
 import {hashTypedData, type Address, type Hex} from "viem";
-import {factoryAbi, dojangScrollAbi, erc20Abi} from "@mapae/abi";
+import {factoryAbi, dojangScrollAbi, erc20Abi, faucetExtensionAbi} from "@mapae/abi";
+import {TESTNET_FAUCET_ID} from "@mapae/protocol";
 import {addresses, giwaSepolia} from "./config";
 import {client} from "./data";
 import {useWallet} from "./wallet";
@@ -159,6 +160,7 @@ export function useMapaeAccount(): AccountState {
 export function useDojangStatus(principal: Address | null, attesterId: Hex | null) {
     const [verified, setVerified] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(false);
+    const [tick, setTick] = useState(0);
 
     useEffect(() => {
         if (!principal || !attesterId) {
@@ -186,9 +188,66 @@ export function useDojangStatus(principal: Address | null, attesterId: Hex | nul
         return () => {
             cancelled = true;
         };
-    }, [principal, attesterId]);
+    }, [principal, attesterId, tick]);
 
-    return {verified, loading};
+    return {verified, loading, refresh: () => setTick((t) => t + 1)};
+}
+
+/**
+ * Self-service Dojang issuance, in the page instead of a cast command.
+ *
+ * The first real user to walk the MCP flow hit this exact wall: a fresh wallet has no
+ * attestation, and the only issuance path was a CLI call with a private key on the command
+ * line. The connected wallet can simply make that call itself - the fee is read from the
+ * contract at click time, never hardcoded, and the attestation lands on msg.sender, which is
+ * exactly the signing principal the delegation's identity condition names.
+ */
+export function useIssueDojang() {
+    const wallet = useWallet();
+    const [issuing, setIssuing] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const issue = async (): Promise<boolean> => {
+        if (!wallet.walletClient || !wallet.address) return false;
+        setIssuing(true);
+        setError(null);
+        try {
+            const fee = await client.readContract({
+                address: addresses.giwaFaucetExtension,
+                abi: faucetExtensionAbi,
+                functionName: "fee",
+            });
+            const hash = await wallet.walletClient.writeContract({
+                address: addresses.giwaFaucetExtension,
+                abi: faucetExtensionAbi,
+                functionName: "payAndIssueEAS",
+                value: fee,
+                account: wallet.address,
+                chain: null,
+            });
+            await client.waitForTransactionReceipt({hash, timeout: 90_000});
+            // The load-balanced RPC can serve a stale read for a few blocks; poll until the
+            // attestation is visible so the UI flips exactly once, to a true state.
+            for (let i = 0; i < 10; i++) {
+                const live = await client.readContract({
+                    address: addresses.dojangScroll,
+                    abi: dojangScrollAbi,
+                    functionName: "isVerified",
+                    args: [wallet.address, TESTNET_FAUCET_ID],
+                });
+                if (live) return true;
+                await new Promise((r) => setTimeout(r, 1500));
+            }
+            return true;
+        } catch (e) {
+            setError(readableError(e));
+            return false;
+        } finally {
+            setIssuing(false);
+        }
+    };
+
+    return {issue, issuing, error};
 }
 
 export function useTokenBalance(token: Address | null, holder: Address | null) {

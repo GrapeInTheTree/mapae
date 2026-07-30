@@ -122,6 +122,9 @@ export const en = {
         creatingAccount: "Creating your account…",
         accountHint: "A Mapae account holds the funds. You keep the identity - your Dojang attestation stays on your own address, because an exchange attests people, never fresh contracts.",
         notVerified: "This address holds no live Dojang attestation from the issuer you selected. You can still sign, but every payment will be refused until it does.",
+        getDojang: "Get a testnet Dojang",
+        getDojangHint: "Self-service - your wallet shows the issuance fee before you confirm",
+        gettingDojang: "Issuing your Dojang…",
         verified: "Dojang verified",
         checking: "Checking identity…",
 
@@ -473,6 +476,9 @@ export const ko: Catalog = {
         creatingAccount: "계정을 만드는 중…",
         accountHint: "마패 계정이 자금을 보관합니다. 신원은 당신에게 남습니다 — 도장 attestation은 당신 주소에 그대로 있습니다. 거래소는 사람에게 발급하지, 갓 배포된 컨트랙트에 발급하지 않기 때문입니다.",
         notVerified: "이 주소에는 선택한 발급자의 유효한 도장이 없습니다. 서명은 할 수 있지만, 도장이 생기기 전까지 모든 결제가 거부됩니다.",
+        getDojang: "테스트넷 도장 받기",
+        getDojangHint: "셀프서비스 — 발급 수수료는 확인 전에 지갑에 표시됩니다",
+        gettingDojang: "도장을 발급하는 중…",
         verified: "도장 검증됨",
         checking: "신원 확인 중…",
 
