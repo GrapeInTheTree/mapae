@@ -152,7 +152,7 @@ function card(s, x, y, w, h, opts = {}) {
         x: M + 0.42, y: 3.06, w: CW - 0.84, h: 0.35, margin: 0, fontFace: KR, fontSize: 12.5, color: C.mute,
     });
 
-    card(s, M, 3.95, CW, 1.95, {line: C.bronzeDim});
+    card(s, M, 3.95, CW, 1.78, {line: C.bronzeDim});
     s.addText("기와 + 마패", {x: M + 0.42, y: 4.18, w: 2.4, h: 0.3, margin: 0, fontFace: MONO, fontSize: 11, color: C.bronzeBright, charSpacing: 1});
     s.addText([
         {text: "결제  →  ", options: {color: C.ink2}},
