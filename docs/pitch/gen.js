@@ -622,22 +622,26 @@ function card(s, x, y, w, h, opts = {}) {
     const s = slide("// APPENDIX A — CONTRACTS");
     title(s, "컨트랙트 전표 — 8개 전수 소스 검증", {fontSize: 24});
     const rows = [
-        ["MapaeDelegationManager", "0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd"],
-        ["MapaeAccountFactory", "0x157aF4D7b3f52685c817d5558b3468caD9b61299"],
-        ["DojangVerifiedEnforcer  ★기여물", "0xb2906a5079702B82C2973423d8cf91e8B41e6371"],
-        ["AllowedPayeeEnforcer  ★오리지널", "0x7eF0f193B721B1749d890F1e231C8074670f1bD1"],
-        ["ERC20PeriodTransferEnforcer  (MetaMask 감사본 vendored)", "0xE33ba891fa502A075D3E422258723eF4cB6AC892"],
-        ["TimestampEnforcer  (MetaMask 감사본 vendored)", "0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02"],
-        ["VerifiedCodeEnforcer  ★오리지널", "0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e"],
-        ["MockKRW  (자산 불가지론의 placeholder)", "0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B"],
+        ["MapaeDelegationManager", "자체 작성 · ERC-7710 호환", "0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd"],
+        ["MapaeAccountFactory", "자체 설계 · EIP-712 소유자 결박", "0x157aF4D7b3f52685c817d5558b3468caD9b61299"],
+        ["DojangVerifiedEnforcer", "★ 어디에도 없던 조건 — 기여물", "0xb2906a5079702B82C2973423d8cf91e8B41e6371"],
+        ["AllowedPayeeEnforcer", "★ 어디에도 없던 조건", "0x7eF0f193B721B1749d890F1e231C8074670f1bD1"],
+        ["ERC20PeriodTransferEnforcer", "MetaMask 감사본 무수정 vendored", "0xE33ba891fa502A075D3E422258723eF4cB6AC892"],
+        ["TimestampEnforcer", "MetaMask 감사본 무수정 vendored", "0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02"],
+        ["VerifiedCodeEnforcer", "★ 어디에도 없던 조건", "0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e"],
+        ["MockKRW", "자체 작성 · 자산 불가지론의 placeholder", "0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B"],
     ];
-    rows.forEach(([n, a], i) => {
+    rows.forEach(([n, tag, a], i) => {
         const y = 2.0 + i * 0.56;
-        s.addText(n, {x: M, y, w: 6.0, h: 0.45, margin: 0, fontFace: KR, fontSize: 12.5, color: C.bone});
-        s.addText(a, {x: 7.0, y: y + 0.03, w: 5.4, h: 0.4, margin: 0, fontFace: MONO, fontSize: 11, color: C.ink2});
+        s.addText(n, {x: M, y, w: 3.5, h: 0.45, margin: 0, fontFace: KR, fontSize: 12.5, color: C.bone});
+        s.addText(tag, {
+            x: 4.35, y: y + 0.03, w: 3.15, h: 0.4, margin: 0, fontFace: KR, fontSize: 10.5,
+            color: tag.startsWith("★") ? C.bronzeBright : tag.includes("vendored") ? C.mute : C.ink2,
+        });
+        s.addText(a, {x: 7.6, y: y + 0.03, w: 4.85, h: 0.4, margin: 0, fontFace: MONO, fontSize: 10.5, color: C.ink2});
     });
-    s.addText("검증 상태는 pnpm check-verified 가 Blockscout API에서 매번 다시 확인한다 — 화면이 아니라 API의 is_verified 를 읽는다.", {
-        x: M, y: 6.6, w: CW, h: 0.35, margin: 0, fontFace: KR, fontSize: 11.5, color: C.mute,
+    s.addText("vendored 2건 외 여섯은 전부 자체 작성이다. ★는 저작 표시가 아니라 “배포된 어떤 프레임워크에도 없는 조건”이라는 주장이며 — 감사본이 무수정으로 도는 것 자체가 호환성 증명이다. 검증 상태는 pnpm check-verified 가 Blockscout API의 is_verified 로 매번 다시 확인한다.", {
+        x: M, y: 6.42, w: CW, h: 0.7, margin: 0, fontFace: KR, fontSize: 11, color: C.mute, lineSpacingMultiple: 1.3,
     });
 }
 
