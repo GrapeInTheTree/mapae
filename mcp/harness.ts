@@ -99,11 +99,13 @@ async function main() {
     console.log(`human issued: account ${ACCOUNT}, merchant ${merchant}, cap 2000/day`);
 
     /* -------------------------- phase 2: the client ------------------------- */
+    // Deliberately NO context in the env: the harness hands it over mid-conversation via
+    // load_context, the way a human pasting into a chat would.
     const child = spawn("node", ["/Users/ahn_euijin/mapae/mcp/dist/index.js"], {
         env: {
             ...process.env,
             MAPAE_AGENT_PRIVATE_KEY: process.env.AGENT_PRIVATE_KEY,
-            MAPAE_PERMISSION_CONTEXT: context,
+            MAPAE_PERMISSION_CONTEXT: "",
         },
         stdio: ["pipe", "pipe", "inherit"],
     });
@@ -157,6 +159,10 @@ async function main() {
     const tools = await request("tools/list", {});
     console.log(`tools: ${tools.result.tools.map((t: {name: string}) => t.name).join(", ")}`);
 
+    const empty = await call("list_permissions");
+    if (!empty.includes("No permission contexts")) throw new Error("expected empty start");
+    const loaded = await call("load_context", {context});
+    if (!loaded.includes('"forThisAgent": true')) throw new Error("load_context failed");
     await call("list_permissions");
     await call("check_budget");
     await call("request_permission", {

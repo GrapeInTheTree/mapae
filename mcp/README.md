@@ -19,10 +19,15 @@ claude mcp add mapae \
 | Tool | Signs with | What it does |
 |---|---|---|
 | `request_permission` | nothing | Composes a policy and returns a prefilled link **for the human to review and sign in their own wallet** |
+| `load_context` | nothing | Accepts the context the human hands back in conversation — the whole grant loop never leaves the chat |
 | `list_permissions` | nothing | Held authorities with live on-chain state (disabled? identity live? budget left?) |
 | `check_budget` | nothing | Remaining period cap, read from the enforcer |
 | `pay` | agent key | Spends within the signed policy — **payee and token come from the policy, not from arguments** |
 | `redelegate` | agent key | Signs a *narrower* child authority to a sub-agent, no transaction |
+
+The human's whole job is: click the link the agent composed, read the policy as a sentence, sign
+in their own wallet, paste the context back. Composition knowledge lives with the agent; judgment
+stays with the human.
 
 There is deliberately no `issue` tool. Issuance is the principal's EIP-712 signature, and holding
 that key here would hand the agent the wallet — the exact thing Mapae exists to prevent. The hand

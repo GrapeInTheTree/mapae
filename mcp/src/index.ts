@@ -104,24 +104,27 @@ interface Held {
     conditions: Condition[];
 }
 
-/** Contexts are handed in at startup and never fetched from anywhere: the agent holds exactly
- *  what a human (or a parent agent) chose to give it. */
+function decodeHeld(context: Hex): Held {
+    const [chain] = decodeAbiParameters(DELEGATION_PARAMS, context) as unknown as [Delegation[]];
+    const root = chain[chain.length - 1];
+    return {
+        context,
+        chain,
+        root,
+        leaf: chain[0],
+        hash: delegationHash(root),
+        conditions: decodeConditions(root.caveats, BOOK),
+    };
+}
+
+/** Contexts are handed in - at startup via env, or mid-conversation via load_context - and never
+ *  fetched from anywhere: the agent holds exactly what a human (or a parent agent) chose to give
+ *  it, and cannot enumerate what else that human has granted. */
 const held: Held[] = (process.env.MAPAE_PERMISSION_CONTEXT ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter((s) => s.startsWith("0x"))
-    .map((context) => {
-        const [chain] = decodeAbiParameters(DELEGATION_PARAMS, context as Hex) as unknown as [Delegation[]];
-        const root = chain[chain.length - 1];
-        return {
-            context: context as Hex,
-            chain,
-            root,
-            leaf: chain[0],
-            hash: delegationHash(root),
-            conditions: decodeConditions(root.caveats, BOOK),
-        };
-    });
+    .map((s) => decodeHeld(s as Hex));
 
 const pick = (index?: number): Held => {
     const h = held[index ?? 0];
@@ -222,8 +225,8 @@ server.tool(
     async () => {
         if (held.length === 0)
             return text(
-                "No permission contexts loaded. A human issues one at " +
-                    `${APP_URL}/create and the context goes into MAPAE_PERMISSION_CONTEXT - use request_permission to compose the ask.`,
+                "No permission contexts held. Compose the ask with request_permission, have the " +
+                    `human sign it at ${APP_URL}/create, then hand the issued context to load_context.`,
             );
         const out = await Promise.all(
             held.map(async (h, index) => {
@@ -383,6 +386,33 @@ server.tool(
         return text({
             askTheHuman: `${APP_URL}/create?${q.toString()}`,
             note: "The human reviews the policy as a sentence and signs in their own wallet; nothing is issued until they do. Once issued, they hand back the permission context.",
+        });
+    },
+);
+
+server.tool(
+    "load_context",
+    "Load a permission context the human just handed over in conversation - the step after they signed what request_permission asked for. Pasting it here is safe by construction: a context is only spendable by the delegate it names, so it is a capability for that agent alone, not a secret.",
+    {context: z.string().describe("The permission context hex, copied from the Composer's issued screen")},
+    async ({context}) => {
+        if (!context.startsWith("0x")) return text({error: "not a permission context (expected 0x…)"});
+        let h: Held;
+        try {
+            h = decodeHeld(context as Hex);
+        } catch {
+            return text({error: "could not decode - copy the whole context, unmodified"});
+        }
+        const existing = held.findIndex((x) => x.hash === h.hash && x.leaf.delegate === h.leaf.delegate);
+        if (existing >= 0) return text({index: existing, note: "already held"});
+        held.push(h);
+        const live = await liveState(h);
+        return text({
+            index: held.length - 1,
+            delegationHash: h.hash,
+            forThisAgent: h.leaf.delegate.toLowerCase() === agent.address.toLowerCase(),
+            conditions: h.conditions.map(describe),
+            remainingThisPeriod: live.available === null ? null : fmtWon(live.available),
+            note: "Held for this session. To keep it across restarts, add it to MAPAE_PERMISSION_CONTEXT.",
         });
     },
 );
