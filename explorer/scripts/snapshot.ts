@@ -1,7 +1,7 @@
 /**
  * Build-time checkpoint for the explorer's aggregate statistics.
  *
- *   pnpm snapshot        (run before每 build; CI does it automatically)
+ *   pnpm snapshot        (runs before every build - the build script invokes it)
  *
  * Why this exists, with the arithmetic:
  *
