@@ -1,5 +1,5 @@
 import {useMemo, useState} from "react";
-import {Link, useNavigate} from "react-router-dom";
+import {Link, useNavigate, useSearchParams} from "react-router-dom";
 import {getAddress, isAddress, type Address, type Hex} from "viem";
 import {
     DELEGATION_TYPES,
@@ -75,13 +75,43 @@ export default function Create() {
 
     const p = preset(presetId);
     const presetMeta = usePreset(presetId);
-    const [form, setForm] = useState<PresetForm>(() => ({
-        agentName: "",
-        agent: "",
-        merchantName: "",
-        merchant: "",
-        ...preset("api").defaults,
-    }));
+    /**
+     * The ERC-7715 request path, over a URL.
+     *
+     * An agent (the mapae-mcp request_permission tool, or anything else) may COMPOSE a policy,
+     * but only a human can grant one - so the agent's ask arrives as query params that do
+     * nothing except prefill this form. The human still reads the sentence and still signs in
+     * their own wallet; a malicious link can at worst propose terms, never accept them. Values
+     * are validated the same way typed input is, and anything malformed falls back silently.
+     */
+    const [params] = useSearchParams();
+    const [form, setForm] = useState<PresetForm>(() => {
+        const base: PresetForm = {
+            agentName: "",
+            agent: "",
+            merchantName: "",
+            merchant: "",
+            ...preset("api").defaults,
+        };
+        const num = (k: string): bigint | null => {
+            const v = params.get(k);
+            return v && /^\d{1,12}$/.test(v) ? BigInt(v) : null;
+        };
+        const addr = (k: string): Address | null => {
+            const v = params.get(k);
+            return v && isAddress(v, {strict: false}) ? (v as Address) : null;
+        };
+        return {
+            ...base,
+            agentName: params.get("agentName")?.slice(0, 64) ?? base.agentName,
+            agent: addr("agent") ?? base.agent,
+            merchant: addr("merchant") ?? base.merchant,
+            merchantName: params.get("merchantName")?.slice(0, 64) ?? base.merchantName,
+            amount: num("amount") ?? base.amount,
+            period: num("period") ?? base.period,
+            validDays: num("validDays") ? Number(num("validDays")) : base.validDays,
+        };
+    });
 
     // Switching preset resets only the policy defaults; who the agent is survives the change.
     function choosePreset(id: PresetId) {
