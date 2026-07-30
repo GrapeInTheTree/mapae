@@ -56,9 +56,14 @@ function Header() {
         }`;
 
     return (
-        <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
-            <div className="mx-auto flex h-14 max-w-6xl items-stretch gap-8 px-6">
-                <Link to="/" className="flex shrink-0 items-center">
+        /* z-30: everything inside pages stays below z-10, so nothing scrolling past can paint
+           over the chrome - the flow diagram's gates once did exactly that at a tied z-index. */
+        <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
+            {/* One row on md+; on a phone the nav takes a second row (order-last + w-full) -
+                squeezing three tracked-caps labels beside the logo and the wallet chip forced
+                the whole page to scroll sideways. */}
+            <div className="mx-auto flex max-w-6xl flex-wrap items-stretch px-4 sm:px-6 md:h-14 md:flex-nowrap md:gap-8">
+                <Link to="/" className="flex h-12 shrink-0 items-center md:h-auto">
                     <Logo px={21} />
                 </Link>
 
@@ -67,7 +72,7 @@ function Header() {
                     whole header reflows the moment someone switches - the chrome moving is a worse
                     cost than the labels being English. It is also the convention GIWA's own site
                     follows. Everything below the header is fully localised. */}
-                <nav className="flex items-stretch gap-7">
+                <nav className="order-last flex h-11 w-full items-stretch justify-center gap-8 md:order-none md:h-auto md:w-auto md:justify-start md:gap-7">
                     <NavLink to="/" end className={link}>
                         Explorer
                     </NavLink>
@@ -79,7 +84,7 @@ function Header() {
                     </NavLink>
                 </nav>
 
-                <div className="ml-auto flex items-center gap-3">
+                <div className="ml-auto flex h-12 items-center gap-3 md:h-auto">
                     {/* Tabular figures, so a rising block number does not jitter its neighbours. */}
                     <span className="tnum hidden items-center gap-1.5 font-mono text-[11.5px] text-mute lg:flex">
                         <span className="h-1.5 w-1.5 rounded-full bg-jade" />

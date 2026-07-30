@@ -121,9 +121,11 @@ export default function Delegations() {
                     {d.chainLength > 1 && (
                         <Tag>{t("dlist", "chainOf", {n: d.chainLength})}</Tag>
                     )}
-                    <span className="ml-auto flex items-center gap-2 text-[11px] text-mute">
-                        <span>{t("tx", "delegator")}</span>
-                        <span className="inline-flex items-center">
+                    {/* Wraps between the two label+address pairs, never inside an address - a hash
+                        broken mid-glyph reads as two different values. */}
+                    <span className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-mute">
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <span>{t("tx", "delegator")}</span>
                             <Mono className="!text-[11.5px] text-ink-2">{short(d.delegator, 4)}</Mono>
                             <CopyButton
                                 value={d.delegator}
@@ -132,8 +134,8 @@ export default function Delegations() {
                             />
                         </span>
                         <span>→</span>
-                        <span>{t("tx", "delegate")}</span>
-                        <span className="inline-flex items-center">
+                        <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                            <span>{t("tx", "delegate")}</span>
                             <Mono className="!text-[11.5px] text-ink-2">{short(d.delegate, 4)}</Mono>
                             <CopyButton
                                 value={d.delegate}

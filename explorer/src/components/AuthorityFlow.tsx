@@ -33,6 +33,15 @@ const GATES: {id: GateId; at: number}[] = [
     {id: "window", at: 0.73},
 ];
 
+/** On a phone-width track the desktop fractions put 80px gates ~50px apart - they overlap into
+ *  an unreadable pile. Below the breakpoint the gates shrink and spread nearly edge to edge. */
+const GATES_COMPACT: Record<GateId, number> = {
+    identity: 0.14,
+    period: 0.38,
+    payee: 0.62,
+    window: 0.86,
+};
+
 const HOLD_MS = 2400;
 
 export function AuthorityFlow() {
@@ -61,8 +70,11 @@ export function AuthorityFlow() {
         return () => ro.disconnect();
     }, []);
 
+    const compact = width > 0 && width < 560;
+    const pos = (g: {id: GateId; at: number}) => (compact ? GATES_COMPACT[g.id] : g.at);
+
     const blocker = GATES.find((g) => !open[g.id]);
-    const stopAt = blocker ? blocker.at : 1;
+    const stopAt = blocker ? pos(blocker) : 1;
 
     // Restart whenever the policy changes, so a click is answered immediately.
     useEffect(() => {
@@ -131,9 +143,12 @@ export function AuthorityFlow() {
                             <button
                                 key={g.id}
                                 onClick={() => setOpen((o) => ({...o, [g.id]: !o[g.id]}))}
-                                style={{left: `${g.at * 100}%`}}
+                                style={{left: `${pos(g) * 100}%`}}
                                 aria-pressed={!isOpen}
-                                className="group absolute top-0 z-20 -translate-x-1/2 focus:outline-none"
+                                /* z below the sticky header (z-30): at z-20 the gates tied the
+                                   old header z and, being later in the DOM, painted on top of
+                                   the chrome while scrolling past. */
+                                className="group absolute top-0 z-[5] -translate-x-1/2 focus:outline-none"
                             >
                                 <motion.span
                                     animate={
@@ -146,7 +161,9 @@ export function AuthorityFlow() {
                                             ? {duration: 0.42, ease: "easeOut"}
                                             : {type: "spring", stiffness: 320, damping: 22}
                                     }
-                                    className={`flex h-[64px] w-[80px] flex-col items-center justify-center gap-1 rounded-xl border shadow-lg shadow-black/30 transition-colors duration-300 ${
+                                    className={`flex flex-col items-center justify-center gap-1 rounded-xl border shadow-lg shadow-black/30 transition-colors duration-300 ${
+                                        compact ? "h-[56px] w-[64px]" : "h-[64px] w-[80px]"
+                                    } ${
                                         blocking
                                             ? "border-reject bg-reject/15 text-reject"
                                             : !isOpen
@@ -156,10 +173,10 @@ export function AuthorityFlow() {
                                                 : "border-line-strong bg-surface-2 text-ink-2 group-hover:border-bronze-dim"
                                     }`}
                                 >
-                                    <span className="text-[12px] font-medium">
+                                    <span className={compact ? "text-[11px] font-medium" : "text-[12px] font-medium"}>
                                         {t("home", `flow${cap(g.id)}` as never)}
                                     </span>
-                                    <span className="text-[10.5px] opacity-70">
+                                    <span className={compact ? "text-[10px] opacity-70" : "text-[10.5px] opacity-70"}>
                                         {isOpen ? t("home", "flowLive") : t("home", "flowOff")}
                                     </span>
                                 </motion.span>
@@ -172,7 +189,7 @@ export function AuthorityFlow() {
                                               ? "bg-jade-dim"
                                               : "bg-line-strong"
                                     }`}
-                                    style={{height: 22}}
+                                    style={{height: compact ? 30 : 22}}
                                 />
                             </button>
                         );
@@ -217,7 +234,7 @@ export function AuthorityFlow() {
                                     setRun((r) => r + 1);
                                 }, HOLD_MS);
                             }}
-                            className="absolute top-[86px] left-0 z-10 -translate-y-1/2"
+                            className="absolute top-[86px] left-0 z-[6] -translate-y-1/2"
                         >
                             <span className="relative block">
                                 <motion.span

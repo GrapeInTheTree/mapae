@@ -152,8 +152,21 @@ export function WalletProvider({children}: {children: ReactNode}) {
                     await readChain(target.provider);
                 }
             } catch (e) {
-                const msg = e instanceof Error ? e.message : String(e);
-                setError(/reject|denied|4001/i.test(msg) ? null : msg.split("\n")[0]);
+                // EIP-1193 providers throw plain objects ({code, message}), not Errors -
+                // String() on those renders "[object Object]" in the dialog.
+                const code = (e as {code?: number})?.code;
+                const raw = (e as {message?: unknown})?.message;
+                const msg =
+                    e instanceof Error
+                        ? e.message
+                        : typeof raw === "string"
+                          ? raw
+                          : JSON.stringify(e);
+                setError(
+                    code === 4001 || /reject|denied|4001/i.test(msg)
+                        ? null
+                        : msg.split("\n")[0],
+                );
             } finally {
                 setConnecting(false);
             }
