@@ -36,7 +36,10 @@ import {
     type Address,
     type Hex,
 } from "viem";
-import {privateKeyToAccount} from "viem/accounts";
+import {generatePrivateKey, privateKeyToAccount} from "viem/accounts";
+import {chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
+import {homedir} from "node:os";
+import {join} from "node:path";
 
 import {enforcerErrorsAbi, managerAbi, periodEnforcerAbi, dojangScrollAbi} from "../../sdk/src/abi.js";
 import {
@@ -55,12 +58,33 @@ import {addresses, APP_URL, giwaSepolia} from "./config.js";
 
 /* ---------------------------------- setup ---------------------------------- */
 
-const key = (process.env.MAPAE_AGENT_PRIVATE_KEY ?? process.env.AGENT_PRIVATE_KEY) as Hex | undefined;
-if (!key?.startsWith("0x")) {
-    console.error("mapae-mcp: set MAPAE_AGENT_PRIVATE_KEY (the AGENT's key - never the principal's)");
-    process.exit(1);
+/**
+ * The agent's key: env override > persisted local key > generated on first boot.
+ *
+ * Nobody should have to know how to mint a keypair to try this. The agent's key is not the
+ * human's wallet - it is the agent's own identity, born with zero authority and holding only
+ * what a human later signs to it - so generating it here, on the machine it will live on, is
+ * strictly safer than asking a person to make one elsewhere and paste it through a terminal.
+ * The file never leaves ~/.mapae, is chmod 600, and no tool ever returns it.
+ */
+function loadOrCreateKey(): Hex {
+    const fromEnv = (process.env.MAPAE_AGENT_PRIVATE_KEY ?? process.env.AGENT_PRIVATE_KEY) as Hex | undefined;
+    if (fromEnv?.startsWith("0x")) return fromEnv;
+
+    const dir = join(homedir(), ".mapae");
+    const file = join(dir, "agent.key");
+    if (existsSync(file)) {
+        const onDisk = readFileSync(file, "utf8").trim() as Hex;
+        if (onDisk.startsWith("0x")) return onDisk;
+    }
+    const fresh = generatePrivateKey();
+    mkdirSync(dir, {recursive: true});
+    writeFileSync(file, fresh + "\n", {mode: 0o600});
+    chmodSync(file, 0o600);
+    console.error(`mapae-mcp: generated a new agent identity -> ${file} (chmod 600)`);
+    return fresh;
 }
-const agent = privateKeyToAccount(key);
+const agent = privateKeyToAccount(loadOrCreateKey());
 const pub = createPublicClient({chain: giwaSepolia, transport: http()});
 const wallet = createWalletClient({account: agent, chain: giwaSepolia, transport: http()});
 
@@ -224,10 +248,16 @@ server.tool(
     {},
     async () => {
         if (held.length === 0)
-            return text(
-                "No permission contexts held. Compose the ask with request_permission, have the " +
-                    `human sign it at ${APP_URL}/create, then hand the issued context to load_context.`,
-            );
+            return text({
+                held: 0,
+                agentAddress: agent.address,
+                howToGetAuthority:
+                    "Compose the ask with request_permission, have the human sign it at " +
+                    `${APP_URL}/create, then hand the issued context to load_context.`,
+                gasNote:
+                    "This agent pays its own gas - fund its address with a little GIWA Sepolia " +
+                    "ETH from any Sepolia faucet before the first pay.",
+            });
         const out = await Promise.all(
             held.map(async (h, index) => {
                 const live = await liveState(h);

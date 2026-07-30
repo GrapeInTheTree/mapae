@@ -4,15 +4,17 @@ A [Mapae](https://mapae.pages.dev) client for any MCP-speaking agent — Claude,
 else that talks the protocol. The agent gets **use of a scoped authority, never the wallet**.
 
 ```bash
-claude mcp add mapae \
-  --env MAPAE_AGENT_PRIVATE_KEY=0x… \
-  --env MAPAE_PERMISSION_CONTEXT=0x… \
-  -- npx mapae-mcp
+claude mcp add mapae -- npx mapae-mcp
 ```
 
-`MAPAE_AGENT_PRIVATE_KEY` is the **agent's own key** — it needs a little GIWA Sepolia ETH for gas.
-`MAPAE_PERMISSION_CONTEXT` is what a human hands the agent after signing at
-[mapae.pages.dev/create](https://mapae.pages.dev/create) (comma-separate to hold several).
+That is the whole install. On first boot the server **generates the agent's own identity** and
+persists it to `~/.mapae/agent.key` (chmod 600, never returned by any tool). The agent's key is
+not the human's wallet — it is born with zero authority and holds only what a human later signs
+to it, so generating it on the machine it will live on is strictly safer than pasting one in.
+Fund the agent's address (shown by `list_permissions`) with a little GIWA Sepolia ETH for gas.
+
+Optional env: `MAPAE_AGENT_PRIVATE_KEY` overrides the stored key;
+`MAPAE_PERMISSION_CONTEXT` preloads contexts (comma-separated) instead of `load_context`.
 
 ## Tools
 
