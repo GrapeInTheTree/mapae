@@ -7,8 +7,10 @@ out/
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-# Docs
-docs/
+# forge init ships `docs/` here for mdbook build output; ours is the hand-written
+# submission surface (SPEC, DEMO, GAPS, the README's brand marks) and must ship.
+# Only the heavyweight design explorations stay local.
+docs/design/
 
 # Dotenv file
 .env

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="t">
+  <title id="t">Mapae</title>
+  <!-- Ink Black, for a light background. Two halves of one seal - principal and agent - with the
+       delegation as the gap between them and the point where it is pressed at the crossing. -->
+  <path fill="#11100E" d="M13 5 25 14.8v34.4L13 59Z"/>
+  <path fill="#11100E" d="M51 5 39 14.8v34.4L51 59Z"/>
+  <circle cx="32" cy="32" r="2.6" fill="#11100E"/>
+</svg>
