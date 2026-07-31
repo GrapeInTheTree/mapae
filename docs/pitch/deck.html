@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>마패 — GASOK Phase 2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+ * The deck is the brand: Ink Black ground, Warm Bone text, bronze only where authority lives,
+ * jade and red reserved for settled / refused. One claim per page; the layout never competes
+ * with the sentence that carries it.
+ */
+:root {
+    --ink: #11100E; --surface: #1A1917; --surface2: #201E1B; --line: #2B2925; --line2: #3A3731;
+    --bone: #E9E4DA; --ink2: #B3AEA3; --mute: #837E74;
+    --bronze: #D9AB77; --bronze-deep: #8A5A35;
+    --jade: #8FBCA1; --red: #D08072;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+@page { size: 1280px 720px; margin: 0; }
+html { background: #000; }
+body { font-family: "Noto Sans KR", sans-serif; -webkit-font-smoothing: antialiased;
+       word-break: keep-all; color: var(--bone); }
+.slide { width: 1280px; height: 720px; background: var(--ink); position: relative;
+         padding: 68px 84px 56px; display: flex; flex-direction: column;
+         page-break-after: always; overflow: hidden; }
+.mono { font-family: "Menlo", monospace; }
+.serif { font-family: "Noto Serif KR", serif; }
+
+/* kicker: the running header of every page */
+.kicker { display: flex; align-items: center; gap: 10px; font-family: Menlo, monospace;
+          font-size: 11px; letter-spacing: .22em; color: var(--bronze); }
+.kicker::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--bronze); }
+.kicker .sec { color: var(--mute); }
+
+h1 { font-family: "Noto Serif KR", serif; font-weight: 600; font-size: 46px;
+     line-height: 1.28; letter-spacing: -0.01em; margin-top: 26px; }
+h1 .dim { color: var(--mute); }
+.lede { font-size: 17.5px; line-height: 1.75; color: var(--ink2); margin-top: 20px; max-width: 900px;
+        font-weight: 300; }
+.lede b, .lede strong { color: var(--bone); font-weight: 500; }
+.bronze { color: var(--bronze); }
+.jade { color: var(--jade); }
+.red { color: var(--red); }
+
+.pageno { position: absolute; bottom: 40px; right: 84px; font-family: Menlo, monospace;
+          font-size: 10.5px; color: var(--mute); letter-spacing: .1em; }
+.brandfoot { position: absolute; bottom: 40px; left: 84px; font-family: Menlo, monospace;
+             font-size: 10.5px; color: var(--mute); letter-spacing: .08em; }
+
+/* cards */
+.cards { display: grid; gap: 18px; margin-top: auto; }
+/* Splits the leftover height evenly above and below the body block, so a short page
+   reads as composed rather than abandoned at the top. */
+.vfill { margin-top: auto; margin-bottom: auto; }
+.vfill .cards { margin-top: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px 28px; }
+.card h3 { font-size: 16.5px; font-weight: 600; }
+.card p { font-size: 13.5px; line-height: 1.7; color: var(--ink2); margin-top: 9px; font-weight: 300; }
+.card .tag { font-family: Menlo, monospace; font-size: 10px; letter-spacing: .16em; color: var(--mute); }
+
+/* footer strip inside a slide */
+.strip { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 20px;
+         font-size: 14px; line-height: 1.75; color: var(--ink2); font-weight: 300; }
+.strip b { color: var(--bone); font-weight: 500; }
+
+/* seal mark */
+.seal path, .seal circle { fill: var(--bone); }
+
+/* flow diagram */
+.flow { display: flex; align-items: stretch; gap: 0; margin-top: 40px; }
+.fnode { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+         padding: 20px 18px; text-align: center; position: relative; }
+.fnode h4 { font-size: 15.5px; font-weight: 600; }
+.fnode p { font-size: 11.5px; color: var(--mute); margin-top: 6px; line-height: 1.55; }
+.farrow { display: flex; flex-direction: column; justify-content: center; align-items: center;
+          width: 74px; flex: none; }
+.farrow .lbl { font-family: Menlo, monospace; font-size: 9.5px; color: var(--bronze);
+               letter-spacing: .06em; margin-bottom: 5px; white-space: nowrap; }
+.farrow svg { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ 1 · COVER ═══════════════════════ -->
+<div class="slide" style="justify-content:center; align-items:center; text-align:center; padding-top:0;">
+    <svg class="seal" viewBox="0 0 64 64" style="width:88px;height:88px;">
+        <path d="M13 5 L25 14.8 L25 44.2 L13 59 Z"/>
+        <path d="M51 5 L39 14.8 L39 44.2 L51 59 Z"/>
+        <circle cx="32" cy="32" r="2.2"/>
+    </svg>
+    <div class="serif" style="font-size:88px; font-weight:700; letter-spacing:.04em; margin-top:34px;">마패</div>
+    <div class="mono" style="font-size:13px; letter-spacing:.42em; color:var(--mute); margin-top:10px;">M A P A E</div>
+    <div class="serif" style="font-size:27px; font-weight:500; margin-top:44px; line-height:1.5;">
+        AI 에이전트에게 <span style="color:var(--mute);">지갑이 아니라</span> <span class="bronze">권한</span>을
+    </div>
+    <p style="font-size:15.5px; color:var(--ink2); margin-top:18px; font-weight:300; max-width:640px; line-height:1.75;">
+        실명이 검증된 사람이 서명 한 번으로 지출 권한을 위임하고,<br>
+        범위는 결제 순간마다 컨트랙트가 강제한다.
+    </p>
+    <div class="mono" style="display:flex; gap:34px; margin-top:52px; font-size:11.5px; color:var(--mute); letter-spacing:.06em;">
+        <span>mapae.pages.dev</span><span>npm: mapae-mcp</span><span>GIWA Sepolia · 91342</span>
+    </div>
+</div>
+
+<!-- ═══════════════════════ 2 · PROBLEM ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">01 <span class="sec">/ 문제</span></div>
+    <h1>에이전트는 이미 결제할 수 있다.<br><span class="dim">안전하게 맡길 방법이 없을 뿐이다.</span></h1>
+    <p class="lede">x402가 열리면서 에이전트가 스스로 결제하고 구독하는 경로는 이미 생겼다.
+       그런데 지금 에이전트에게 결제를 맡기는 방법은 두 가지뿐이다.</p>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns: 1fr 1fr;">
+        <div class="card">
+            <div class="tag red" style="letter-spacing:.14em;">방법 1</div>
+            <h3 style="margin-top:10px;">개인키를 통째로 넘긴다</h3>
+            <p>에이전트가 곧 지갑이 된다. 한도도, 수취인도, 기한도 걸 수 없다.
+               실수 한 번이 전 재산의 사고가 된다.</p>
+        </div>
+        <div class="card">
+            <div class="tag red" style="letter-spacing:.14em;">방법 2</div>
+            <h3 style="margin-top:10px;">수탁 서비스에 맡긴다</h3>
+            <p>그 회사의 서버, 정책, 보안을 통째로 믿어야 한다.
+               온체인 결제를 하려고 다시 중개인을 세우는 셈이다.</p>
+        </div>
+    </div>
+    <div class="strip">
+        <b>2026년 2월 —</b> OpenClaw 프레임워크로 만든 에이전트가 요청 금액을 잘못 읽어
+        보유 토큰 <b>전량</b>을 전송했다. 해킹도, 컨트랙트 취약점도 아니었다. 에이전트의 오해 하나였다.
+    </div>
+    </div>
+    <div class="pageno">02 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 3 · APPROACH (IAM) ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">02 <span class="sec">/ 접근</span></div>
+    <h1>클라우드는 같은 문제를<br>이미 <span class="bronze">권한</span>으로 풀었다</h1>
+    <p class="lede">AWS는 직원에게 서버의 루트 키를 나눠주지 않는다. 범위가 정해진 권한을 발급하고,
+       사용하는 순간마다 정책을 평가한다. 에이전트의 지출에 필요한 것도 정확히 이 네 가지다.</p>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="card"><h3>얼마까지</h3><p>기간당 지출 한도.<br>창이 넘어가면 자동으로 리셋.</p></div>
+        <div class="card"><h3>어디에</h3><p>허용된 수취인.<br>목록 밖으로는 1원도 못 나간다.</p></div>
+        <div class="card"><h3>언제까지</h3><p>유효 기간.<br>지나면 서명이 그대로 죽는다.</p></div>
+        <div class="card" style="border-color:var(--bronze-deep);"><h3 class="bronze">누가 줬는가</h3><p>위임한 사람의 실명 증명.<br>결제 순간에도 유효해야 한다.</p></div>
+    </div>
+    <div class="strip">
+        역할표를 두고 관리하는 RBAC이 아니다. 에이전트가 들고 온 <b>서명된 권한</b>을,
+        결제 순간의 <b>살아 있는 속성</b>으로 판정한다 — 그 속성 가운데 하나가 신원이다.
+    </div>
+    </div>
+    <div class="pageno">03 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 4 · WHY GIWA ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">03 <span class="sec">/ 왜 기와인가</span></div>
+    <h1>마지막 조건은 기와에만 있다</h1>
+    <p class="lede">기와의 프리미티브는 전부 <b>"누구인가"</b>에 답한다.
+       <b>"누가 나를 대신해 지출할 수 있는가"</b>는 아직 비어 있다.</p>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns: repeat(4, 1fr);">
+        <div class="card"><div class="tag">신원</div><h3 style="margin-top:10px;">도장</h3><p>라이선스 거래소가 실명 확인을 마치고 찍는 온체인 증명.</p></div>
+        <div class="card"><div class="tag">이름</div><h3 style="margin-top:10px;">UP.ID</h3><p>주소를 사람이 부를 수 있는 이름으로.</p></div>
+        <div class="card"><div class="tag">프라이버시</div><h3 style="margin-top:10px;">보자기</h3><p>드러내지 않을 권리.</p></div>
+        <div class="card" style="border-color:var(--bronze-deep); background:var(--surface2);">
+            <div class="tag bronze">권한 — 이 제안</div><h3 class="bronze" style="margin-top:10px;">마패</h3>
+            <p>범위를 정해 넘기고, 결제마다 검증되고, 즉시 취소되는 위임.</p></div>
+    </div>
+    <div class="strip">
+        신원을 결제 조건으로 걸려면 <b>체인 위에 신원이 있어야 한다.</b>
+        다른 체인에는 이 조건에 쓸 재료 자체가 없다 — 도장이 마패를 가능하게 하고,
+        마패가 도장을 결제의 언어로 만든다.
+    </div>
+    </div>
+    <div class="pageno">04 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 5 · NAME ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">04 <span class="sec">/ 이름</span></div>
+    <h1>한도가 청동에 새겨져 있었다</h1>
+    <p class="lede">조선의 마패는 상서원이 <b>신원이 확인된 관원</b>에게만 내주던 구리 패다.
+       뒷면에 새긴 말의 수가 곧 역참에서 쓸 수 있는 말의 수 — 품계에 따라 달랐다.
+       역참은 패를 <b>쓰는 순간</b> 확인했다.</p>
+    <div style="margin-top:34px; border:1px solid var(--line); border-radius:14px; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; background:var(--surface2); border-bottom:1px solid var(--line);">
+            <div class="mono" style="padding:13px 28px; font-size:10.5px; letter-spacing:.18em; color:var(--mute);">조선의 마패</div>
+            <div class="mono" style="padding:13px 28px; font-size:10.5px; letter-spacing:.18em; color:var(--bronze); border-left:1px solid var(--line);">우리의 마패</div>
+        </div>
+        <div style="font-size:14.5px; line-height:1.5; font-weight:300;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line);">
+                <div style="padding:14px 28px; color:var(--ink2);">신원이 확인된 관원에게만 발급</div>
+                <div style="padding:14px 28px; border-left:1px solid var(--line);">도장 보유자의 서명으로만 발급</div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line); background:var(--surface);">
+                <div style="padding:14px 28px; color:var(--ink2);">말의 수 = 권한의 크기, 품계별 차등</div>
+                <div style="padding:14px 28px; border-left:1px solid var(--line);">서명된 한도 = 권한의 크기, 정책별 차등</div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; border-bottom:1px solid var(--line);">
+                <div style="padding:14px 28px; color:var(--ink2);">역참이 사용 시점에 패를 확인</div>
+                <div style="padding:14px 28px; border-left:1px solid var(--line);">컨트랙트가 결제 시점에 조건을 확인</div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; background:var(--surface);">
+                <div style="padding:14px 28px; color:var(--ink2);">삼마패로 네 필은 끌 수 없다</div>
+                <div style="padding:14px 28px; border-left:1px solid var(--line);">한도를 넘는 시도는 1원도 통과하지 못한다</div></div>
+        </div>
+    </div>
+    <div class="strip" style="border-top:0; padding-top:16px;">
+        조선의 마패는 위조할 수 있었다 — 청동 조각이었으니까.
+        <b>이것은 쓰일 때마다 검증을 다시 통과해야 한다.</b>
+    </div>
+    <div class="pageno">05 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 6 · ARCHITECTURE ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">05 <span class="sec">/ 구조</span></div>
+    <h1>발급은 서명 한 번, 강제는 컨트랙트가</h1>
+    <div class="flow">
+        <div class="fnode">
+            <h4>사람</h4>
+            <p>도장 보유자.<br>조건을 정하고 서명한다.</p>
+        </div>
+        <div class="farrow"><span class="lbl">서명</span>
+            <svg width="46" height="10" viewBox="0 0 46 10"><path d="M0 5h40m-5-4 5 4-5 4" stroke="#8A5A35" stroke-width="1.4" fill="none"/></svg></div>
+        <div class="fnode" style="border-color:var(--bronze-deep); background:var(--surface2);">
+            <h4 class="bronze">마패</h4>
+            <p>서명된 위임장.<br>조건 4종이 서명 안에 봉인.</p>
+        </div>
+        <div class="farrow"><span class="lbl">전달</span>
+            <svg width="46" height="10" viewBox="0 0 46 10"><path d="M0 5h40m-5-4 5 4-5 4" stroke="#8A5A35" stroke-width="1.4" fill="none"/></svg></div>
+        <div class="fnode">
+            <h4>에이전트</h4>
+            <p>범위 안에서 자율 결제.<br>키는 로컬, 지갑은 없음.</p>
+        </div>
+        <div class="farrow"><span class="lbl">결제 요청</span>
+            <svg width="46" height="10" viewBox="0 0 46 10"><path d="M0 5h40m-5-4 5 4-5 4" stroke="#8A5A35" stroke-width="1.4" fill="none"/></svg></div>
+        <div class="fnode">
+            <h4>위임 매니저</h4>
+            <p>서명·한도·수취인·기한·신원<br>전수 검사 후에만 이체.</p>
+        </div>
+        <div class="farrow"><span class="lbl">정산</span>
+            <svg width="46" height="10" viewBox="0 0 46 10"><path d="M0 5h40m-5-4 5 4-5 4" stroke="#8FBCA1" stroke-width="1.4" fill="none"/></svg></div>
+        <div class="fnode">
+            <h4>가맹점</h4>
+            <p>수취. 사슬 끝에는<br>항상 실명이 있다.</p>
+        </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:34px;">
+        <div class="card">
+            <div class="tag">오프체인</div>
+            <p style="margin-top:8px; font-size:14px;">발급과 전달. <b style="color:var(--bone);">가스 0, 트랜잭션 0</b> —
+            쓰이기 전까지는 체인에 흔적조차 없다. 발급 자체가 무료라 권한을 잘게 쪼개 줄 수 있다.</p>
+        </div>
+        <div class="card">
+            <div class="tag">온체인</div>
+            <p style="margin-top:8px; font-size:14px;">검증·정산·기록. 조건을 지키는 것은 에이전트의 선의가 아니라
+            <b style="color:var(--bone);">위임 매니저의 코드</b>다. 거부된 시도까지 원장에 남는다.</p>
+        </div>
+    </div>
+    <div class="strip" style="border-top:0; padding-top:14px; font-size:12.5px; color:var(--mute);">
+        표준: ERC-7710(위임 실행) · ERC-7715(권한 요청) · x402 v2(결제 프로토콜) — 발명하지 않고 채택했다.
+    </div>
+    <div class="pageno">06 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 7 · CONDITIONS / THE GAP ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">06 <span class="sec">/ 조건</span></div>
+    <h1>넷은 어디에나 있다.<br><span class="dim">하나는 어디에도 없었다.</span></h1>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns: repeat(4, 1fr); margin-top:40px;">
+        <div class="card"><h3>기간당 한도</h3><p>금액과 기간을 함께 서명.<br>창마다 자동 리셋.</p></div>
+        <div class="card"><h3>수취인 제한</h3><p>이체 데이터 안의 수취 주소를 직접 검사한다.</p></div>
+        <div class="card"><h3>유효 기한</h3><p>시각 범위를 벗어난 서명은 그대로 죽는다.</p></div>
+        <div class="card" style="border-color:var(--bronze-deep); background:var(--surface2);">
+            <h3 class="bronze">신원 검증</h3><p>위임한 사람의 도장이 <b style="color:var(--bone);">결제 순간에도</b> 유효한가.</p></div>
+    </div>
+    <div class="strip">
+        공개된 위임 프레임워크의 감사된 조건 <b>38종을 전수 조사했다.</b>
+        금액·기간·횟수·대상·시간 — 전부 있다. 위임자의 <b>신원을 묻는 조건은 없다.</b>
+        조건으로 걸 수 있는 온체인 신원이 없었기 때문이다.
+    </div>
+    <div class="strip" style="margin-top:0; border-top:0; padding-top:10px; font-size:12.5px; color:var(--mute);">
+        표준을 그대로 채택했기 때문에, 그 감사된 조건들은 수정 없이 우리 매니저에서 그대로 돈다 —
+        신원 조건 하나만 우리가 보탰다.
+    </div>
+    </div>
+    <div class="pageno">07 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 8 · KILL SWITCH ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">07 <span class="sec">/ 킬스위치</span></div>
+    <h1>도장 취소 하나로, 모든 마패가 멈춘다</h1>
+    <p class="lede">신원 조건은 발급 시점의 스냅샷이 아니라 <b>결제 순간마다</b> 도장을 새로 읽는다.
+       취소와 만료가 트랜잭션 없이 즉시 반영된다.</p>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns:1fr 1fr;">
+        <div class="card">
+            <div class="tag">위임 스위치</div>
+            <h3 style="margin-top:10px;">마패 하나를 끈다</h3>
+            <p>위임자가 특정 마패를 비활성화하면 그 마패의 결제만 거부된다.
+               다시 켜면 <b style="color:var(--bone);">쓰던 한도 그대로</b> 재개된다 — 리셋이 아니다.</p>
+        </div>
+        <div class="card" style="border-color:var(--bronze-deep); background:var(--surface2);">
+            <div class="tag bronze">신원 스위치</div>
+            <h3 style="margin-top:10px;">도장을 취소한다</h3>
+            <p>그 사람이 발급한 <b style="color:var(--bone);">모든 마패</b>가 한 번에 멈춘다 —
+               마패 쪽에는 트랜잭션 하나 없이. 재발급하면 전부 재개된다.</p>
+        </div>
+    </div>
+    <div class="strip">
+        두 스위치는 <b>서로 독립</b>이고 <b>각각 되돌릴 수 있다.</b>
+        끔·켬·취소·재발급 네 경우 모두 GIWA Sepolia <b>라이브 트랜잭션</b>으로 증명했다 —
+        한쪽을 움직일 때 다른 쪽이 온전한 상태에서.
+    </div>
+    </div>
+    <div class="pageno">08 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 9 · THE POINT ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">08 <span class="sec">/ 증명</span></div>
+    <h1>모든 조건이 멀쩡한데,<br>결제가 거부된다</h1>
+    <div class="vfill">
+    <div style="display:flex; gap:14px; margin-top:44px;">
+        <div class="card" style="flex:1; text-align:center; padding:22px 12px;"><div class="jade" style="font-size:20px;">✓</div><p style="margin-top:8px; font-size:13px;">서명 유효</p></div>
+        <div class="card" style="flex:1; text-align:center; padding:22px 12px;"><div class="jade" style="font-size:20px;">✓</div><p style="margin-top:8px; font-size:13px;">한도 남음</p></div>
+        <div class="card" style="flex:1; text-align:center; padding:22px 12px;"><div class="jade" style="font-size:20px;">✓</div><p style="margin-top:8px; font-size:13px;">기한 유효</p></div>
+        <div class="card" style="flex:1; text-align:center; padding:22px 12px;"><div class="jade" style="font-size:20px;">✓</div><p style="margin-top:8px; font-size:13px;">수취인 허용</p></div>
+        <div class="card" style="flex:1.6; text-align:center; padding:22px 12px; border-color:#5A3430; background:#221A18;">
+            <div class="red" style="font-size:20px;">✕</div>
+            <p style="margin-top:8px; font-size:13px; color:var(--bone);">신원 검증 실패</p>
+            <p style="margin-top:4px; font-size:11.5px; color:var(--mute);">실명 증명이 취소되었다는<br>이유 하나로</p>
+        </div>
+    </div>
+    <div class="strip" style="margin-top:40px;">
+        마패가 파는 것은 결제가 되는 것이 아니라, <b>되면 안 되는 결제가 안 되는 것</b>이다.
+        거부된 시도도 전부 원장에 남는다 — 어떤 조건이 막았는지까지.
+        사고가 나면 결제에서 마패, 마패에서 도장, 도장에서 실명까지 거꾸로 걸어간다.
+    </div>
+    </div>
+    <div class="pageno">09 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 10 · PRODUCT ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">09 <span class="sec">/ 제품</span></div>
+    <h1>mapae.pages.dev<span class="dim"> — 접속하면 전부 실물이다</span></h1>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-top:40px;">
+        <div class="card">
+            <div class="tag">발급</div>
+            <h3 style="margin-top:10px;">조건을 문장으로 읽고, 서명한다</h3>
+            <p>프리셋을 고르거나 직접 조합한다. 도장이 없으면 발급 버튼이 먼저 도장부터 안내한다.
+               서명은 가스 0.</p>
+        </div>
+        <div class="card">
+            <div class="tag">권한 관리</div>
+            <h3 style="margin-top:10px;">지출 현황과 킬스위치</h3>
+            <p>마패별 사용액과 잔여 한도, 만료까지 남은 시간.
+               비활성화·재활성화가 버튼 하나다.</p>
+        </div>
+        <div class="card">
+            <div class="tag">추적</div>
+            <h3 style="margin-top:10px;">거부의 이유를 지목한다</h3>
+            <p>거부된 결제를 열면 어떤 조건이 막았는지 체인 데이터 안에서 짚어 보여준다.
+               성공만 보여주는 원장은 절반짜리다.</p>
+        </div>
+    </div>
+    <div class="strip">
+        <b>백엔드 서버가 없다.</b> 화면의 모든 숫자는 접속한 브라우저가 방금 체인에서 직접 읽은 값이다 —
+        중간에 우리를 믿어야 하는 지점이 없다.
+    </div>
+    </div>
+    <div class="pageno">10 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 11 · MCP ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">10 <span class="sec">/ 에이전트 연동</span></div>
+    <h1>MCP를 말하는 에이전트는<br>이미 마패의 클라이언트다</h1>
+    <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:22px; margin-top:30px;">
+        <div style="border:1px solid var(--line); border-radius:14px; overflow:hidden; font-size:13px;">
+            <div style="display:grid; grid-template-columns:170px 1fr; background:var(--surface2); border-bottom:1px solid var(--line);">
+                <div class="mono" style="padding:11px 20px; font-size:10px; letter-spacing:.16em; color:var(--mute);">도구</div>
+                <div class="mono" style="padding:11px 20px; font-size:10px; letter-spacing:.16em; color:var(--mute);">하는 일</div>
+            </div>
+            <div class="mcprow" style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">list_permissions</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">보유한 마패 목록과 각각의 조건</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line); background:var(--surface);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">check_budget</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">이번 기간의 사용액과 잔여 한도</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">pay</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">결제 — 수취인·토큰은 서명된 정책에서 나온다</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line); background:var(--surface);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">agent_status</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">에이전트 주소·가스 잔량·남은 결제 여력</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">request_permission</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">사람에게 보낼 권한 요청 링크 생성 (ERC-7715)</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr; border-bottom:1px solid var(--line); background:var(--surface);"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">load_context</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">발급받은 마패를 대화 안에서 바로 장착</div></div>
+            <div style="display:grid; grid-template-columns:170px 1fr;"><div class="mono" style="padding:9px 20px; color:var(--bronze); font-size:12px;">redelegate</div><div style="padding:9px 20px; color:var(--ink2); font-weight:300;">더 좁은 범위로만 재위임 (2홉 검증 완료)</div></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:18px;">
+            <div class="card" style="padding:20px 22px;">
+                <div class="mono" style="font-size:13px; color:var(--bone);">npx mapae-mcp</div>
+                <p style="margin-top:8px; font-size:12.5px;">설치 한 줄, 설정 0. 에이전트 키는 로컬에서 생성되어
+                   밖으로 나가지 않는다.</p>
+            </div>
+            <div class="card" style="padding:20px 22px; border-color:var(--bronze-deep);">
+                <h3 style="font-size:14px;" class="bronze">발급 도구는 없다 — 그것이 설계다</h3>
+                <p style="margin-top:8px; font-size:12.5px;">발급과 취소는 사람의 서명에만 속한다.
+                   에이전트는 쓰고, 좁혀서 넘길 수만 있다.</p>
+            </div>
+            <div class="card" style="padding:20px 22px;">
+                <h3 style="font-size:14px;">프롬프트 인젝션 면역</h3>
+                <p style="margin-top:8px; font-size:12.5px;">결제의 수취인은 인자가 아니라 서명된 정책에서 나온다.
+                   에이전트를 속여도 다른 주소로는 보낼 수 없다.</p>
+            </div>
+        </div>
+    </div>
+    <div class="pageno">11 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 12 · LIVE BOUNDARY ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">11 <span class="sec">/ 실측</span></div>
+    <h1>하루 한도 1만 원짜리 마패의, 실제 하루</h1>
+    <p class="lede">실제 에이전트 세션에서 연속으로 실행된 세 결제다. 전부 GIWA Sepolia 원장에 있다.</p>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:30px;">
+        <div style="display:grid; grid-template-columns:150px 1fr 110px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 28px;">
+            <div class="serif" style="font-size:23px;">₩4,800</div>
+            <div style="font-size:13.5px; color:var(--ink2); font-weight:300;">첫 결제. 누적 ₩4,800 — 한도 안.</div>
+            <div class="mono jade" style="text-align:right; font-size:12px; letter-spacing:.1em;">승인</div>
+        </div>
+        <div style="display:grid; grid-template-columns:150px 1fr 110px; align-items:center; background:#221A18; border:1px solid #5A3430; border-radius:12px; padding:18px 28px;">
+            <div class="serif" style="font-size:23px;">₩5,500</div>
+            <div style="font-size:13.5px; color:var(--ink2); font-weight:300;">누적 ₩10,300은 한도 초과 — 컨트랙트가 거부. 300원이 초과여도 전액이 거부된다.</div>
+            <div class="mono red" style="text-align:right; font-size:12px; letter-spacing:.1em;">거부</div>
+        </div>
+        <div style="display:grid; grid-template-columns:150px 1fr 110px; align-items:center; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:18px 28px;">
+            <div class="serif" style="font-size:23px;">₩5,200</div>
+            <div style="font-size:13.5px; color:var(--ink2); font-weight:300;">누적 정확히 ₩10,000 — 통과. 한도의 마지막 1원까지 쓸 수 있고, 1원도 넘을 수 없다.</div>
+            <div class="mono jade" style="text-align:right; font-size:12px; letter-spacing:.1em;">승인</div>
+        </div>
+    </div>
+    <div class="strip">
+        한도를 지킨 것은 프롬프트가 아니라 컨트랙트다.
+        같은 경로 위에서 <b>x402 정산</b>도 라이브로 동작한다 — 402 응답을 받고 정산까지,
+        하나의 서명으로 여러 번 정산되는 GIWA의 유일한 x402 경로.
+    </div>
+    <div class="pageno">12 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 13 · NUMBERS ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">12 <span class="sec">/ 현재까지</span></div>
+    <h1>약속이 아니라, 배포된 것</h1>
+    <div class="cards" style="grid-template-columns: repeat(4, 1fr); margin-top:38px;">
+        <div class="card" style="text-align:center; padding:28px 16px;"><div class="serif" style="font-size:46px;">8</div><p style="margin-top:6px;">컨트랙트 배포<br>전수 소스 검증</p></div>
+        <div class="card" style="text-align:center; padding:28px 16px;"><div class="serif" style="font-size:46px;">153</div><p style="margin-top:6px;">테스트<br>정적 분석 심각·중대 0</p></div>
+        <div class="card" style="text-align:center; padding:28px 16px;"><div class="serif" style="font-size:46px;">16</div><p style="margin-top:6px;">발급되어 사용된 마패</p></div>
+        <div class="card" style="text-align:center; padding:28px 16px;"><div class="serif" style="font-size:46px;">34</div><p style="margin-top:6px;">결제 시도<br><span class="jade">승인 20</span> · <span class="red">거부 14</span></p></div>
+    </div>
+    <div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-top:18px;">
+        <div class="card" style="text-align:center; padding:22px 16px;"><div class="serif" style="font-size:34px;">1</div><p style="margin-top:4px;">npm 패키지 — mapae-mcp</p></div>
+        <div class="card" style="text-align:center; padding:22px 16px;"><div class="serif" style="font-size:34px;">1</div><p style="margin-top:4px;">공개 URL — mapae.pages.dev</p></div>
+        <div class="card" style="text-align:center; padding:22px 16px;"><div class="serif" style="font-size:34px;">0</div><p style="margin-top:4px;">백엔드 서버</p></div>
+    </div>
+    <div class="strip">
+        거부 14건이 실적의 절반이다 — <b>이 제품이 파는 것이 거부</b>이기 때문이다.
+        전부 실패 사유가 디코딩된 채로 익스플로러에서 열린다.
+    </div>
+    <div class="pageno">13 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 14 · SCOPE ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">13 <span class="sec">/ 범위</span></div>
+    <h1>기와 위에 선다 —<br><span class="dim">다시 만들지 않은 것들</span></h1>
+    <div class="vfill">
+    <div class="cards" style="grid-template-columns:1fr 1fr; margin-top:34px;">
+        <div class="card"><h3>지갑</h3><p>기와 월렛의 자리다. 표준 권한 요청(ERC-7715) 경로를 미리 구현해 두었다 —
+            월렛이 표준을 켜는 날, 통합 작업이 아니라 스위치가 된다.</p></div>
+        <div class="card"><h3>스테이블코인</h3><p>원화 스테이블이 나오면 주소만 바꾼다.
+            테스트 토큰은 어떤 표준 확장도 없는 맨몸 ERC-20 위에서 전부 동작했다 —
+            자산을 가리지 않는다는 증명이다.</p></div>
+        <div class="card"><h3>위임 표준</h3><p>ERC-7710/7715를 발명하지 않고 채택했다.
+            업계의 감사된 조건들이 수정 없이 호환되고, 우리 신원 조건도 표준 매니저에 그대로 꽂힌다.</p></div>
+        <div class="card"><h3>백엔드</h3><p>권한이 있는지 없는지는 체인만이 답해야 한다.
+            서버를 두는 순간 "우리를 믿어야 하는 지점"이 생긴다 — 그 지점을 만들지 않았다.</p></div>
+    </div>
+    </div>
+    <div class="pageno">14 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 15 · LIMITS & NEXT ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">14 <span class="sec">/ 한계와 다음</span></div>
+    <h1>지금 없는 것, 다음에 오는 것</h1>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:32px;">
+        <div>
+            <div class="mono" style="font-size:10.5px; letter-spacing:.18em; color:var(--mute); margin-bottom:14px;">지금 없는 것</div>
+            <div class="card" style="margin-bottom:14px;"><h3>실사용자</h3><p>아직 0이다. 대신 접속·발급·설치·결제·취소의 전 구간을
+                오늘 누구나 직접 재현할 수 있게 만들었다.</p></div>
+            <div class="card" style="margin-bottom:14px;"><h3>팀</h3><p>1인. 컨트랙트·SDK·정산·제품·에이전트 연동을 혼자 배포했다.</p></div>
+            <div class="card"><h3>실명 코드 검증 조건</h3><p>"검증된 에이전트 빌드만 지출" 조건은 발급 기관이 아직 한 곳뿐이라
+                배포·테스트까지만 마친 상태다.</p></div>
+        </div>
+        <div>
+            <div class="mono" style="font-size:10.5px; letter-spacing:.18em; color:var(--bronze); margin-bottom:14px;">다음에 오는 것</div>
+            <div class="card" style="margin-bottom:14px; border-color:var(--bronze-deep);"><h3>기와 월렛 연동</h3><p>ERC-7715 요청 경로는 이미 구현되어 있다.
+                월렛 팀과의 스위치 협의가 선발 후 첫 작업이다.</p></div>
+            <div class="card" style="margin-bottom:14px;"><h3>도장 세분화를 따라간다</h3><p>거래소별·등급별 도장이 늘수록 조건은
+                코드 변경 없이 촘촘해진다 — 발급자는 배포 상수가 아니라 서명 안의 선택이다.</p></div>
+            <div class="card"><h3>도장 조회 계층 · EOA 직접 위임</h3><p>GIWA에 없는 도장 조회 API를 공개하고,
+                EIP-7702(활성 확인 완료)로 계정 없는 직접 위임 경로를 연다.</p></div>
+        </div>
+    </div>
+    <div class="pageno">15 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ 16 · CLOSING ═══════════════════════ -->
+<div class="slide" style="justify-content:center; align-items:center; text-align:center;">
+    <svg class="seal" viewBox="0 0 64 64" style="width:56px;height:56px; opacity:.9;">
+        <path d="M13 5 L25 14.8 L25 44.2 L13 59 Z"/>
+        <path d="M51 5 L39 14.8 L39 44.2 L51 59 Z"/>
+        <circle cx="32" cy="32" r="2.2"/>
+    </svg>
+    <div class="serif" style="font-size:38px; font-weight:600; line-height:1.55; margin-top:40px; max-width:900px;">
+        기와는 신원·이름·프라이버시를 갖췄다.<br>
+        <span class="bronze">권한</span>이 마지막 칸이다.
+    </div>
+    <p style="font-size:16px; color:var(--ink2); margin-top:24px; font-weight:300; line-height:1.8;">
+        마패는 그 칸을 채우는 위임 프리미티브 —<br>
+        실명 위에 서고, 결제마다 검증되고, 즉시 취소된다.
+    </p>
+    <div class="mono" style="display:flex; gap:34px; margin-top:56px; font-size:11.5px; color:var(--mute); letter-spacing:.06em;">
+        <span>mapae.pages.dev</span><span>npm: mapae-mcp</span><span>github.com/GrapeInTheTree/mapae</span>
+    </div>
+    <div class="pageno">16 / 18</div>
+</div>
+
+<!-- ═══════════════════════ A1 · CONTRACTS ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">부록 A <span class="sec">/ 컨트랙트 전표</span></div>
+    <h1 style="font-size:36px;">GIWA Sepolia — 전수 소스 검증</h1>
+    <div style="margin-top:26px; border:1px solid var(--line); border-radius:14px; overflow:hidden; font-size:12.5px;">
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; background:var(--surface2); border-bottom:1px solid var(--line);">
+            <div class="mono" style="padding:10px 22px; font-size:10px; letter-spacing:.16em; color:var(--mute);">컨트랙트</div>
+            <div class="mono" style="padding:10px 22px; font-size:10px; letter-spacing:.16em; color:var(--mute);">역할</div>
+            <div class="mono" style="padding:10px 22px; font-size:10px; letter-spacing:.16em; color:var(--mute);">주소</div>
+        </div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line);"><div style="padding:9px 22px; font-weight:500;">MapaeDelegationManager</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">ERC-7710 위임 실행·검증의 중심</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line); background:var(--surface);"><div style="padding:9px 22px; font-weight:500; color:var(--bronze);">DojangVerifiedEnforcer</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">신원 조건 — 결제 순간마다 도장을 읽는다</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0xb2906a5079702B82C2973423d8cf91e8B41e6371</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line);"><div style="padding:9px 22px; font-weight:500;">AllowedPayeeEnforcer</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">수취인 제한 — 이체 데이터의 수취 주소 검사</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0x7eF0f193B721B1749d890F1e231C8074670f1bD1</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line); background:var(--surface);"><div style="padding:9px 22px; font-weight:500;">ERC20PeriodTransferEnforcer</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">기간당 한도 — 감사본 그대로 채택</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0xE33ba891fa502A075D3E422258723eF4cB6AC892</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line);"><div style="padding:9px 22px; font-weight:500;">TimestampEnforcer</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">유효 기한 — 감사본 그대로 채택</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line); background:var(--surface);"><div style="padding:9px 22px; font-weight:500;">VerifiedCodeEnforcer</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">검증된 에이전트 빌드만 지출 (배포·테스트 완료)</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px; border-bottom:1px solid var(--line);"><div style="padding:9px 22px; font-weight:500;">MapaeAccountFactory</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">위임 계정 생성 — 소유자 서명 동의 필수</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0x157aF4D7b3f52685c817d5558b3468caD9b61299</div></div>
+        <div style="display:grid; grid-template-columns:250px 1fr 380px;"><div style="padding:9px 22px; font-weight:500;">MockKRW</div><div style="padding:9px 22px; color:var(--ink2); font-weight:300;">테스트 원화 토큰 — 표준 확장 없는 맨몸 ERC-20</div><div class="mono" style="padding:9px 22px; font-size:11px; color:var(--mute);">0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B</div></div>
+    </div>
+    <div class="strip" style="border-top:0; padding-top:16px; font-size:12.5px; color:var(--mute);">
+        전 컨트랙트가 GIWA Sepolia Blockscout에서 소스 검증되어 있다 · sepolia-explorer.giwa.io ·
+        위임 계정(MapaeAccount)은 팩토리가 생성한다
+    </div>
+    <div class="pageno">17 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+<!-- ═══════════════════════ A2 · VERIFICATION ═══════════════════════ -->
+<div class="slide">
+    <div class="kicker">부록 B <span class="sec">/ 검증 전표</span></div>
+    <h1 style="font-size:36px;">같은 주장을 다섯 겹으로 검증했다</h1>
+    <div class="cards" style="grid-template-columns:1fr 1fr; margin-top:30px; gap:14px;">
+        <div class="card" style="padding:20px 24px;"><h3>단위·불변식 테스트 153</h3><p>인코딩 적합성은 재계산 없이 리터럴 기대값으로 고정.
+            기간 한도는 무작위 호출 폭풍 아래서도 "어떤 기간에도 한도 초과 불가" 불변식 유지.</p></div>
+        <div class="card" style="padding:20px 24px;"><h3>포크 테스트 — 실제 도장 상대로</h3><p>실제 거래소 검증을 통과한 주소를 핀 블록에서 소유자로 세워,
+            실배포 도장 컨트랙트 상대로 신원 조건 통과·거부를 재현.</p></div>
+        <div class="card" style="padding:20px 24px;"><h3>정적 분석 — 심각·중대 0</h3><p>Slither 전체 스캔. 남긴 예외는 전부 근거 주석과 함께.</p></div>
+        <div class="card" style="padding:20px 24px;"><h3>3개 언어 바이트 패리티</h3><p>같은 위임을 Solidity·TypeScript·Go가 각각 인코딩해
+            바이트 단위로 일치 — 정산자와 SDK가 서로 다른 걸 서명하는 사고를 원천 차단.</p></div>
+    </div>
+    <div class="card" style="margin-top:14px; padding:20px 24px; border-color:var(--bronze-deep);">
+        <h3 class="bronze">그리고 라이브 — 전부 공개 트랜잭션</h3>
+        <p>정상 결제와 한도 초과, 수취인 이탈, 신원 취소, 위임 끔·켬, 재발급, 2홉 재위임, x402 정산까지 —
+           모든 경계 사례가 GIWA Sepolia에 거부 사유가 디코딩된 채로 남아 있고, mapae.pages.dev에서 열린다.</p>
+    </div>
+    <div class="pageno">18 / 18</div><div class="brandfoot">MAPAE</div>
+</div>
+
+</body>
+</html>
