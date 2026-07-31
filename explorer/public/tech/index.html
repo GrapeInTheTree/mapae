@@ -138,6 +138,18 @@ footer { margin-top: 76px; padding-top: 30px; border-top: 1px solid var(--line);
          font-size: 13px; color: var(--mute); }
 footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px; }
 
+
+/* ── language toggle: one URL, both languages, so a shared link never lands on the wrong one ── */
+.lang { position: fixed; top: 22px; right: 24px; z-index: 20; display: flex;
+        border: 1px solid var(--line2); border-radius: 8px; overflow: hidden;
+        background: rgba(17,16,14,.82); backdrop-filter: blur(8px); }
+.lang button { appearance: none; background: none; border: 0; cursor: pointer;
+               font-family: "SF Mono", Menlo, monospace; font-size: 10.5px; letter-spacing: .12em;
+               color: var(--mute); padding: 7px 11px; }
+.lang button[aria-pressed="true"] { color: var(--ink); background: var(--bone); }
+[data-l][hidden] { display: none; }
+@media print { .lang { display: none; } }
+
 @media (max-width: 1080px) {
     .shell { display: block; padding: 0 24px; }
     .rail { display: none; }
@@ -167,7 +179,12 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 </style>
 </head>
 <body>
-<div class="shell">
+<div class="lang" role="group" aria-label="Language">
+    <button type="button" data-set="ko" aria-pressed="true">KO</button>
+    <button type="button" data-set="en" aria-pressed="false">EN</button>
+</div>
+
+<div class="shell" data-l="ko">
 
 <nav class="rail" aria-label="목차">
     <ol>
@@ -185,8 +202,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <li><a href="#s12"><span class="n">12</span>제품</a></li>
         <li><a href="#s13"><span class="n">13</span>검증</a></li>
         <li><a href="#s14"><span class="n">14</span>만들지 않은 것</a></li>
-        <li><a href="#s15"><span class="n">15</span>배포 주소</a></li>
-        <li><a href="#s16"><span class="n">16</span>다음</a></li>
+        <li><a href="#s15"><span class="n">15</span>신뢰 가정·위협 모델</a></li>
+        <li><a href="#s16"><span class="n">16</span>배포 주소</a></li>
+        <li><a href="#s17"><span class="n">17</span>다음</a></li>
+        <li><a href="#s18"><span class="n">18</span>참고 표준</a></li>
     </ol>
 </nav>
 
@@ -235,8 +254,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <div class="note">
         <strong>2026년 2월</strong> — OpenClaw 프레임워크로 만든 트레이딩 에이전트가 요청 금액을
         잘못 읽어 보유 토큰 5,243만 개(당시 약 25만 달러) 전량을 전송했다. 해킹도 컨트랙트
-        취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도를 사람이 서명해
-        박아뒀다면 오해해도 그 이상은 나갈 수 없다.
+        취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도가 사람의 서명에 고정되어 있었다면, 에이전트가 오해해도 그 이상은 이동할 수 없다.
     </div>
     <p>그리고 한도만으로는 부족하다. 사고가 났을 때 <strong>누가 이 권한을 줬는지</strong>가
        남지 않으면 책임 주체를 특정할 수 없고, 가맹점은 에이전트 결제를 받을 이유가 없다.
@@ -286,7 +304,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        사람이</strong> 가진다. 조건은 계정이 아니라 <code>owner</code>를 평가한다.</p>
     <p>이 분리는 위조 경로를 하나 연다. 아무나 컨트랙트를 배포해 <code>owner()</code>가 남의
        검증된 주소를 가리키게 만들 수 있다 — 훔치는 것은 없지만 <strong>책임 사슬을
-       위조</strong>하는 것이고, 그게 이 제품의 전부다. 두 겹으로 막는다.</p>
+       위조</strong>하는 것이며, 그 사슬이 이 시스템이 보증하는 전부다. 두 겹으로 막는다.</p>
     <div class="card">
         <h4>① 계정 생성에 소유자 본인의 EIP-712 동의 서명을 요구한다</h4>
         <p>팩토리가 서명을 검증하고 등록한다. 동의 없이는 그 주소를 owner로 하는 계정이 존재할 수 없다.</p>
@@ -379,7 +397,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <div class="grid2">
         <div class="q ok"><div class="lbl">도장 유효 · 위임 활성</div><div class="r">결제 성공</div></div>
         <div class="q no"><div class="lbl">도장 유효 · 위임 비활성</div><div class="r">거부</div><div class="why">위임 킬스위치가 단독으로 작동</div></div>
-        <div class="q no"><div class="lbl">도장 취소 · 위임 활성</div><div class="r">거부</div><div class="why">신원 킬스위치가 단독으로 작동 — 핵심 장면</div></div>
+        <div class="q no"><div class="lbl">도장 취소 · 위임 활성</div><div class="r">거부</div><div class="why">신원 킬스위치가 단독으로 작동</div></div>
         <div class="q no"><div class="lbl">도장 취소 · 위임 비활성</div><div class="r">거부</div><div class="why">검증이 조건보다 먼저라 위임 쪽 에러가 결정적으로 나온다</div></div>
     </div>
     <p>각 축을 <strong>다른 축이 온전한 상태에서</strong> 시험했다. 도장이 살아 있는 채로 위임만
@@ -397,19 +415,17 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <p>재위임은 ERC-7710의 일급 연산이다. 에이전트가 자기 권한의 일부를 다른 에이전트에게 넘길
        수 있다. 사슬의 <strong>모든 링크의 조건이 평가</strong>되므로, 자식은 받은 것을 좁힐 수만
        있고 넓힐 수 없다.</p>
-    <p>뿌리를 끄면 위에서 존재조차 모르는 하위 에이전트까지 죽는다. 이 성질을 지키는 것이 사슬
+    <p>뿌리를 비활성화하면 상위에서 존재를 모르는 하위 에이전트까지 함께 정지한다. 이 성질을 지키는 것이 사슬
        테스트 스위트의 존재 이유다.</p>
 </section>
 
 <section id="s10">
     <h2><span class="num">10</span>x402 정산</h2>
-    <p>x402 v2의 <code>exact</code> 스킴은 EVM에서 세 가지 자산 이전 방식을 정의한다. 그중
-       둘은 토큰 레이어에서 승인하고 nonce와 함께 죽는다. 세 번째 <code>erc7710</code>은
+    <p>x402 v2의 <code>exact</code> 스킴은 EVM에서 세 가지 자산 이전 방식을 정의한다. 그중 둘은 토큰 레이어에서 승인하며, 그 승인은 nonce 한 번으로 소진된다. 세 번째 <code>erc7710</code>은
        <strong>위임 매니저를 시뮬레이션</strong>해서 검증하며, 하나의 승인으로 <strong>여러 번
        정산</strong>할 수 있는 유일한 방식이다.</p>
-    <p>마패가 그 슬롯에 꽂힌다. 정산자는 <strong>정책도 자금도 갖지 않는다</strong> — 모든
-       한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 편법이 아니라
-       셀링 포인트다: 정책 엔진 전체가 온체인이라 정산자가 무지해도 된다.</p>
+    <p>마패는 이 세 번째 방식을 구현한다. 정산자는 <strong>정책도 자금도 갖지 않는다</strong> — 모든
+       한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 이것은 우회가 아니라 설계 목표다. 정책 판정이 전부 온체인에 있으므로 정산자는 정책을 알 필요가 없고, 알 수도 없다.</p>
     <p>GIWA에는 EIP-3009 토큰이 없어 다른 두 방식은 애초에 불가능하다. 라이브 증명에서는 같은
        서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부된다.</p>
 </section>
@@ -508,7 +524,39 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 </section>
 
 <section id="s15">
-    <h2><span class="num">15</span>배포 주소</h2>
+    <h2><span class="num">15</span>신뢰 가정과 위협 모델</h2>
+    <p>이 시스템이 무엇을 신뢰하고 무엇을 신뢰하지 않는지를 명시한다. 신뢰 경계를 적지 않은
+       보안 주장은 검증할 수 없다.</p>
+    <h3>신뢰하는 것</h3>
+    <div class="scroll"><table>
+        <tr><th>대상</th><th>가정</th></tr>
+        <tr><td>도장 발급자</td><td>거래소가 실명 확인을 정확히 수행하고, 취소 사유가 생기면 취소한다. 마패는 발급 정확성을 검증하지 않는다 — 다만 <strong>어떤 발급자를 믿을지는 위임자가 서명으로 고른다</strong></td></tr>
+        <tr><td>EAS · DojangScroll</td><td>attestation의 만료·취소 상태를 정확히 반영한다. 조건은 이 값을 매 결제마다 읽는다</td></tr>
+        <tr><td>체인</td><td>GIWA의 합의와 재구성 내성. 이 문서의 모든 강제는 온체인 실행에 의존한다</td></tr>
+        <tr><td>vendoring한 코드</td><td>기간 한도·기한 조건은 MetaMask 감사본을 무수정으로 쓴다. 감사 결과를 신뢰하되, 실제 실행은 우리 테스트가 재확인한다</td></tr>
+    </table></div>
+    <h3>신뢰하지 않는 것</h3>
+    <div class="scroll"><table>
+        <tr><th>대상</th><th>이유와 방어</th></tr>
+        <tr><td>에이전트</td><td>침해되었다고 가정한다. 서명된 조건 밖으로는 지출할 수 없고, 수취인은 인자가 아니라 정책에서 나온다. 에이전트 키 유출의 최대 피해는 <strong>남은 한도까지, 허용된 수취인에게</strong>다</td></tr>
+        <tr><td>정산자 (x402)</td><td>정책도 자금도 갖지 않는다. 정산자가 악의적이어도 조건을 우회할 수 없다 — 판정이 전부 온체인이다. 매니저 주소를 하나로 고정해, 공격자가 지정한 매니저로 수수료 지불자를 소모시키는 경로를 막는다</td></tr>
+        <tr><td>프런트엔드</td><td>백엔드가 없고, 화면의 값은 브라우저가 체인에서 직접 읽는다. 서명 문장과 서명 바이트가 같은 구조에서 생성되며 코덱이 서로의 역함수임을 테스트가 강제한다 — 표시와 서명이 어긋나는 경로를 코드 수준에서 닫는다</td></tr>
+        <tr><td>임의의 컨트랙트</td><td>등록되지 않은 컨트랙트의 <code>owner()</code>는 공격자가 정하는 값이므로, 조건은 팩토리 등록 여부를 먼저 확인한다</td></tr>
+        <tr><td>재위임 하위 사슬</td><td>사슬의 모든 링크의 조건이 평가되므로 자식은 부모를 넓힐 수 없다. 뿌리 비활성화가 사슬 전체를 관통한다</td></tr>
+    </table></div>
+    <h3>알려진 한계</h3>
+    <ul>
+        <li><strong>발급 시점의 신원은 보증하지 않는다.</strong> 조건은 결제 순간의 liveness를 읽을 뿐,
+            거래소가 잘못 발급한 attestation을 걸러내지 못한다. 이는 도장 계층의 책임이다.</li>
+        <li><strong>가스는 에이전트가 낸다.</strong> 잔액이 떨어지면 결제가 실패한다. 대납(paymaster)은
+            기와에 번들러 인프라가 서면 검토한다.</li>
+        <li><strong>공개 RPC의 읽기 일관성.</strong> 로드밸런싱된 엔드포인트가 서로 다른 높이의 상태를
+            반환할 수 있다. 강제는 온체인이라 안전에는 영향이 없지만, 조회 UI는 재시도로 대응한다.</li>
+    </ul>
+</section>
+
+<section id="s16">
+    <h2><span class="num">16</span>배포 주소</h2>
     <p>GIWA Sepolia (91342). 전부 소스 검증되어 있다.</p>
     <div class="scroll"><table>
         <tr><td><code>MapaeDelegationManager</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd">0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd</a></td></tr>
@@ -522,8 +570,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     </table></div>
 </section>
 
-<section id="s16">
-    <h2><span class="num">16</span>다음</h2>
+<section id="s17">
+    <h2><span class="num">17</span>다음</h2>
     <div class="card key">
         <h4>감사된 조건 38종 전부 탑재</h4>
         <p>지금은 결제에 필요한 5종이 올라가 있다. 표준 호환이라 나머지는 수정이 아니라
@@ -549,6 +597,20 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     </div>
 </section>
 
+<section id="s18">
+    <h2><span class="num">18</span>참고 표준</h2>
+    <div class="scroll"><table>
+        <tr><td>ERC-7710</td><td>스마트 컨트랙트 위임 — <code>redeemDelegations</code> 인터페이스와 조건 훅</td></tr>
+        <tr><td>ERC-7715</td><td>지갑에 실행 권한을 요청하는 표면. 요청 경로를 구현해 두었다</td></tr>
+        <tr><td>ERC-7579</td><td>모듈형 계정의 실행 인코딩 — 모드워드와 단일 실행 레이아웃</td></tr>
+        <tr><td>EIP-712 · ERC-1271</td><td>구조화 데이터 서명, 컨트랙트 서명 검증</td></tr>
+        <tr><td>EIP-7702</td><td>EOA에 코드를 부여하는 경로. 기와에서 활성 확인, 로드맵</td></tr>
+        <tr><td>x402 v2</td><td>HTTP 402 결제 프로토콜. <code>exact</code> 스킴의 <code>erc7710</code> 방식을 구현</td></tr>
+        <tr><td>EAS</td><td>Ethereum Attestation Service. 도장이 이 위에 서고, 만료·취소를 결제 시점에 읽는다</td></tr>
+        <tr><td>MetaMask delegation-framework</td><td>구조·해싱의 바이트 호환 기준. 조건 2종은 감사본을 무수정 사용 (MIT AND Apache-2.0)</td></tr>
+    </table></div>
+</section>
+
 <footer>
     <div>더 깊은 문서는 저장소에 있다 — 바이트 수준 명세, 라이브 트랜잭션 전표, 직접 측정한
          생태계 격차.</div>
@@ -564,5 +626,502 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 
 </main>
 </div>
+
+
+<div class="shell" data-l="en" hidden>
+
+<nav class="rail" aria-label="Contents">
+    <ol>
+        <li><a href="#e1"><span class="n">01</span>Summary</a></li>
+        <li><a href="#e2"><span class="n">02</span>The problem</a></li>
+        <li><a href="#e3"><span class="n">03</span>Architecture</a></li>
+        <li><a href="#e4"><span class="n">04</span>Identity vs. funds</a></li>
+        <li><a href="#e5"><span class="n">05</span>The redemption path</a></li>
+        <li><a href="#e6"><span class="n">06</span>Caveats</a></li>
+        <li><a href="#e7"><span class="n">07</span>The contribution</a></li>
+        <li><a href="#e8"><span class="n">08</span>Kill switches</a></li>
+        <li><a href="#e9"><span class="n">09</span>Re-delegation</a></li>
+        <li><a href="#e10"><span class="n">10</span>The x402 path</a></li>
+        <li><a href="#e11"><span class="n">11</span>Agent integration</a></li>
+        <li><a href="#e12"><span class="n">12</span>The product</a></li>
+        <li><a href="#e13"><span class="n">13</span>Verification</a></li>
+        <li><a href="#e14"><span class="n">14</span>Not built</a></li>
+        <li><a href="#e15"><span class="n">15</span>Trust and threat model</a></li>
+        <li><a href="#e16"><span class="n">16</span>Deployed</a></li>
+        <li><a href="#e17"><span class="n">17</span>Next</a></li>
+        <li><a href="#e18"><span class="n">18</span>References</a></li>
+    </ol>
+</nav>
+
+<main>
+
+<header>
+    <div class="mark">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M13 5 L25 14.8 L25 44.2 L13 59 Z"/>
+            <path d="M51 5 L39 14.8 L39 44.2 L51 59 Z"/>
+            <circle cx="32" cy="32" r="2.2"/>
+        </svg>
+        <span>MAPAE</span>
+    </div>
+    <h1>The authority layer<br>for agent payments</h1>
+    <p class="sub">A person with a verified real-world identity grants scoped spending authority to
+       software. The scope is enforced on-chain at every payment, revocation is immediate, and any
+       payment resolves backwards to the verified human who authorised it.</p>
+    <div class="meta">
+        <span>Technical document &middot; 2026.07</span>
+        <span>GIWA Sepolia &middot; 91342</span>
+        <span>Solidity 0.8.29</span>
+        <span><a href="https://github.com/GrapeInTheTree/mapae">github.com/GrapeInTheTree/mapae</a></span>
+    </div>
+</header>
+
+<section id="e1">
+    <h2><span class="num">01</span>Summary</h2>
+    <p>x402 opened the path for an agent to pay for things on its own. What is still missing is a
+       way to <strong>hand over the authority to do so</strong>. Today there are two options: give
+       the agent a private key, with no cap, no payee restriction and no expiry; or trust a
+       custodial service, which reintroduces the intermediary that on-chain payment was meant to
+       remove.</p>
+    <p>Mapae is a third option. The delegation mechanism itself is not invented here &mdash;
+       ERC-7710/7715 and x402 are adopted as they stand, and the contribution is
+       <em>one condition that did not exist anywhere</em>: <strong>the identity of the delegator</strong>.</p>
+    <div class="scroll"><table>
+        <tr><td>Contracts</td><td class="n">8</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
+        <tr><td>Tests</td><td class="n">153</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
+        <tr><td>Live transactions</td><td class="n">20+</td><td>Settlements and every category of refusal, each with its decoded reason</td></tr>
+        <tr><td>Backend servers</td><td class="n">0</td><td>Whether an authority is valid is answered by the chain alone</td></tr>
+    </table></div>
+</section>
+
+<section id="e2">
+    <h2><span class="num">02</span>The problem</h2>
+    <p>Both current ways of letting an agent pay share the same defect: <strong>there is no
+       scope</strong>. Hand over a key and the agent becomes the wallet; use a custodian and you
+       have rebuilt the intermediary in order to make an on-chain payment.</p>
+    <div class="note">
+        <strong>February 2026</strong> &mdash; a trading agent built on the OpenClaw framework
+        misread a requested amount and transferred its entire holding of 52.43 million tokens,
+        roughly USD 250,000 at the time. Not a hack, not a contract vulnerability:
+        <strong>a single misunderstanding by the agent</strong>. Had the cap been fixed in a human
+        signature, no misunderstanding could have moved more than that cap.
+    </div>
+    <p>And a cap alone is not enough. If <strong>who granted the authority</strong> does not
+       survive the incident, no party can be held responsible, and a merchant has no reason to
+       accept agent payments at all. That last piece exists only on GIWA &mdash; no other chain has
+       an identity to condition on.</p>
+</section>
+
+<section id="e3">
+    <h2><span class="num">03</span>Architecture</h2>
+    <div class="dia">
+        <div class="tier">
+            <div class="box"><b>Person (EOA)</b><span>Holds the attestation<br>Signs the conditions</span></div>
+            <div class="arr">sign<i>&rarr;</i></div>
+            <div class="box k"><b>Mapae</b><span>Off-chain grant<br>0 gas &middot; 0 transactions</span></div>
+            <div class="arr">hand off<i>&rarr;</i></div>
+            <div class="box"><b>Agent</b><span>Spends autonomously<br>within scope</span></div>
+        </div>
+        <div class="vgap"></div>
+        <div class="tier">
+            <div class="box"><b>Dojang (DojangScroll)</b><span>Liveness read at time of use</span></div>
+            <div class="arr">read<i>&larr;</i></div>
+            <div class="box k"><b>Delegation manager</b><span>Signatures, chain, caveats</span></div>
+            <div class="arr">execute<i>&rarr;</i></div>
+            <div class="box"><b>Account (funds)</b><span>owner is immutable</span></div>
+        </div>
+        <div class="dcap">Four caveats are evaluated in the manager &mdash; identity, period cap,
+            payee, window. A single failure refuses the whole payment.</div>
+    </div>
+    <div class="scroll"><table>
+        <tr><th>Contract</th><th>Role</th></tr>
+        <tr><td><code>MapaeDelegationManager</code></td><td>ERC-7710 redemption. Validates signatures, chain linkage and disabled flags, evaluates caveats, and only then delegates execution to the account</td></tr>
+        <tr><td><code>MapaeAccount</code></td><td>Holds funds and delegation state. <code>owner</code> is immutable</td></tr>
+        <tr><td><code>MapaeAccountFactory</code></td><td>CREATE2 deployment, EIP-712 owner-consent verification, registry</td></tr>
+        <tr><td><code>DojangVerifiedEnforcer</code></td><td><strong>The contribution.</strong> Conditions a delegation on the delegator's real-world identity</td></tr>
+        <tr><td><code>AllowedPayeeEnforcer</code></td><td>Inspects the recipient inside the transfer calldata, not merely the target</td></tr>
+        <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask's audited enforcers, vendored unmodified &mdash; compatibility demonstrated rather than claimed</td></tr>
+        <tr><td><code>VerifiedCodeEnforcer</code></td><td>Human-in-the-loop tier: redeems only while a live off-chain confirmation stands</td></tr>
+    </table></div>
+</section>
+
+<section id="e4">
+    <h2><span class="num">04</span>Why identity and funds live at different addresses</h2>
+    <p><strong>A Dojang attestation does not attach to a contract.</strong> An exchange attests the
+       wallet address of a person who passed KYC; it will never attest a freshly deployed contract.
+       A design that gates on the delegator address directly would therefore leave the delegator
+       unattested in production, and the demo would pass only on a self-issued attestation &mdash;
+       which proves nothing.</p>
+    <p>So the addresses are split. <strong>The account holds the funds and the delegation state;
+       the person who owns that account holds the identity.</strong> The gate evaluates
+       <code>owner</code>, not the account.</p>
+    <p>That split opens exactly one forgery path: anyone can deploy a contract whose
+       <code>owner()</code> points at a stranger's verified address. Nothing is stolen, but
+       <strong>the accountability chain is forged</strong> &mdash; and that chain is everything
+       this system guarantees. Two defences close it.</p>
+    <div class="card">
+        <h4>&#9312; Creating an account requires an EIP-712 consent signature from the named owner</h4>
+        <p>The factory verifies it and records the binding. Without consent, no account claiming that owner can exist.</p>
+    </div>
+    <div class="card">
+        <h4>&#9313; The gate checks registration before it trusts <code>owner()</code></h4>
+        <p>On an unregistered contract, <code>owner()</code> is a value the attacker chooses. Reverse the order and the defence is worthless.</p>
+    </div>
+    <p>A risk disappears as a side effect: because the owner EOA claims its attestation directly,
+       the question of whether a contract <em>can</em> receive one never arises.</p>
+</section>
+
+<section id="e5">
+    <h2><span class="num">05</span>What a payment passes through</h2>
+    <div class="steps">
+        <div class="step"><div>The agent calls <code>redeemDelegations</code> on the manager</div></div>
+        <div class="step"><div>Array lengths &rarr; the caller is the leaf delegate &rarr; <b>every signature in the chain</b> (ECDSA for EOAs, ERC-1271 for accounts) &rarr; disabled flags and authority linkage</div></div>
+        <div class="step"><div>Caveats: <code>beforeAll</code>, then <code>before</code> <b>leaf to root</b></div></div>
+        <div class="step"><div>Execution runs on the <b>root delegator's account</b> (ERC-7579 single execution)</div></div>
+        <div class="step"><div><code>after</code>, then <code>afterAll</code>, root to leaf</div></div>
+    </div>
+    <div class="note">
+        <strong>Validation always precedes caveats.</strong> That ordering is pinned by a test
+        rather than assumed, which is what makes the outcome deterministic when both kill switches
+        are thrown at once. Batches are atomic: if the second of two executions fails, the first
+        rolls back.
+    </div>
+</section>
+
+<section id="e6">
+    <h2><span class="num">06</span>Caveats &mdash; what is actually signed</h2>
+    <p>A caveat is <code>{enforcer, terms, args}</code>. <strong>The delegator signs
+       <code>terms</code></strong>; the redeemer supplies <code>args</code> at use. The delegation
+       hash excludes <code>signature</code> and <code>args</code>, so nothing the redeemer supplies
+       can alter what was signed.</p>
+    <p>All terms are tightly packed at fixed offsets, and <strong>a wrong length reverts rather
+       than truncating</strong>. Caveats are a conjunction: the last unit of an allowance is
+       spendable, and one unit past it is not.</p>
+    <div class="scroll"><table>
+        <tr><th>Caveat</th><th>Length</th><th>Layout</th></tr>
+        <tr><td>Identity</td><td class="n">52</td><td><code>attesterId(32) &Vert; principal(20)</code></td></tr>
+        <tr><td>Period cap</td><td class="n">116</td><td><code>token(20) &Vert; periodAmount(32) &Vert; periodDuration(32) &Vert; startDate(32)</code></td></tr>
+        <tr><td>Payee</td><td class="n">20&times;N</td><td>Packed addresses. An empty list is an <strong>error</strong>, never an allow-all</td></tr>
+        <tr><td>Window</td><td class="n">32</td><td><code>afterThreshold(uint128) &Vert; beforeThreshold(uint128)</code></td></tr>
+    </table></div>
+</section>
+
+<section id="e7">
+    <h2><span class="num">07</span>The contribution &mdash; the identity caveat</h2>
+    <p>Delegation frameworks already express nearly every spending condition: amounts, periods,
+       streams, targets, methods, calldata, time windows, call counts. MetaMask's framework alone
+       ships <strong>38 audited caveat enforcers</strong>.</p>
+    <p><strong>None of them &mdash; in any deployed framework, on any chain &mdash; conditions a
+       delegation on identity</strong>, because there was no on-chain identity to condition on.</p>
+    <h3>Four load-bearing decisions</h3>
+    <div class="card key">
+        <h4>&#9312; It gates the principal, not the agent</h4>
+        <p>The question an auditor, counterparty or insurer asks is <strong>which verified human
+           authorised this spend</strong>, not whether the software is verified.</p>
+    </div>
+    <div class="card key">
+        <h4>&#9313; The issuer is signed, not assumed</h4>
+        <p>The attester id lives inside the signed terms, so a delegation scoped to one exchange
+           cannot be satisfied by a self-issued attestation &mdash; proven live. The issuer is a
+           <strong>choice made at signing time</strong> rather than a deployment constant, so the
+           gate widens as the Dojang ecosystem grows, with no contract change.</p>
+    </div>
+    <div class="card key">
+        <h4>&#9314; Liveness is read at use, never cached at issuance</h4>
+        <p>Dojang's own resolver documents that its index is not the source of truth for liveness.
+           Following that inherits revocation and expiry as
+           <strong>instant, transaction-free kill switches</strong>.</p>
+    </div>
+    <div class="card key">
+        <h4>&#9315; The boolean read first, the uid getter second</h4>
+        <p>The uid getter reverts on an unverified address. The boolean read collapses absent,
+           expired and revoked into false, so the payer always receives
+           <strong>one actionable error</strong>.</p>
+    </div>
+    <p>The enforcer is stateless and never parses execution calldata, so it composes with any call
+       shape and has no per-delegation accounting to poison by calling the hook directly.</p>
+    <h3>A second gap &mdash; the payee caveat</h3>
+    <p>Target allowlists gate the <strong>token contract</strong>, but an ERC-20 payment's
+       recipient lives at calldata bytes <code>[4:36]</code>, which nothing deployed inspects.
+       <code>AllowedPayeeEnforcer</code> is what makes <em>may pay only these merchants</em>
+       expressible.</p>
+</section>
+
+<section id="e8">
+    <h2><span class="num">08</span>Kill switches &mdash; a 2&times;2</h2>
+    <p>Two independent switches, each independently reversible.</p>
+    <div class="grid2">
+        <div class="q ok"><div class="lbl">Attestation live &middot; delegation on</div><div class="r">Settles</div></div>
+        <div class="q no"><div class="lbl">Attestation live &middot; delegation off</div><div class="r">Refused</div><div class="why">The delegation switch acting alone</div></div>
+        <div class="q no"><div class="lbl">Attestation revoked &middot; delegation on</div><div class="r">Refused</div><div class="why">The identity switch acting alone</div></div>
+        <div class="q no"><div class="lbl">Attestation revoked &middot; delegation off</div><div class="r">Refused</div><div class="why">Validation precedes caveats, so the delegation error is the deterministic one</div></div>
+    </div>
+    <p>Each axis was exercised <strong>while the other stayed intact</strong> &mdash; the delegation
+       disabled with the attestation live, the attestation revoked with the delegation enabled
+       &mdash; so no result depends on an unverified assumption about the manager's check order.
+       Switching a delegation back on <strong>resumes against the allowance already spent</strong>;
+       it does not reset it.</p>
+    <div class="note">
+        What makes the identity switch different: revoking one attestation stops
+        <strong>every delegation that person ever granted</strong>, without a single transaction
+        touching a Mapae contract.
+    </div>
+</section>
+
+<section id="e9">
+    <h2><span class="num">09</span>Re-delegation &mdash; narrowing only</h2>
+    <p>Re-delegation is a first-class ERC-7710 operation, so an agent can pass part of its
+       authority on. <strong>Every link's caveats are evaluated</strong>, which is what lets a child
+       narrow what it received and never widen it.</p>
+    <p>Disabling the root also stops a sub-agent nobody upstream has heard of. Defending that
+       property is why the chain test suite exists.</p>
+</section>
+
+<section id="e10">
+    <h2><span class="num">10</span>The x402 path</h2>
+    <p>x402 v2's <code>exact</code> scheme on EVM defines three asset-transfer methods. Two
+       authorise at the token layer, and that authorisation is consumed by a single nonce. The
+       third, <code>erc7710</code>, is verified by <strong>simulating the delegation
+       manager</strong>, and is the only one a single authorisation can settle more than once.</p>
+    <p>Mapae implements that third method. The facilitator holds <strong>no policy and no
+       funds</strong>: every cap, payee, window and identity check runs on-chain, and its key pays
+       gas and nothing else. This is a design goal rather than a workaround &mdash; because
+       adjudication is entirely on-chain, the settler does not need to know the policy, and cannot.</p>
+    <p>GIWA has no EIP-3009 token, so the other two methods are not available here at all. In the
+       live run, one signed payload settles twice and a third attempt is refused before broadcast.</p>
+</section>
+
+<section id="e11">
+    <h2><span class="num">11</span>Agent integration</h2>
+    <p><code>npx mapae-mcp</code>. MCP is the standard for attaching external tools to an AI agent,
+       and Mapae ships as such a server on npm. One line to install, no configuration; everything
+       after that is natural language.</p>
+    <div class="scroll"><table>
+        <tr><th>Tool</th><th>What it does</th></tr>
+        <tr><td><code>list_permissions</code></td><td>Held delegations and the conditions on each</td></tr>
+        <tr><td><code>check_budget</code></td><td>Spent and remaining allowance for the current period</td></tr>
+        <tr><td><code>pay</code></td><td>Payment &mdash; recipient and token come from the signed policy</td></tr>
+        <tr><td><code>agent_status</code></td><td>Agent address, gas balance, payments still affordable</td></tr>
+        <tr><td><code>request_permission</code></td><td>Builds a request link for a person to sign (ERC-7715)</td></tr>
+        <tr><td><code>load_context</code></td><td>Loads a granted delegation into the running session</td></tr>
+        <tr><td><code>redelegate</code></td><td>Re-delegates, narrowing only</td></tr>
+    </table></div>
+    <div class="note">
+        <strong>There is deliberately no tool to issue or revoke.</strong> That authority belongs to
+        a person's signature, and on-chain only the delegator holds it. A payment's
+        <strong>recipient and token come from the signed policy, not from arguments</strong>, so
+        prompt injection cannot redirect funds. The agent key is generated locally on first run and
+        never leaves the machine.
+    </div>
+</section>
+
+<section id="e12">
+    <h2><span class="num">12</span>The product</h2>
+    <p>The explorer is a static SPA with <strong>no backend</strong> &mdash; the browser reads GIWA
+       directly. Three surfaces:</p>
+    <div class="card">
+        <h4>Create</h4>
+        <p>Compose a scoped authority, read it back <strong>as one sentence in your own
+           language</strong>, and sign. No gas, no transaction. The sentence and the bytes are
+           generated from the same structure, and a test enforces that encode and decode are
+           inverses, so what is read cannot drift from what is signed.</p>
+    </div>
+    <div class="card">
+        <h4>Permissions</h4>
+        <p>What was granted, what it has spent against its cap, and the switch that stops it. What
+           was issued comes from the browser; what happened is read live from the chain on every
+           mount. Where they disagree the chain wins, and the UI says which is which.</p>
+    </div>
+    <div class="card">
+        <h4>Explorer</h4>
+        <p>Paste a payment hash and the full delegation chain unfolds with its conditions.</p>
+    </div>
+    <p>Two things separate this from a block explorer. <strong>Rejections are first-class</strong>:
+       a refused payment emits no logs, so the delegation is decoded from calldata and the reason
+       recovered by replaying the call against pre-block state. And <strong>tense is
+       honest</strong>: a payment that was valid when made shows both facts &mdash; proven valid
+       then by the gate event, revoked now by the live read.</p>
+</section>
+
+<section id="e13">
+    <h2><span class="num">13</span>Verification</h2>
+    <p><strong>153 tests</strong>, all passing. What each layer proves matters more than the count.</p>
+    <div class="scroll"><table>
+        <tr><th>Layer</th><th>Count</th><th>What it proves</th></tr>
+        <tr><td>Fork tests, pinned</td><td class="n">10</td><td>Every Dojang assumption against the <strong>real deployment</strong>: a genuine KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately</td></tr>
+        <tr><td>Encoding conformance</td><td class="n">16</td><td>Typehashes, hash exclusions, ERC-7579 mode word &mdash; pinned as literal constants, never recomputed</td></tr>
+        <tr><td>Delegation chain</td><td class="n">16</td><td>A child cannot widen its parent's cap; forged grafts refused; disabling the root reaches the leaves</td></tr>
+        <tr><td>Manager API</td><td class="n">16</td><td>Kill-switch authority, malformed batches, no hook can re-enter redemption, hook ordering pinned</td></tr>
+        <tr><td>Enforcers and account</td><td class="n">77</td><td>Forgery paths, execution-shape refusals, factory consent binding</td></tr>
+        <tr><td>Integration</td><td class="n">13</td><td>The full scenario end to end, batch atomicity, the 2&times;2 matrix</td></tr>
+        <tr><td>Invariants</td><td class="n">5</td><td>1000 runs &times; 256 calls against an independent ghost ledger: the cap holds, <strong>no payment while identity is dead</strong>, tokens conserved</td></tr>
+        <tr><td>Cross-language byte parity</td><td class="n">31</td><td>The same delegation encoded by Solidity, TypeScript and Go, byte-identical</td></tr>
+        <tr><td>Static analysis</td><td class="n">0 / 0</td><td>Slither high and medium. Five findings triaged and disabled inline with rationale</td></tr>
+        <tr><td>Source verification</td><td class="n">8 / 8</td><td>Read from Blockscout's <strong>API</strong>, not from what a browser displays</td></tr>
+    </table></div>
+    <div class="note">
+        That last row is not pedantry. The test token showed source in the explorer and the verify
+        tool reported "already verified", while the API said <strong>false</strong> &mdash;
+        Blockscout was borrowing source from a different address with identical bytecode that
+        someone else had verified. It is verified in its own right now.
+    </div>
+    <h3>Bugs verification actually caught</h3>
+    <ul>
+        <li>A mode-word packing error silently disabled two execution-shape guards. It hid while the
+            all-zero test passed vacuously, and surfaced on a non-zero round-trip.</li>
+        <li>A build configuration reported deployment success while broadcasting nothing, caught by
+            reading code back from the chain.</li>
+        <li>An account-creation signature was well-formed yet rejected on-chain, because it was
+            signed as EIP-191 rather than the factory's EIP-712 digest.</li>
+    </ul>
+</section>
+
+<section id="e14">
+    <h2><span class="num">14</span>What was deliberately not built</h2>
+    <div class="scroll"><table>
+        <tr><td>A wallet</td><td>That is GIWA Wallet's place. The ERC-7715 request path is already implemented &mdash; when the wallet turns the standard on, this is a switch rather than an integration</td></tr>
+        <tr><td>A stablecoin</td><td>When a KRW stablecoin ships, only an address changes. The test token implements <strong>no standard extension on purpose</strong>, and everything working on a bare ERC-20 is the proof that the design is asset-agnostic</td></tr>
+        <tr><td>A delegation standard</td><td>Adopted, not invented. Audited enforcers run unmodified on this manager, and this identity enforcer runs on theirs</td></tr>
+        <tr><td>An on-chain registry</td><td>Requiring storage at grant time would break the model where a grant is an off-chain signature with no transaction. One gate event closes the traceback loop instead</td></tr>
+        <tr><td>ERC-8004</td><td>Permissionless self-registration adds nothing to an accountability chain, and no registry exists on GIWA (verified by probing). Agent identity is gated the GIWA-native way, through attested code</td></tr>
+        <tr><td>A backend</td><td>Whether an authority is valid must be answered by the chain. An index for fast queries is on the roadmap, but that is caching and shaping &mdash; not the source of truth</td></tr>
+    </table></div>
+</section>
+
+<section id="e15">
+    <h2><span class="num">15</span>Trust assumptions and threat model</h2>
+    <p>What this system trusts, and what it does not. A security claim without a stated trust
+       boundary cannot be checked.</p>
+    <h3>Trusted</h3>
+    <div class="scroll"><table>
+        <tr><th>Party</th><th>Assumption</th></tr>
+        <tr><td>Attestation issuer</td><td>The exchange performs identity verification correctly and revokes when grounds arise. Mapae does not verify issuance quality &mdash; but <strong>which issuer to trust is the delegator's signed choice</strong></td></tr>
+        <tr><td>EAS &middot; DojangScroll</td><td>Expiry and revocation state are reported accurately. The gate reads this on every payment</td></tr>
+        <tr><td>The chain</td><td>GIWA's consensus and reorg resistance. Every enforcement here depends on on-chain execution</td></tr>
+        <tr><td>Vendored code</td><td>The period-cap and window enforcers are MetaMask's audited code, unmodified. The audit is trusted; the behaviour is re-checked by our own tests</td></tr>
+    </table></div>
+    <h3>Not trusted</h3>
+    <div class="scroll"><table>
+        <tr><th>Party</th><th>Why, and the defence</th></tr>
+        <tr><td>The agent</td><td>Assumed compromised. It cannot spend outside the signed conditions, and the recipient comes from policy rather than arguments. The worst case from a leaked agent key is <strong>the remaining allowance, to an allowlisted payee</strong></td></tr>
+        <tr><td>The facilitator</td><td>Holds no policy and no funds. A malicious facilitator cannot bypass a caveat, because adjudication is entirely on-chain. It pins a single manager address, so an attacker-supplied manager cannot turn the fee payer into a gas faucet</td></tr>
+        <tr><td>The frontend</td><td>There is no backend, and displayed values are read from the chain by the browser. The sentence shown and the bytes signed are generated from one structure, with a test enforcing that the codec is a pair of inverses</td></tr>
+        <tr><td>Arbitrary contracts</td><td><code>owner()</code> on an unregistered contract is attacker-controlled, so the gate checks factory registration first</td></tr>
+        <tr><td>Downstream delegations</td><td>Every link's caveats are evaluated, so a child cannot widen a parent, and disabling the root reaches the whole chain</td></tr>
+    </table></div>
+    <h3>Known limits</h3>
+    <ul>
+        <li><strong>Issuance-time identity is not guaranteed.</strong> The gate reads liveness at the
+            moment of payment; it cannot detect an attestation the exchange issued in error. That
+            belongs to the identity layer.</li>
+        <li><strong>The agent pays gas.</strong> If its balance runs out, payments fail. Sponsorship
+            is worth revisiting once bundler infrastructure exists on GIWA.</li>
+        <li><strong>Read consistency on public RPC.</strong> A load-balanced endpoint can return
+            state at differing heights. Enforcement is on-chain so safety is unaffected, but query
+            surfaces retry.</li>
+    </ul>
+</section>
+
+<section id="e16">
+    <h2><span class="num">16</span>Deployed &mdash; GIWA Sepolia (91342)</h2>
+    <p>All source-verified.</p>
+    <div class="scroll"><table>
+        <tr><td><code>MapaeDelegationManager</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd">0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd</a></td></tr>
+        <tr><td><code>MapaeAccountFactory</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x157aF4D7b3f52685c817d5558b3468caD9b61299">0x157aF4D7b3f52685c817d5558b3468caD9b61299</a></td></tr>
+        <tr><td><code>DojangVerifiedEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xb2906a5079702B82C2973423d8cf91e8B41e6371">0xb2906a5079702B82C2973423d8cf91e8B41e6371</a></td></tr>
+        <tr><td><code>AllowedPayeeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1">0x7eF0f193B721B1749d890F1e231C8074670f1bD1</a></td></tr>
+        <tr><td><code>ERC20PeriodTransferEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892">0xE33ba891fa502A075D3E422258723eF4cB6AC892</a></td></tr>
+        <tr><td><code>TimestampEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02">0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02</a></td></tr>
+        <tr><td><code>VerifiedCodeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e">0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e</a></td></tr>
+        <tr><td><code>MockKRW</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B">0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B</a></td></tr>
+    </table></div>
+</section>
+
+<section id="e17">
+    <h2><span class="num">17</span>Next</h2>
+    <div class="card key">
+        <h4>All 38 audited conditions</h4>
+        <p>Five are deployed &mdash; the ones a payment needs. Because the structures are
+           byte-compatible, the rest is verification work rather than authoring: per-payment
+           ceiling, lifetime total, call count, allowed selector, and an approved-order hash that
+           binds a payment to a purpose. Productised as scenario presets, so the combinations are a
+           choice rather than an exercise.</p>
+    </div>
+    <div class="card key">
+        <h4>Wallet integration and Dojang granularity</h4>
+        <p>The ERC-7715 request path exists; only the wallet side remains. And as per-exchange and
+           per-tier attestations appear, the expressible conditions sharpen
+           <strong>without a contract change</strong>, because the issuer is a signed choice rather
+           than a constant.</p>
+    </div>
+    <div class="card">
+        <h4>A query layer</h4>
+        <p>GIWA has no off-chain Dojang query surface. Indexing real-issuer attestations and Mapae
+           redemptions opens one for the ecosystem: truth stays on the chain, speed comes from the
+           index.</p>
+    </div>
+    <div class="card">
+        <h4>EIP-7702</h4>
+        <p>Verified active on GIWA by behavioural test. The owner EOA becomes the delegator
+           directly, so the attested address itself holds the delegation with no account contract.
+           The enforcer already accepts that shape.</p>
+    </div>
+</section>
+
+<section id="e18">
+    <h2><span class="num">18</span>References</h2>
+    <div class="scroll"><table>
+        <tr><td>ERC-7710</td><td>Smart contract delegation &mdash; the <code>redeemDelegations</code> interface and caveat hooks</td></tr>
+        <tr><td>ERC-7715</td><td>Requesting execution permissions from a wallet. The request path is implemented</td></tr>
+        <tr><td>ERC-7579</td><td>Modular account execution encoding &mdash; mode word and single-execution layout</td></tr>
+        <tr><td>EIP-712 &middot; ERC-1271</td><td>Typed structured data signing; contract signature verification</td></tr>
+        <tr><td>EIP-7702</td><td>Setting code on an EOA. Verified active on GIWA; on the roadmap</td></tr>
+        <tr><td>x402 v2</td><td>HTTP 402 payment protocol. The <code>erc7710</code> method of the <code>exact</code> scheme is implemented</td></tr>
+        <tr><td>EAS</td><td>Ethereum Attestation Service. Dojang builds on it; expiry and revocation are read at payment time</td></tr>
+        <tr><td>MetaMask delegation-framework</td><td>The byte-compatibility reference for structures and hashing. Two enforcers vendored unmodified (MIT AND Apache-2.0)</td></tr>
+    </table></div>
+</section>
+
+<footer>
+    <div>Deeper material lives in the repository &mdash; byte-level specification, the ledger of
+         live transactions, and measured ecosystem gaps.</div>
+    <div class="links">
+        <a href="https://github.com/GrapeInTheTree/mapae">Repository</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/SPEC.md">Specification</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/DEMO.md">Live transactions</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/GAPS.md">Ecosystem gaps</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/ERC7715.md">Wallet mapping</a>
+        <a href="/">Product</a>
+    </div>
+</footer>
+
+</main>
+</div>
+
+<script>
+// The document ships both languages; the toggle only decides which is displayed, so a saved page
+// and a printed page keep whichever the reader chose, and no URL can point at a missing language.
+(function () {
+    var buttons = document.querySelectorAll(".lang button");
+    function apply(lang) {
+        document.documentElement.lang = lang;
+        document.querySelectorAll("[data-l]").forEach(function (el) {
+            el.hidden = el.getAttribute("data-l") !== lang;
+        });
+        buttons.forEach(function (b) {
+            b.setAttribute("aria-pressed", String(b.dataset.set === lang));
+        });
+        document.title = lang === "en" ? "Mapae - Technical Document" : "마패 - 기술 문서";
+        try { localStorage.setItem("mapae.doc.lang", lang); } catch (e) {}
+    }
+    var saved = null;
+    try { saved = localStorage.getItem("mapae.doc.lang"); } catch (e) {}
+    var prefersKo = (navigator.language || "").toLowerCase().indexOf("ko") === 0;
+    apply(saved || (prefersKo ? "ko" : "en"));
+    buttons.forEach(function (b) {
+        b.addEventListener("click", function () { apply(b.dataset.set); });
+    });
+})();
+</script>
 </body>
 </html>
