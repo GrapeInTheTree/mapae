@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>마패 — 기술 문서</title>
+<meta name="description" content="에이전트 결제의 권한 레이어. 아키텍처와 구현 결정의 이유.">
+<link rel="icon" href="/mapae-favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/*
+ * A technical one-pager, typeset as a document rather than a web page: one reading column, a
+ * numbered spine down the left, and everything self-contained so it survives being saved,
+ * printed, or read offline. Same Ink/Bone/Bronze as the product - bronze marks authority,
+ * jade and red are reserved for settled and refused, exactly as they are on-chain.
+ */
+:root {
+    --ink: #11100E; --surface: #191815; --surface2: #201E1B;
+    --line: #2B2925; --line2: #38352F;
+    --bone: #E9E4DA; --ink2: #B3AEA3; --mute: #837E74;
+    --bronze: #D9AB77; --bronze-deep: #8A5A35;
+    --jade: #8FBCA1; --red: #D08072;
+    --col: 730px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { background: var(--ink); scroll-behavior: smooth; }
+body {
+    background: var(--ink); color: var(--bone);
+    font-family: "Noto Sans KR", -apple-system, sans-serif;
+    font-size: 15.5px; line-height: 1.85; font-weight: 300;
+    word-break: keep-all; -webkit-font-smoothing: antialiased;
+}
+a { color: var(--bronze); text-decoration: none; border-bottom: 1px solid rgba(217,171,119,.28); }
+a:hover { border-bottom-color: var(--bronze); }
+strong, b { font-weight: 500; color: var(--bone); }
+em { font-style: normal; color: var(--bronze); }
+code, .mono { font-family: "SF Mono", Menlo, monospace; font-size: .87em; }
+code { color: var(--ink2); background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
+
+/* ── layout: a fixed spine on the left, one column of prose ── */
+.shell { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: grid;
+         grid-template-columns: 1fr var(--col) 1fr; }
+.rail { position: sticky; top: 0; height: 100vh; padding: 108px 26px 40px 0;
+        display: flex; flex-direction: column; justify-content: flex-start; }
+.rail ol { list-style: none; font-size: 12px; line-height: 1.55; }
+.rail li { margin-bottom: 9px; }
+.rail a { color: var(--mute); border: 0; display: flex; gap: 9px; }
+.rail a:hover { color: var(--bone); }
+.rail .n { font-family: "SF Mono", Menlo, monospace; font-size: 10px; color: var(--line2);
+           padding-top: 2px; flex: none; }
+main { grid-column: 2; padding: 0 0 120px; min-width: 0; }
+
+/* ── masthead ── */
+header { padding: 96px 0 42px; border-bottom: 1px solid var(--line); }
+.mark { display: flex; align-items: center; gap: 13px; }
+.mark svg { width: 27px; height: 27px; }
+.mark svg path, .mark svg circle { fill: var(--bone); }
+.mark span { font-family: "SF Mono", Menlo, monospace; font-size: 12px; letter-spacing: .34em; }
+h1 { font-family: "Noto Serif KR", serif; font-size: 44px; font-weight: 600; line-height: 1.3;
+     letter-spacing: -.01em; margin-top: 30px; }
+.sub { font-size: 17px; color: var(--ink2); margin-top: 16px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 26px;
+        font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--mute); }
+
+/* ── sections ── */
+section { padding-top: 58px; scroll-margin-top: 24px; }
+h2 { font-family: "Noto Serif KR", serif; font-size: 25px; font-weight: 600; line-height: 1.4;
+     display: flex; gap: 15px; align-items: baseline; }
+h2 .num { font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: var(--bronze);
+          flex: none; font-weight: 400; }
+h3 { font-size: 16px; font-weight: 600; margin-top: 30px; }
+p { margin-top: 15px; }
+h2 + p, h3 + p { margin-top: 13px; }
+ul, ol.body { margin: 15px 0 0 3px; padding-left: 18px; }
+li { margin-top: 8px; }
+
+/* ── figures ── */
+table { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 13.5px; }
+th { text-align: left; font-family: "SF Mono", Menlo, monospace; font-size: 10px;
+     letter-spacing: .15em; color: var(--mute); font-weight: 400; text-transform: uppercase;
+     padding: 0 14px 9px 0; border-bottom: 1px solid var(--line2); }
+td { padding: 11px 14px 11px 0; border-bottom: 1px solid var(--line); vertical-align: top;
+     color: var(--ink2); line-height: 1.65; }
+td:first-child { color: var(--bone); font-weight: 400; }
+td.n { font-family: "SF Mono", Menlo, monospace; color: var(--bronze); white-space: nowrap; }
+.scroll { overflow-x: auto; }
+
+.note { border-left: 2px solid var(--bronze-deep); padding: 3px 0 3px 20px; margin-top: 24px;
+        font-size: 14.5px; color: var(--ink2); }
+.note strong { color: var(--bone); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+        padding: 20px 24px; margin-top: 14px; font-size: 14.5px; }
+.card h4 { font-size: 15px; font-weight: 600; }
+.card p { margin-top: 8px; color: var(--ink2); font-size: 14px; }
+.card.key { border-color: var(--bronze-deep); background: var(--surface2); }
+
+/* ── architecture diagram ── */
+.dia { margin-top: 28px; border: 1px solid var(--line); border-radius: 14px; padding: 30px 26px;
+       background: var(--surface); }
+.tier { display: flex; align-items: center; gap: 12px; }
+.box { flex: 1; border: 1px solid var(--line2); border-radius: 10px; padding: 13px 15px;
+       background: var(--ink); text-align: center; }
+.box.k { border-color: var(--bronze-deep); background: var(--surface2); }
+.box b { display: block; font-size: 13.5px; font-weight: 600; }
+.box span { display: block; font-size: 11px; color: var(--mute); margin-top: 4px; line-height: 1.5; }
+.arr { font-family: "SF Mono", Menlo, monospace; font-size: 10px; color: var(--bronze);
+       text-align: center; flex: none; width: 74px; }
+.arr i { display: block; font-style: normal; color: var(--line2); font-size: 13px; margin-top: 1px; }
+.vgap { height: 14px; }
+.dcap { margin-top: 18px; padding-top: 15px; border-top: 1px solid var(--line);
+        font-size: 12.5px; color: var(--mute); }
+
+/* ── pipeline steps ── */
+.steps { counter-reset: s; margin-top: 22px; }
+.step { display: grid; grid-template-columns: 30px 1fr; gap: 15px; padding: 12px 0;
+        border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.step:last-child { border-bottom: 0; }
+.step::before { counter-increment: s; content: counter(s);
+                font-family: "SF Mono", Menlo, monospace; font-size: 11px; color: var(--bronze);
+                padding-top: 5px; }
+.step div { color: var(--ink2); }
+.step b { color: var(--bone); }
+
+/* ── 2x2 ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.q { border: 1px solid var(--line); border-radius: 11px; padding: 17px 19px; background: var(--surface); }
+.q .lbl { font-family: "SF Mono", Menlo, monospace; font-size: 10px; letter-spacing: .12em;
+          color: var(--mute); }
+.q .r { margin-top: 7px; font-size: 14px; font-weight: 500; }
+.q.ok .r { color: var(--jade); }
+.q.no .r { color: var(--red); }
+.q .why { font-size: 12px; color: var(--mute); margin-top: 3px; line-height: 1.55; }
+
+footer { margin-top: 76px; padding-top: 30px; border-top: 1px solid var(--line);
+         font-size: 13px; color: var(--mute); }
+footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px; }
+
+@media (max-width: 1080px) {
+    .shell { display: block; padding: 0 24px; }
+    .rail { display: none; }
+    main { max-width: var(--col); margin: 0 auto; }
+}
+@media (max-width: 620px) {
+    body { font-size: 15px; }
+    h1 { font-size: 31px; }
+    h2 { font-size: 21px; gap: 10px; }
+    header { padding-top: 60px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .tier { flex-direction: column; align-items: stretch; }
+    .arr { width: auto; padding: 2px 0; }
+}
+@media print {
+    :root { --ink: #fff; --surface: #fbfaf8; --surface2: #f5f3ef; --line: #ddd8d0;
+            --line2: #c9c3b8; --bone: #16150F; --ink2: #3A3730; --mute: #6E6A60;
+            --bronze: #7A4E2B; --bronze-deep: #B08A5E; }
+    .rail { display: none; }
+    .shell { display: block; max-width: none; padding: 0; }
+    section { page-break-inside: auto; }
+    h2 { page-break-after: avoid; }
+    table, .dia, .card, .grid2 { page-break-inside: avoid; }
+    a { color: var(--bronze); border: 0; }
+    @page { margin: 16mm; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="rail" aria-label="목차">
+    <ol>
+        <li><a href="#s1"><span class="n">01</span>요약</a></li>
+        <li><a href="#s2"><span class="n">02</span>문제</a></li>
+        <li><a href="#s3"><span class="n">03</span>아키텍처</a></li>
+        <li><a href="#s4"><span class="n">04</span>신원과 자금의 분리</a></li>
+        <li><a href="#s5"><span class="n">05</span>결제가 지나는 경로</a></li>
+        <li><a href="#s6"><span class="n">06</span>조건 — 무엇을 서명하나</a></li>
+        <li><a href="#s7"><span class="n">07</span>기여물: 신원 조건</a></li>
+        <li><a href="#s8"><span class="n">08</span>킬스위치</a></li>
+        <li><a href="#s9"><span class="n">09</span>재위임</a></li>
+        <li><a href="#s10"><span class="n">10</span>x402 정산</a></li>
+        <li><a href="#s11"><span class="n">11</span>에이전트 연동</a></li>
+        <li><a href="#s12"><span class="n">12</span>제품</a></li>
+        <li><a href="#s13"><span class="n">13</span>검증</a></li>
+        <li><a href="#s14"><span class="n">14</span>만들지 않은 것</a></li>
+        <li><a href="#s15"><span class="n">15</span>배포 주소</a></li>
+        <li><a href="#s16"><span class="n">16</span>다음</a></li>
+    </ol>
+</nav>
+
+<main>
+
+<header>
+    <div class="mark">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+            <path d="M13 5 L25 14.8 L25 44.2 L13 59 Z"/>
+            <path d="M51 5 L39 14.8 L39 44.2 L51 59 Z"/>
+            <circle cx="32" cy="32" r="2.2"/>
+        </svg>
+        <span>MAPAE</span>
+    </div>
+    <h1>에이전트 결제의<br>권한 레이어</h1>
+    <p class="sub">실명이 검증된 사람이 소프트웨어에 범위를 정해 지출 권한을 넘긴다.
+       범위는 결제 순간마다 컨트랙트가 강제하고, 취소는 즉시 반영되며, 사고는 실명까지 역추적된다.</p>
+    <div class="meta">
+        <span>기술 문서 · 2026.07</span>
+        <span>GIWA Sepolia · 91342</span>
+        <span>Solidity 0.8.29</span>
+        <span><a href="https://github.com/GrapeInTheTree/mapae">github.com/GrapeInTheTree/mapae</a></span>
+    </div>
+</header>
+
+<section id="s1">
+    <h2><span class="num">01</span>요약</h2>
+    <p>x402로 에이전트가 스스로 결제하는 경로는 이미 열렸다. 막힌 것은 <strong>권한을 넘기는
+       방법</strong>이다. 지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수 없다)
+       수탁 서비스를 믿는 것 둘뿐이다.</p>
+    <p>마패는 세 번째 길이다. 위임 메커니즘 자체는 발명하지 않았다 — ERC-7710/7715와 x402를
+       채택하고, <em>어디에도 없던 조건 하나</em>를 기여한다: <strong>위임자의 신원</strong>.</p>
+    <div class="scroll"><table>
+        <tr><td>컨트랙트</td><td class="n">8</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
+        <tr><td>테스트</td><td class="n">153</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
+        <tr><td>라이브 트랜잭션</td><td class="n">20+</td><td>정상 결제와 모든 거부 유형, 사유가 디코딩된 채로</td></tr>
+        <tr><td>백엔드 서버</td><td class="n">0</td><td>권한의 유효성은 체인만 답한다</td></tr>
+    </table></div>
+</section>
+
+<section id="s2">
+    <h2><span class="num">02</span>문제</h2>
+    <p>에이전트에게 결제를 맡기는 현재의 방법은 둘 다 같은 결함을 공유한다. <strong>범위가
+       없다.</strong> 개인키를 넘기면 에이전트가 곧 지갑이 되고, 수탁에 맡기면 온체인 결제를
+       하려고 다시 중개인을 세우는 셈이다.</p>
+    <div class="note">
+        <strong>2026년 2월</strong> — OpenClaw 프레임워크로 만든 트레이딩 에이전트가 요청 금액을
+        잘못 읽어 보유 토큰 5,243만 개(당시 약 25만 달러) 전량을 전송했다. 해킹도 컨트랙트
+        취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도를 사람이 서명해
+        박아뒀다면 오해해도 그 이상은 나갈 수 없다.
+    </div>
+    <p>그리고 한도만으로는 부족하다. 사고가 났을 때 <strong>누가 이 권한을 줬는지</strong>가
+       남지 않으면 책임 주체를 특정할 수 없고, 가맹점은 에이전트 결제를 받을 이유가 없다.
+       이 마지막 조각이 기와에만 있다 — 다른 체인에는 조건으로 걸 신원 자체가 없다.</p>
+</section>
+
+<section id="s3">
+    <h2><span class="num">03</span>아키텍처</h2>
+    <div class="dia">
+        <div class="tier">
+            <div class="box"><b>사람 (EOA)</b><span>도장 보유<br>조건을 서명</span></div>
+            <div class="arr">서명<i>→</i></div>
+            <div class="box k"><b>마패</b><span>오프체인 위임장<br>가스 0 · 트랜잭션 0</span></div>
+            <div class="arr">전달<i>→</i></div>
+            <div class="box"><b>에이전트</b><span>범위 안에서<br>자율 결제</span></div>
+        </div>
+        <div class="vgap"></div>
+        <div class="tier">
+            <div class="box"><b>도장 (DojangScroll)</b><span>결제 시점 liveness 조회</span></div>
+            <div class="arr">조회<i>←</i></div>
+            <div class="box k"><b>위임 매니저</b><span>서명·사슬·조건 전수 검사</span></div>
+            <div class="arr">실행<i>→</i></div>
+            <div class="box"><b>계정 (자금)</b><span>owner immutable</span></div>
+        </div>
+        <div class="dcap">조건 4종이 매니저에서 평가된다 — 신원 · 기간 한도 · 수취인 · 기한.
+            하나라도 실패하면 결제가 통째로 거부된다.</div>
+    </div>
+    <div class="scroll"><table>
+        <tr><th>컨트랙트</th><th>역할</th></tr>
+        <tr><td><code>MapaeDelegationManager</code></td><td>ERC-7710 위임 실행. 서명·사슬·비활성 검사 후 조건을 평가하고, 통과해야만 계정에 실행을 위임</td></tr>
+        <tr><td><code>MapaeAccount</code></td><td>자금과 위임 상태를 보유. <code>owner</code>는 immutable</td></tr>
+        <tr><td><code>MapaeAccountFactory</code></td><td>CREATE2 배포 + 소유자 동의 서명(EIP-712) 검증 + 등록부</td></tr>
+        <tr><td><code>DojangVerifiedEnforcer</code></td><td><strong>기여물.</strong> 위임자의 실명 증명을 결제 조건으로 건다</td></tr>
+        <tr><td><code>AllowedPayeeEnforcer</code></td><td>이체 calldata의 수취인을 검사 — 타겟이 아니라</td></tr>
+        <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask 감사본을 무수정 vendoring — 호환성의 실증</td></tr>
+        <tr><td><code>VerifiedCodeEnforcer</code></td><td>사람 확인 티어. 살아 있는 오프체인 확인이 있을 때만 통과</td></tr>
+    </table></div>
+</section>
+
+<section id="s4">
+    <h2><span class="num">04</span>신원과 자금의 분리</h2>
+    <p><strong>도장은 컨트랙트에 붙지 않는다.</strong> 거래소는 KYC를 통과한 <em>사람의 지갑
+       주소</em>에 발급하지, 방금 배포된 컨트랙트에 발급하지 않는다. 그래서 위임자 주소를 그대로
+       검증하도록 설계하면 프로덕션에서 도장이 없고, 데모는 자기 발급 attestation으로만 통과한다
+       — 논지가 무너진다.</p>
+    <p>그래서 주소를 둘로 나눴다. <strong>자금과 위임 상태는 계정이, 신원은 그 계정의 소유자인
+       사람이</strong> 가진다. 조건은 계정이 아니라 <code>owner</code>를 평가한다.</p>
+    <p>이 분리는 위조 경로를 하나 연다. 아무나 컨트랙트를 배포해 <code>owner()</code>가 남의
+       검증된 주소를 가리키게 만들 수 있다 — 훔치는 것은 없지만 <strong>책임 사슬을
+       위조</strong>하는 것이고, 그게 이 제품의 전부다. 두 겹으로 막는다.</p>
+    <div class="card">
+        <h4>① 계정 생성에 소유자 본인의 EIP-712 동의 서명을 요구한다</h4>
+        <p>팩토리가 서명을 검증하고 등록한다. 동의 없이는 그 주소를 owner로 하는 계정이 존재할 수 없다.</p>
+    </div>
+    <div class="card">
+        <h4>② 조건은 등록 여부를 먼저 확인한 뒤에만 <code>owner()</code>를 신뢰한다</h4>
+        <p>등록되지 않은 컨트랙트의 <code>owner()</code>는 공격자가 정하는 값이다. 순서가 뒤바뀌면 방어가 무의미해진다.</p>
+    </div>
+    <p>부수 효과로 리스크 하나가 소멸한다 — 소유자 EOA가 도장을 직접 발급받으므로 "컨트랙트가
+       attestation을 받을 수 있는가"라는 가정 자체가 불필요해진다.</p>
+</section>
+
+<section id="s5">
+    <h2><span class="num">05</span>결제가 지나는 경로</h2>
+    <div class="steps">
+        <div class="step"><div>에이전트가 매니저에 <code>redeemDelegations</code> 호출</div></div>
+        <div class="step"><div>배열 길이 → 호출자가 말단 delegate인가 → <b>사슬의 모든 서명</b>(EOA는 ECDSA, 계정은 ERC-1271) → 비활성 플래그와 authority 연결</div></div>
+        <div class="step"><div>조건 평가: <code>beforeAll</code> → <code>before</code>를 <b>말단에서 뿌리 방향</b>으로</div></div>
+        <div class="step"><div>실행은 <b>뿌리 위임자의 계정</b>에서 (ERC-7579 단일 실행)</div></div>
+        <div class="step"><div><code>after</code> → <code>afterAll</code>을 뿌리에서 말단 방향으로</div></div>
+    </div>
+    <div class="note">
+        <strong>검증이 조건보다 항상 먼저 온다.</strong> 이 순서는 가정이 아니라 테스트로 고정돼
+        있어서, 두 킬스위치가 동시에 걸렸을 때 어떤 에러가 나는지가 결정적이다. 배치는
+        원자적이다 — 2건 중 2번째가 실패하면 1번째도 롤백된다.
+    </div>
+</section>
+
+<section id="s6">
+    <h2><span class="num">06</span>조건 — 무엇을 서명하나</h2>
+    <p>조건은 <code>{enforcer, terms, args}</code>다. <code>terms</code>는 <strong>위임자가
+       서명</strong>하고, <code>args</code>는 사용 시점에 사용자가 낸다. 위임 해시는
+       <code>signature</code>와 <code>args</code>를 제외하고 계산되므로, 사용자가 낸 값이 서명을
+       바꿀 수 없다.</p>
+    <p>terms는 전부 고정 오프셋으로 tightly-pack되며, <strong>길이가 틀리면 잘라내는 게 아니라
+       revert</strong>한다. 조건들은 논리곱이다 — 한도의 마지막 1원까지 쓸 수 있고, 1원도 넘을
+       수 없다.</p>
+    <div class="scroll"><table>
+        <tr><th>조건</th><th>길이</th><th>레이아웃</th></tr>
+        <tr><td>신원</td><td class="n">52</td><td><code>attesterId(32) ‖ principal(20)</code></td></tr>
+        <tr><td>기간 한도</td><td class="n">116</td><td><code>token(20) ‖ periodAmount(32) ‖ periodDuration(32) ‖ startDate(32)</code></td></tr>
+        <tr><td>수취인</td><td class="n">20×N</td><td>패킹된 주소 목록. 빈 목록은 전체 허용이 아니라 <strong>에러</strong></td></tr>
+        <tr><td>기한</td><td class="n">32</td><td><code>afterThreshold(uint128) ‖ beforeThreshold(uint128)</code></td></tr>
+    </table></div>
+</section>
+
+<section id="s7">
+    <h2><span class="num">07</span>기여물 — 신원 조건</h2>
+    <p>배포된 위임 프레임워크들은 거의 모든 지출 조건을 이미 표현한다. 금액·기간·스트리밍·
+       타겟·메서드·calldata·시간 범위·호출 횟수. MetaMask 프레임워크 하나만 해도 감사된 조건이
+       <strong>38종</strong>이다.</p>
+    <p><strong>그중 위임을 신원에 걸리게 하는 것은 없다</strong> — 어떤 배포된 프레임워크에도,
+       어떤 체인에도. 조건으로 걸 온체인 신원이 없었기 때문이다.</p>
+    <h3>설계 결정 넷</h3>
+    <div class="card key">
+        <h4>① 에이전트가 아니라 위임자의 신원을 건다</h4>
+        <p>감사인·거래상대·보험사가 묻는 것은 "이 소프트웨어가 검증됐나"가 아니라
+           <strong>"어떤 실명이 이 지출을 허락했나"</strong>다.</p>
+    </div>
+    <div class="card key">
+        <h4>② 발급자는 가정하지 않고 서명한다</h4>
+        <p>발급자 식별자가 서명된 terms 안에 있다. 업비트로 범위가 정해진 위임은 자가 발급
+           attestation으로 만족될 수 없다 — 라이브로 증명됨. 발급자가 배포 상수가 아니라
+           <strong>서명 시점의 선택</strong>이라, 도장 생태계가 자랄수록 컨트랙트 변경 없이
+           넓어진다.</p>
+    </div>
+    <div class="card key">
+        <h4>③ liveness는 캐시하지 않고 사용 시점에 읽는다</h4>
+        <p>Dojang의 리졸버 자체가 "attestation은 사용 시점에 검증되어야 하며 인덱서는 liveness의
+           진실 소스가 아니다"라고 명시한다. 이 설계를 그대로 따랐고, 그래서 취소와 만료가
+           <strong>트랜잭션 없는 즉시 킬스위치</strong>가 된다.</p>
+    </div>
+    <div class="card key">
+        <h4>④ boolean 조회 먼저, uid 조회는 나중</h4>
+        <p>uid 게터는 미검증 주소에 revert한다. boolean 읽기가 부재·만료·취소를 전부 false로
+           접어주므로, 결제자는 항상 <strong>행동 가능한 에러 하나</strong>를 받는다.</p>
+    </div>
+    <p>이 컨트랙트는 무상태이고 실행 calldata를 파싱하지 않는다. 그래서 어떤 호출 형태와도
+       조합되고, 훅을 직접 불러 오염시킬 회계도 없다.</p>
+    <h3>두 번째 빈칸 — 수취인 조건</h3>
+    <p>작업 중에 격차가 하나 더 드러났다. 타겟 allowlist는 <strong>토큰 컨트랙트</strong>를
+       검사하는데, ERC-20 결제의 실제 수취인은 calldata 바이트 <code>[4:36]</code>에 있고 배포된
+       것 중 이걸 보는 게 없다. <code>AllowedPayeeEnforcer</code>가 <em>"이 가맹점들에만 지불
+       가능"</em>을 표현 가능하게 만든다.</p>
+</section>
+
+<section id="s8">
+    <h2><span class="num">08</span>킬스위치 — 2×2 직교</h2>
+    <p>두 개의 독립적인 스위치가 있고, 각각 되돌릴 수 있다.</p>
+    <div class="grid2">
+        <div class="q ok"><div class="lbl">도장 유효 · 위임 활성</div><div class="r">결제 성공</div></div>
+        <div class="q no"><div class="lbl">도장 유효 · 위임 비활성</div><div class="r">거부</div><div class="why">위임 킬스위치가 단독으로 작동</div></div>
+        <div class="q no"><div class="lbl">도장 취소 · 위임 활성</div><div class="r">거부</div><div class="why">신원 킬스위치가 단독으로 작동 — 핵심 장면</div></div>
+        <div class="q no"><div class="lbl">도장 취소 · 위임 비활성</div><div class="r">거부</div><div class="why">검증이 조건보다 먼저라 위임 쪽 에러가 결정적으로 나온다</div></div>
+    </div>
+    <p>각 축을 <strong>다른 축이 온전한 상태에서</strong> 시험했다. 도장이 살아 있는 채로 위임만
+       끄고, 위임이 켜진 채로 도장만 취소한다. 그래서 결과가 매니저의 체크 순서라는 가정에
+       의존하지 않는다. 되돌리는 것도 각각 증명했다 — 다시 켜면 <strong>쓰던 한도 그대로</strong>
+       재개되지, 리셋되지 않는다.</p>
+    <div class="note">
+        신원 스위치가 특별한 이유: 도장을 취소하면 그 사람이 발급한 <strong>모든 마패</strong>가
+        한 번에 멈춘다. 마패 컨트랙트를 건드리는 트랜잭션은 하나도 없이.
+    </div>
+</section>
+
+<section id="s9">
+    <h2><span class="num">09</span>재위임 — 좁히기만 가능</h2>
+    <p>재위임은 ERC-7710의 일급 연산이다. 에이전트가 자기 권한의 일부를 다른 에이전트에게 넘길
+       수 있다. 사슬의 <strong>모든 링크의 조건이 평가</strong>되므로, 자식은 받은 것을 좁힐 수만
+       있고 넓힐 수 없다.</p>
+    <p>뿌리를 끄면 위에서 존재조차 모르는 하위 에이전트까지 죽는다. 이 성질을 지키는 것이 사슬
+       테스트 스위트의 존재 이유다.</p>
+</section>
+
+<section id="s10">
+    <h2><span class="num">10</span>x402 정산</h2>
+    <p>x402 v2의 <code>exact</code> 스킴은 EVM에서 세 가지 자산 이전 방식을 정의한다. 그중
+       둘은 토큰 레이어에서 승인하고 nonce와 함께 죽는다. 세 번째 <code>erc7710</code>은
+       <strong>위임 매니저를 시뮬레이션</strong>해서 검증하며, 하나의 승인으로 <strong>여러 번
+       정산</strong>할 수 있는 유일한 방식이다.</p>
+    <p>마패가 그 슬롯에 꽂힌다. 정산자는 <strong>정책도 자금도 갖지 않는다</strong> — 모든
+       한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 편법이 아니라
+       셀링 포인트다: 정책 엔진 전체가 온체인이라 정산자가 무지해도 된다.</p>
+    <p>GIWA에는 EIP-3009 토큰이 없어 다른 두 방식은 애초에 불가능하다. 라이브 증명에서는 같은
+       서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부된다.</p>
+</section>
+
+<section id="s11">
+    <h2><span class="num">11</span>에이전트 연동</h2>
+    <p><code>npx mapae-mcp</code>. MCP는 AI 에이전트에 외부 도구를 꽂는 표준 규격이고, 마패는 이
+       규격의 서버로 npm에 배포되어 있다. 클로드 코드·코덱스 같은 에이전트에 설치 한 줄이면
+       붙고, 그다음부터는 전부 자연어다.</p>
+    <div class="scroll"><table>
+        <tr><th>도구</th><th>하는 일</th></tr>
+        <tr><td><code>list_permissions</code></td><td>보유한 마패 목록과 각각의 조건</td></tr>
+        <tr><td><code>check_budget</code></td><td>이번 기간의 사용액과 잔여 한도</td></tr>
+        <tr><td><code>pay</code></td><td>결제 — 수취인·토큰은 서명된 정책에서 나온다</td></tr>
+        <tr><td><code>agent_status</code></td><td>에이전트 주소·가스 잔량·남은 결제 여력</td></tr>
+        <tr><td><code>request_permission</code></td><td>사람에게 보낼 권한 요청 링크 생성 (ERC-7715)</td></tr>
+        <tr><td><code>load_context</code></td><td>발급받은 마패를 대화 안에서 바로 장착</td></tr>
+        <tr><td><code>redelegate</code></td><td>더 좁은 범위로만 재위임</td></tr>
+    </table></div>
+    <div class="note">
+        <strong>발급과 취소 도구는 일부러 없다.</strong> 그 권한은 사람의 서명에만 속하고,
+        온체인에서도 위임자만 할 수 있다. 그리고 결제의 <strong>수취인과 토큰은 인자가 아니라
+        서명된 정책에서 나온다</strong> — 프롬프트 인젝션으로 에이전트를 속여도 엉뚱한 주소로
+        보낼 수 없다. 에이전트 키는 첫 실행 때 로컬에서 생성되어 밖으로 나가지 않는다.
+    </div>
+</section>
+
+<section id="s12">
+    <h2><span class="num">12</span>제품</h2>
+    <p>익스플로러는 정적 SPA다. <strong>서버가 없다</strong> — 브라우저가 GIWA를 직접 읽는다.
+       세 화면이 있다.</p>
+    <div class="card">
+        <h4>발급</h4>
+        <p>조건을 조합하고 <strong>자기 언어의 한 문장으로</strong> 읽은 뒤 서명한다. 가스 0,
+           트랜잭션 0. 문장과 바이트가 <strong>같은 구조에서 생성</strong>되므로, 읽은 것과 서명한
+           것이 어긋날 수 없다 — 코덱이 서로의 역함수임을 테스트가 강제한다.</p>
+    </div>
+    <div class="card">
+        <h4>권한 관리</h4>
+        <p>발급한 것, 한도 대비 쓴 것, 그리고 끄는 스위치. 발급 사실은 브라우저가, 일어난 일은 매
+           마운트마다 체인이 답한다. 어긋나면 체인이 이기고, UI가 어느 쪽인지 말한다.</p>
+    </div>
+    <div class="card">
+        <h4>추적</h4>
+        <p>결제 해시를 넣으면 위임 사슬 전체를 조건과 함께 펼친다.</p>
+    </div>
+    <p>블록 익스플로러와 다른 점 둘. <strong>거부가 일급이다</strong> — 거부된 결제에는 로그가
+       없으므로 위임을 calldata에서 복원하고, 블록 직전 상태에 재생해 거부 사유를 되살린다.
+       그리고 <strong>시제가 정직하다</strong> — 당시엔 유효했던 결제는 두 사실을 다 보여준다.
+       게이트 이벤트가 증명하는 그때의 유효함과, 라이브 조회가 말하는 지금의 취소됨.</p>
+</section>
+
+<section id="s13">
+    <h2><span class="num">13</span>검증</h2>
+    <p><strong>테스트 153개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요하다.</p>
+    <div class="scroll"><table>
+        <tr><th>층</th><th>개수</th><th>증명하는 것</th></tr>
+        <tr><td>포크 테스트</td><td class="n">10</td><td><strong>실제 도장 배포본</strong> 상대로 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힌다</td></tr>
+        <tr><td>인코딩 적합성</td><td class="n">16</td><td>타입해시, 해시 제외 필드, ERC-7579 모드워드 — 리터럴 상수로 고정, 재계산 금지</td></tr>
+        <tr><td>위임 사슬</td><td class="n">16</td><td>자식이 부모 한도를 넓힐 수 없음, 위조 접합 거부, 뿌리 차단이 하위까지 관통</td></tr>
+        <tr><td>매니저 API</td><td class="n">16</td><td>킬스위치 권한, 잘못된 배치, 훅 재진입 불가, 훅 순서 고정</td></tr>
+        <tr><td>Enforcer · 계정</td><td class="n">77</td><td>위조 경로, 실행 형태 거부, 팩토리 동의 바인딩</td></tr>
+        <tr><td>통합</td><td class="n">13</td><td>전 구간 시나리오, 배치 원자성, 2×2 킬스위치 행렬</td></tr>
+        <tr><td>불변식</td><td class="n">5</td><td>1000회 × 256콜. 독립 유령 원장 대비 — <strong>신원이 죽으면 결제 없음</strong>, 한도 유지, 토큰 보존</td></tr>
+        <tr><td>3언어 바이트 패리티</td><td class="n">31</td><td>같은 위임을 Solidity·TypeScript·Go가 각각 인코딩해 바이트 단위로 일치</td></tr>
+        <tr><td>정적 분석</td><td class="n">0 / 0</td><td>Slither 심각·중대 0. 예외 5건은 전부 근거 주석과 함께</td></tr>
+        <tr><td>소스 검증</td><td class="n">8 / 8</td><td>Blockscout <strong>API</strong>의 검증 플래그를 직접 읽는다</td></tr>
+    </table></div>
+    <div class="note">
+        마지막 항목이 사소해 보이지만 아니다. 테스트 토큰은 익스플로러에 소스가 보이고 검증 도구도
+        "이미 검증됨"이라 답했는데 API는 <strong>false</strong>였다 — Blockscout이 바이트코드가
+        같은 <strong>남의 주소에서 소스를 빌려</strong> 보여주고 있었다. 지금은 자기 자격으로
+        검증되어 있다.
+    </div>
+    <h3>검증이 실제로 잡은 버그</h3>
+    <ul>
+        <li>모드워드 패킹 오류가 실행 형태 가드 둘을 조용히 무력화하고 있었다. all-zero 테스트가
+            공허하게 통과하는 동안 숨어 있다가 비-zero 왕복에 걸렸다.</li>
+        <li>빌드 설정 하나가 아무것도 브로드캐스트하지 않으면서 배포 성공을 보고했다. 체인에서
+            코드를 되읽어 발견했다.</li>
+        <li>계정 생성 서명이 잘 만들어졌는데 온체인에서 거부됐다. 팩토리의 EIP-712 다이제스트가
+            아니라 EIP-191로 서명하고 있었다.</li>
+    </ul>
+</section>
+
+<section id="s14">
+    <h2><span class="num">14</span>만들지 않은 것</h2>
+    <div class="scroll"><table>
+        <tr><td>지갑</td><td>기와 월렛의 자리다. ERC-7715 요청 경로를 미리 구현해 두었다 — 월렛이 표준을 켜면 통합이 아니라 스위치다</td></tr>
+        <tr><td>스테이블코인</td><td>원화 스테이블이 나오면 주소만 바꾼다. 테스트 토큰은 어떤 표준 확장도 <strong>일부러 구현하지 않은</strong> 맨몸 ERC-20이고, 그 위에서 전부 동작한 것이 자산 불가지론의 증명이다</td></tr>
+        <tr><td>위임 표준</td><td>발명하지 않고 채택했다. 감사된 조건들이 무수정으로 우리 매니저에서 돌고, 우리 신원 조건도 그들 매니저에 꽂힌다</td></tr>
+        <tr><td>온체인 레지스트리</td><td>발급 시점 저장을 강요하면 "발급은 오프체인 서명, 트랜잭션 없음"이라는 모델이 깨진다. 게이트 이벤트 한 줄이 역추적 고리를 닫는다</td></tr>
+        <tr><td>ERC-8004</td><td>퍼미션리스 자가 등록은 책임 사슬에 아무것도 보태지 않는다. 에이전트 신원은 기와 방식으로 — 검증된 코드 조건으로</td></tr>
+        <tr><td>자체 백엔드</td><td>권한이 유효한지는 체인만 답해야 한다. 조회를 빠르게 할 인덱서는 로드맵에 있지만, 그것은 가공과 캐시이지 진실의 원본이 아니다</td></tr>
+    </table></div>
+</section>
+
+<section id="s15">
+    <h2><span class="num">15</span>배포 주소</h2>
+    <p>GIWA Sepolia (91342). 전부 소스 검증되어 있다.</p>
+    <div class="scroll"><table>
+        <tr><td><code>MapaeDelegationManager</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd">0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd</a></td></tr>
+        <tr><td><code>MapaeAccountFactory</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x157aF4D7b3f52685c817d5558b3468caD9b61299">0x157aF4D7b3f52685c817d5558b3468caD9b61299</a></td></tr>
+        <tr><td><code>DojangVerifiedEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xb2906a5079702B82C2973423d8cf91e8B41e6371">0xb2906a5079702B82C2973423d8cf91e8B41e6371</a></td></tr>
+        <tr><td><code>AllowedPayeeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1">0x7eF0f193B721B1749d890F1e231C8074670f1bD1</a></td></tr>
+        <tr><td><code>ERC20PeriodTransferEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892">0xE33ba891fa502A075D3E422258723eF4cB6AC892</a></td></tr>
+        <tr><td><code>TimestampEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02">0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02</a></td></tr>
+        <tr><td><code>VerifiedCodeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e">0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e</a></td></tr>
+        <tr><td><code>MockKRW</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B">0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B</a></td></tr>
+    </table></div>
+</section>
+
+<section id="s16">
+    <h2><span class="num">16</span>다음</h2>
+    <div class="card key">
+        <h4>감사된 조건 38종 전부 탑재</h4>
+        <p>지금은 결제에 필요한 5종이 올라가 있다. 표준 호환이라 나머지는 수정이 아니라
+           <strong>검증의 일</strong>이다 — 건당 상한, 누적 총액, 호출 횟수, 허용 함수 셀렉터,
+           결제를 목적에 묶는 주문 해시. 구독·법인 경비 같은 시나리오 프리셋으로 조합을
+           제품화한다.</p>
+    </div>
+    <div class="card key">
+        <h4>기와 월렛 연동 · 도장 세분화</h4>
+        <p>ERC-7715 요청 경로는 구현되어 있어 월렛 쪽 스위치만 남았다. 그리고 거래소별·등급별
+           도장이 늘수록 걸 수 있는 조건이 <strong>코드 변경 없이</strong> 촘촘해진다 — 발급자는
+           배포 상수가 아니라 서명 안의 선택이기 때문이다.</p>
+    </div>
+    <div class="card">
+        <h4>조회 인프라</h4>
+        <p>GIWA에는 도장을 조회할 오프체인 API가 없다. 실 발급자 attestation과 마패 사용 기록을
+           인덱싱해 생태계가 쓸 조회 계층을 연다. 진실은 체인이 쥐고, 속도는 인덱서가 낸다.</p>
+    </div>
+    <div class="card">
+        <h4>EOA 직접 위임 — EIP-7702</h4>
+        <p>GIWA에서 활성화되어 있음을 행동 테스트로 확인했다. 소유자 EOA가 직접 위임자가 되면 계정
+           컨트랙트 없이 검증된 주소 자체가 위임을 보유한다. 조건은 이 형태를 이미 받아들인다.</p>
+    </div>
+</section>
+
+<footer>
+    <div>더 깊은 문서는 저장소에 있다 — 바이트 수준 명세, 라이브 트랜잭션 전표, 직접 측정한
+         생태계 격차.</div>
+    <div class="links">
+        <a href="https://github.com/GrapeInTheTree/mapae">저장소</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/SPEC.md">명세 (SPEC)</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/DEMO.md">트랜잭션 전표 (DEMO)</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/GAPS.md">생태계 격차 (GAPS)</a>
+        <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/ERC7715.md">지갑 매핑 (ERC-7715)</a>
+        <a href="/">제품</a>
+    </div>
+</footer>
+
+</main>
+</div>
+</body>
+</html>

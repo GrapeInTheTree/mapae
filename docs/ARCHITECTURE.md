@@ -1,245 +1,242 @@
-# 마패 — 기술 문서
+# Architecture
 
-에이전트 결제의 권한 레이어. 이 문서는 **아키텍처와 구현 결정의 이유**를 다룬다.
-바이트 수준 명세는 [SPEC.md](SPEC.md), 라이브 트랜잭션 전표는 [DEMO.md](DEMO.md),
-직접 측정한 생태계 격차는 [GAPS.md](GAPS.md)에 있다. 전 컨트랙트는 GIWA Sepolia(91342)에
-배포·소스 검증되어 있다.
+The authority layer for agent payments. This document covers the architecture and **why each
+decision was made**; [SPEC.md](SPEC.md) is the byte-level reference, [DEMO.md](DEMO.md) is the
+ledger of live transactions, and [GAPS.md](GAPS.md) records ecosystem gaps with the measurements
+behind them.
+
+A Korean edition, typeset as a standalone one-pager, is at
+**[mapae.pages.dev/tech](https://mapae.pages.dev/tech)**.
 
 ---
 
-## 1. 무엇을 푸는가
+## 1. What this solves
 
-x402로 에이전트가 스스로 결제하는 경로는 이미 열렸다. 막힌 것은 **권한을 넘기는 방법**이다.
-지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수 없다) 수탁 서비스를 믿는 것
-둘뿐이다.
+x402 opened the path for an agent to pay for things on its own. What is still missing is a way to
+**hand over the authority to do so**. Today there are two options: give the agent a private key —
+no cap, no payee restriction, no expiry — or trust a custodial service, which reintroduces the
+intermediary that on-chain payment was supposed to remove.
 
-마패는 세 번째 길이다. 실명이 검증된 사람이 **범위가 정해진 지출 권한**을 소프트웨어에
-서명으로 넘기고, 범위는 결제 순간마다 컨트랙트가 강제하며, 취소는 즉시 반영되고, 사고가
-나면 결제에서 실명까지 역추적된다.
+Mapae is a third option. The delegation mechanism itself is not invented here: ERC-7710/7715 and
+x402 are adopted as they stand, and the contribution is **one condition that did not exist
+anywhere** — the identity of the person who granted the authority.
 
-위임 메커니즘 자체는 발명하지 않았다. ERC-7710/7715와 x402를 채택하고, **어디에도 없던
-조건 하나**를 기여한다 — 위임자의 신원.
-
-## 2. 전체 구조
+## 2. Architecture
 
 ```
-principal (EOA, 사람)  ──소유──▶  MapaeAccount  ──보유──▶  자금, 위임 상태
-      │                               ▲
-      │ 도장 attestation 보유          │ executeFromExecutor
-      ▼                               │
-  DojangScroll ◀──조회── MapaeDelegationManager ◀──redeemDelegations── 에이전트 / 정산자
-   (결제 시점                          │
-    liveness)                          └─ caveats: 신원 · 기간 한도 · 수취인 · 기한
+principal (EOA, a person)  ──owns──▶  MapaeAccount  ──holds──▶  funds, delegation state
+      │                                   ▲
+      │ holds a Dojang attestation        │ executeFromExecutor
+      ▼                                   │
+  DojangScroll ◀──reads── MapaeDelegationManager ◀──redeemDelegations── agent / facilitator
+   (liveness,                             │
+    at time of use)                       └─ caveats: identity · period cap · payee · window
 ```
 
-| 컴포넌트 | 역할 |
+| Contract | Role |
 |---|---|
-| `MapaeDelegationManager` | ERC-7710 위임 실행. 서명·사슬·비활성 검사 후 조건들을 평가하고, 통과해야만 계정에 실행을 위임 |
-| `MapaeAccount` | 자금과 위임 상태를 보유. `owner`는 immutable, 팩토리가 생성 |
-| `MapaeAccountFactory` | CREATE2 배포 + **소유자 동의 서명(EIP-712)** 검증 + 등록부 |
-| `DojangVerifiedEnforcer` | **기여물.** 위임자의 실명 증명을 결제 조건으로 건다 |
-| `AllowedPayeeEnforcer` | 이체 calldata의 **수취인**을 검사 (타겟이 아니라) |
-| `ERC20PeriodTransferEnforcer` · `TimestampEnforcer` | MetaMask 감사본을 무수정 vendoring — 호환성의 실증 |
-| `VerifiedCodeEnforcer` | 사람 확인 티어. 살아 있는 오프체인 확인이 있을 때만 통과 |
+| `MapaeDelegationManager` | ERC-7710 redemption. Validates signatures, chain linkage and disabled flags, evaluates the caveats, and only then delegates execution to the account |
+| `MapaeAccount` | Holds the funds and the delegation state. `owner` is immutable |
+| `MapaeAccountFactory` | CREATE2 deployment + EIP-712 owner-consent verification + registry |
+| `DojangVerifiedEnforcer` | **The contribution.** Conditions a delegation on the delegator's real-world identity |
+| `AllowedPayeeEnforcer` | Inspects the *recipient* inside the transfer calldata, not merely the target |
+| `ERC20PeriodTransferEnforcer`<br>`TimestampEnforcer` | MetaMask's audited enforcers, vendored unmodified — compatibility demonstrated rather than claimed |
+| `VerifiedCodeEnforcer` | Human-in-the-loop tier: redeems only while a live off-chain confirmation stands |
 
-## 3. 왜 신원과 자금을 분리했는가
+## 3. Why identity and funds live at different addresses
 
-**도장은 컨트랙트에 붙지 않는다.** 거래소는 KYC를 통과한 *사람의 지갑 주소*에 발급하지, 방금
-배포된 컨트랙트에 발급하지 않는다. 그래서 `isVerified(delegator)`로 설계하면 프로덕션에서
-위임자에게 도장이 없고, 데모는 자기 발급 attestation으로만 통과한다 — 논지가 무너진다.
+**A Dojang attestation does not attach to a contract.** An exchange attests the wallet address of
+a person who passed KYC; it will never attest a freshly deployed contract. So a design that gates
+on the delegator address directly would leave the delegator unattested in production, and the demo
+would pass only on a self-issued attestation — which proves nothing.
 
-그래서 주소를 둘로 나눴다. **자금과 위임 상태는 계정이, 신원은 그 계정의 소유자인 사람이**
-가진다. 조건은 계정이 아니라 `owner`를 평가한다.
+The addresses are therefore split. **The account holds the money and the delegation state; the
+person who owns that account holds the identity.** The gate evaluates `owner`, not the account.
 
-이 분리는 위조 경로를 하나 연다. 아무나 컨트랙트를 배포해 `owner()`가 남의 검증된 주소를
-가리키게 만들 수 있다 — 훔치는 것은 없지만 **책임 사슬을 위조**하는 것이고, 그게 이 제품의
-전부다. 그래서 두 겹으로 막는다.
+That split opens exactly one forgery path: anyone can deploy a contract whose `owner()` points at
+a stranger's verified address. Nothing is stolen, but **the accountability chain is forged** — and
+that chain is the entire product. Two defences close it:
 
-1. 계정 생성에 **그 소유자 본인의 EIP-712 동의 서명**을 요구한다. 팩토리가 검증하고 등록한다.
-2. 조건은 `factory.isMapaeAccount(delegator)`를 **먼저** 확인한 뒤에만 `owner()`를 신뢰한다.
-   등록되지 않은 컨트랙트의 `owner()`는 공격자가 정하는 값이다.
+1. **Creating an account requires an EIP-712 consent signature from the named owner.** The factory
+   verifies it and records the binding. Without consent, no account claiming that owner can exist.
+2. **The gate checks `factory.isMapaeAccount(delegator)` *before* it trusts `owner()`.** On an
+   unregistered contract, `owner()` is a value the attacker chooses. Reverse the order and the
+   defence is worthless.
 
-부수 효과로 리스크 하나가 소멸한다 — 소유자 EOA가 도장을 직접 발급받으므로 "컨트랙트가
-attestation을 받을 수 있는가"라는 가정 자체가 불필요해진다.
+A risk disappears as a side effect: because the owner EOA claims its attestation directly, the
+question of whether a contract *can* receive one never arises.
 
-## 4. 결제 한 건이 지나는 경로
+## 4. What a payment passes through
 
-1. 에이전트가 매니저에 `redeemDelegations(permissionContexts, modes, executionCalldatas)` 호출
-2. 매니저: 배열 길이 → 호출자가 말단 delegate인가 → **사슬의 모든 서명**(EOA는 ECDSA,
-   계정은 ERC-1271) → 비활성 플래그와 authority 연결
-3. 조건 평가: `beforeAll` → `before`를 **말단에서 뿌리 방향**으로
-4. 실행은 **뿌리 위임자의 계정**에서 (ERC-7579 단일 실행)
-5. `after` → `afterAll`을 뿌리에서 말단 방향으로
+1. The agent calls `redeemDelegations(permissionContexts, modes, executionCalldatas)`
+2. The manager checks array lengths → the caller is the leaf delegate → **every signature in the
+   chain** (ECDSA for EOAs, ERC-1271 for accounts) → disabled flags and authority linkage
+3. Caveats: `beforeAll`, then `before` **leaf to root**
+4. Execution runs on the **root delegator's account** (ERC-7579 single execution)
+5. `after`, then `afterAll`, root to leaf
 
-**검증이 조건보다 항상 먼저 온다.** 이 순서는 가정이 아니라 테스트로 고정돼 있어서
-(`test_KillSwitches_AreOrthogonal`), 두 킬스위치가 동시에 걸렸을 때 어떤 에러가 나는지가
-결정적이다. 배치는 원자적이다 — 2건 중 2번째가 실패하면 1번째도 롤백된다.
+**Validation always precedes caveats.** That ordering is pinned by a test rather than assumed
+(`test_KillSwitches_AreOrthogonal`), which is what makes the outcome deterministic when both kill
+switches are thrown at once. Batches are atomic: if the second of two executions fails, the first
+rolls back.
 
-## 5. 조건 — 무엇을 서명하는가
+## 5. Caveats — what is actually signed
 
-`Caveat`는 `{enforcer, terms, args}`다. `terms`는 **위임자가 서명**하고, `args`는 사용
-시점에 사용자가 낸다. 위임 해시는 `signature`와 `args`를 제외하고 계산된다 — 그래서 사용자가
-낸 값이 서명을 바꿀 수 없다.
+A caveat is `{enforcer, terms, args}`. **`terms` is signed by the delegator**; `args` is supplied
+by the redeemer at use. The delegation hash excludes `signature` and `args`, so nothing the
+redeemer supplies can alter what was signed.
 
-terms는 전부 고정 오프셋으로 tightly-pack되며, 길이가 틀리면 잘라내는 게 아니라 revert한다.
-바이트 레이아웃은 [SPEC.md](SPEC.md#terms-layouts) 참조.
+All terms are tightly packed at fixed offsets, and a wrong length reverts rather than truncating.
+Layouts are in [SPEC.md](SPEC.md#terms-layouts). Caveats are a conjunction — the last won of an
+allowance is spendable, and one won past it is not.
 
-조건들은 **논리곱**이다 — 하나라도 실패하면 결제가 통째로 거부된다. 한도의 마지막 1원까지
-쓸 수 있고, 1원도 넘을 수 없다.
+## 6. The contribution — `DojangVerifiedEnforcer`
 
-## 6. 기여물 — `DojangVerifiedEnforcer`
+Delegation frameworks already express nearly every spending condition: amounts, periods, streams,
+targets, methods, calldata, time windows, call counts. MetaMask's framework alone ships **38
+audited caveat enforcers**.
 
-배포된 위임 프레임워크들은 거의 모든 지출 조건을 이미 표현한다. 금액·기간·스트리밍·타겟·
-메서드·calldata·시간 범위·호출 횟수. MetaMask 프레임워크 하나만 해도 감사된 조건이 38종이다.
+**None of them — in any deployed framework, on any chain — conditions a delegation on identity**,
+because there was no on-chain identity to condition on.
 
-**그중 위임을 신원에 걸리게 하는 것은 없다** — 어떤 배포된 프레임워크에도, 어떤 체인에도.
-조건으로 걸 온체인 신원이 없었기 때문이다.
+Four load-bearing decisions:
 
-이 컨트랙트가 그 칸을 채운다. 설계 결정 넷:
+**It gates the principal, not the agent.** The question an auditor, counterparty or insurer asks
+is *which verified human authorised this spend*, not whether the software is verified.
 
-**① 에이전트가 아니라 위임자의 신원을 건다.**
-감사인·거래상대·보험사가 묻는 것은 "이 소프트웨어가 검증됐나"가 아니라
-**"어떤 실명이 이 지출을 허락했나"**다.
+**The issuer is signed, not assumed.** The attester id lives inside the signed terms, so a
+delegation scoped to Upbit Korea cannot be satisfied by a self-issued attestation — proven live in
+[T4](DEMO.md). The issuer is a choice made at signing time rather than a deployment constant,
+which means the gate widens as the Dojang ecosystem grows without any contract change.
 
-**② 발급자는 가정하지 않고 서명한다.**
-`attesterId`가 서명된 terms 안에 있다. 업비트로 범위가 정해진 위임은 자가 발급 attestation으로
-만족될 수 없다. 라이브로 증명됨 — [T4](DEMO.md)가 faucet 발급 위임자를 업비트 범위 위임
-아래에서 거부한다. 발급자가 배포 상수가 아니라 **서명 시점의 선택**이라는 뜻이고, 도장
-생태계가 자랄수록 컨트랙트 변경 없이 넓어진다.
+**Liveness is read at use, never cached at issuance.** Dojang's own resolver documents that its
+index is not the source of truth for liveness. Following that inherits revocation and expiry as
+**instant, transaction-free kill switches**.
 
-**③ liveness는 발급 시점에 캐시하지 않고 사용 시점에 읽는다.**
-Dojang의 리졸버 자체가 "attestation은 사용 시점에 검증되어야 하며 인덱서는 liveness의 진실
-소스가 아니다"라고 명시한다. 이 설계를 그대로 따랐고, 그래서 취소와 만료가
-**트랜잭션 없는 즉시 킬스위치**가 된다.
+**The boolean read first, the uid getter second.** The uid getter reverts on an unverified
+address. `isVerified` collapses absent, expired and revoked into `false`, so the payer always
+receives Mapae's one actionable error.
 
-**④ `isVerified` 먼저, uid 조회는 나중.**
-uid 게터는 미검증 주소에 revert한다. boolean 읽기가 부재·만료·취소를 전부 `false`로
-접어주므로, 결제자는 항상 마패의 **행동 가능한 에러 하나**(`NotDojangVerified`)를 받는다.
+The enforcer is stateless and never parses execution calldata, so it composes with any call shape
+and has no per-delegation accounting to poison by calling the hook directly.
 
-이 컨트랙트는 무상태이고 실행 calldata를 파싱하지 않는다. 그래서 어떤 호출 형태와도 조합되고,
-훅을 직접 불러 오염시킬 per-delegation 회계도 없다.
+### A second gap — `AllowedPayeeEnforcer`
 
-## 7. 두 번째 빈칸 — `AllowedPayeeEnforcer`
+Target allowlists gate the **token contract**, but an ERC-20 payment's recipient lives at calldata
+bytes `[4:36]`, which nothing deployed inspects. This enforcer is what makes *may pay only these
+merchants* expressible. It denies by default: an empty payee list is an error, never an allow-all.
 
-작업 중에 격차가 하나 더 드러났다. 타겟 allowlist는 **토큰 컨트랙트**를 검사하는데,
-ERC-20 결제의 실제 수취인은 calldata 바이트 `[4:36]`에 있고 배포된 것 중 이걸 보는 게 없다.
+## 7. Kill switches — a 2×2
 
-이 컨트랙트가 *"이 가맹점들에만 지불 가능"*을 표현 가능하게 만든다. **기본 거부**다 — 빈
-수취인 목록은 전체 허용이 아니라 에러다.
-
-## 8. 킬스위치 — 2×2 직교
-
-두 개의 독립적인 스위치가 있고, 각각 되돌릴 수 있다.
-
-| | 위임 활성 | 위임 비활성 |
+| | Delegation enabled | Delegation disabled |
 |---|---|---|
-| **도장 유효** | 결제 성공 | `CannotUseADisabledDelegation` |
-| **도장 취소** | `NotDojangVerified` | `CannotUseADisabledDelegation` (검증이 조건보다 먼저) |
+| **Attestation live** | payment settles | `CannotUseADisabledDelegation` |
+| **Attestation revoked** | `NotDojangVerified` | `CannotUseADisabledDelegation` (validation precedes caveats) |
 
-각 축을 **다른 축이 온전한 상태에서** 시험했다. 도장이 살아 있는 채로 위임만 끄고, 위임이
-켜진 채로 도장만 취소한다. 그래서 결과가 매니저의 체크 순서라는 가정에 의존하지 않는다.
-되돌리는 것도 각각 증명했다 — 다시 켜면 **쓰던 한도 그대로** 재개되지 리셋되지 않는다.
+Each axis was exercised **while the other stayed intact** — the delegation disabled with the
+attestation live, the attestation revoked with the delegation enabled — so no result depends on an
+unverified assumption about the manager's check order. Each is independently reversible: switching
+a delegation back on **resumes against the allowance already spent**, it does not reset it.
 
-신원 스위치가 특별한 이유: 도장을 취소하면 그 사람이 발급한 **모든 마패**가 한 번에 멈춘다.
-마패 컨트랙트를 건드리는 트랜잭션은 하나도 없이.
+What makes the identity switch different: revoking one attestation stops **every delegation that
+person ever granted**, without a single transaction touching a Mapae contract.
 
-## 9. 재위임 — 좁히기만 가능
+## 8. Re-delegation
 
-재위임은 ERC-7710의 일급 연산이다. 에이전트가 자기 권한의 일부를 다른 에이전트에게 넘길 수
-있다. 사슬의 **모든 링크의 조건이 평가**되므로, 자식은 받은 것을 좁힐 수만 있고 넓힐 수 없다.
+Re-delegation is a first-class ERC-7710 operation, so an agent can pass part of its authority on.
+Every link's caveats are evaluated, which is what lets a child **narrow** what it received and
+never widen it. Disabling the root kills a sub-agent nobody upstream has heard of.
 
-뿌리를 끄면 위에서 존재조차 모르는 하위 에이전트까지 죽는다. 이 성질을 지키는 것이 사슬
-테스트 스위트의 존재 이유다 (`test_Redelegation_ChildCannotWidenParentCap`).
+## 9. The x402 path
 
-## 10. x402 정산
+x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two authorise at the token
+layer and die with their nonce. The third, `erc7710`, is verified by **simulating the delegation
+manager**, and is the only one a single authorisation can settle more than once.
 
-x402 v2의 `exact` 스킴은 EVM에서 세 가지 자산 이전 방식을 정의한다. 그중 둘(`eip3009`,
-`permit2`)은 토큰 레이어에서 승인하고 nonce와 함께 죽는다. 세 번째 `erc7710`은 **위임 매니저를
-시뮬레이션**해서 검증하며, 하나의 승인으로 **여러 번 정산**할 수 있는 유일한 방식이다.
+Mapae plugs into that slot. The facilitator holds **no policy and no funds**: every cap, payee,
+window and identity check runs on-chain, and its key pays gas and nothing else. That is not a
+shortcut but the point — the policy engine being entirely on-chain is what lets the settler be
+ignorant and unprivileged.
 
-마패가 그 슬롯에 꽂힌다. 정산자는 **정책도 자금도 갖지 않는다** — 모든 한도·수취인·기한·신원
-검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 편법이 아니라 셀링 포인트다:
-정책 엔진 전체가 온체인이라 정산자가 무지해도 된다.
+GIWA has no EIP-3009 token ([GAPS.md](GAPS.md)), so the other two methods are not available here
+at all. See [DEMO.md](DEMO.md#x402-facilitator---the-erc7710-path-live) for the live run, where one
+signed payload settles twice and the third attempt is refused before broadcast.
 
-GIWA에는 EIP-3009 토큰이 없어서([GAPS.md](GAPS.md)) 다른 두 방식은 애초에 불가능하다.
-라이브 증명은 [DEMO.md](DEMO.md#x402-facilitator---the-erc7710-path-live) — 같은 서명
-payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부된다.
+## 10. Agent integration — MCP
 
-## 11. 에이전트 연동 — MCP
+`npx mapae-mcp`, published to npm. Seven tools: `list_permissions`, `check_budget`, `pay`,
+`agent_status`, `request_permission`, `load_context`, `redelegate`.
 
-`npx mapae-mcp` (npm 배포). MCP를 말하는 에이전트라면 설정 없이 붙는다. 도구 7종:
-`list_permissions` · `check_budget` · `pay` · `agent_status` · `request_permission` ·
-`load_context` · `redelegate`.
+**There is deliberately no tool to issue or revoke.** That authority belongs to a person's
+signature, and on-chain only the delegator holds it. An agent may spend and may pass a narrower
+grant along — nothing else.
 
-**발급과 취소 도구는 일부러 없다.** 그 권한은 사람의 서명에만 속하고, 온체인에서도 위임자만
-할 수 있다. 에이전트는 쓰고, 좁혀서 넘길 수만 있다.
+A payment's **recipient and token come from the signed policy, not from arguments**, so prompt
+injection cannot redirect funds. The agent key is generated locally on first run and never leaves
+the machine; `MAPAE_PROFILE` separates identities, and it is set where a human configures the
+server, never by a tool.
 
-결제의 **수취인과 토큰은 인자가 아니라 서명된 정책에서 나온다.** 프롬프트 인젝션으로
-에이전트를 속여도 엉뚱한 주소로 보낼 수 없다.
+## 11. The product
 
-에이전트 키는 첫 실행 때 로컬에서 생성되어 `~/.mapae/`에 남고 밖으로 나가지 않는다.
-`MAPAE_PROFILE`로 신원을 나눌 수 있다 — 사람이 설정하는 자리에서만 정해지고, 도구가
-바꿀 수 없다.
+`explorer/` is a static SPA with **no backend** — the browser reads GIWA directly. Three surfaces:
 
-## 12. 제품 — 백엔드 없는 익스플로러
+- **Create** — compose a scoped authority, read it back **as one sentence in your own language**,
+  and sign. No gas, no transaction. The sentence and the bytes are generated from the same
+  structure, and a test enforces that encode and decode are inverses, so what is read cannot drift
+  from what is signed.
+- **Permissions** — what was granted, what it has spent against its cap, and the switch that stops
+  it. What was *issued* comes from the browser; what *happened* is read live from the chain on
+  every mount. Where they disagree the chain wins, and the UI says which is which.
+- **Explorer** — paste a payment hash and the full delegation chain unfolds with its conditions.
 
-`explorer/`는 정적 SPA다. **서버가 없다** — 브라우저가 GIWA를 직접 읽는다. 세 화면:
+Two things separate the trace from a block explorer. **Rejections are first-class**: a refused
+payment emits no logs, so the delegation is decoded from calldata and the reason recovered by
+replaying the call against pre-block state. And **tense is honest**: a payment that was valid when
+made shows both facts — proven valid then by the gate event, revoked now by the live read.
 
-- **발급** — 조건을 조합하고 **자기 언어의 한 문장으로** 읽은 뒤 서명한다. 가스 0, 트랜잭션 0.
-  문장과 바이트가 **같은 구조에서 생성**되므로, 읽은 것과 서명한 것이 어긋날 수 없다
-  (코덱이 서로의 역함수임을 테스트가 강제한다).
-- **권한 관리** — 발급한 것, 한도 대비 쓴 것, 그리고 끄는 스위치. 발급 사실은 브라우저가,
-  일어난 일은 매 마운트마다 체인이 답한다. 어긋나면 체인이 이기고, UI가 어느 쪽인지 말한다.
-- **추적** — 결제 해시를 넣으면 위임 사슬 전체를 조건과 함께 펼친다.
+## 12. Verification
 
-블록 익스플로러와 다른 점 둘. **거부가 일급이다** — 거부된 결제에는 로그가 없으므로 위임을
-calldata에서 복원하고, 블록 직전 상태에 재생해 거부 사유를 되살린다. 그리고 **시제가
-정직하다** — 당시엔 유효했던 결제는 두 사실을 다 보여준다(게이트 이벤트가 증명하는 그때의
-유효함, 라이브 조회가 말하는 지금의 취소됨).
+**153 tests**, all passing. What each layer proves matters more than the count.
 
-## 13. 검증 체계
-
-**테스트 153개** 전부 통과. 층위별로 무엇을 증명하는지:
-
-| 층 | 개수 | 증명하는 것 |
+| Layer | Count | What it proves |
 |---|---|---|
-| 포크 테스트 (블록 31,909,542 핀) | 10 | **실제 도장 배포본** 상대로 모든 가정 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힌다 |
-| 인코딩 적합성 | 16 | 타입해시, 해시 제외(`signature`·`args`, 퍼징), ERC-7579 모드워드 — **리터럴 상수로 고정**, 재계산 금지 |
-| 위임 사슬 | 16 | 자식이 부모 한도를 넓힐 수 없음, 끊긴 authority와 위조 접합 거부, 뿌리 차단이 하위까지 관통 |
-| 매니저 API | 16 | 킬스위치 권한, 잘못된 배치, 훅의 재진입 불가, 배치·사슬 양쪽의 훅 순서 고정 |
-| Enforcer와 계정 | 77 | 위조 경로, 실행 형태 거부, 팩토리 동의 바인딩, vendoring한 MetaMask 코드의 실제 실행 |
-| 통합 | 13 | T1–T8 전 구간, 배치 원자성, 2×2 킬스위치 행렬 |
-| 불변식 (1000회 × 256콜) | 5 | 독립 유령 원장 대비 — 기간 한도 유지, **신원이 죽으면 결제 없음**, 비활성 시 없음, 공격자 미지급, 토큰 보존 |
-| 3언어 바이트 패리티 | 4 + 27 | `abi.encode(Delegation[])`·EIP-712 다이제스트·패킹된 실행이 Solidity(기준)·TypeScript(SDK)·Go(정산자)에서 바이트 동일 |
-| Slither | 0 심각 / 0 중대 | 예외 5건은 전부 근거 주석과 함께 |
-| 라이브 트랜잭션 | 20+ | T1–T8, 정산자 흐름, 그리고 **사람이 MetaMask로 서명한** 4건 |
-| 소스 검증 | 8/8 | `pnpm check-verified`가 Blockscout **API**의 `is_verified`를 읽는다 |
+| Fork tests, pinned at block 31,909,542 | 10 | Every Dojang assumption against the **real deployment**: a genuine Upbit-KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately |
+| Encoding conformance | 16 | Typehashes, hash exclusions, ERC-7579 mode word — pinned as literal constants, never recomputed |
+| Delegation chain | 16 | A child cannot widen its parent's cap; broken authority links and forged grafts are refused; disabling the root kills a sub-agent |
+| Manager API | 16 | Kill-switch authority, malformed batches, no hook can re-enter redemption, hook ordering pinned |
+| Enforcers and account | 77 | Forgery paths, execution-shape refusals, factory consent binding |
+| Integration | 13 | The full scenario end to end, batch atomicity, the 2×2 matrix |
+| Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: the cap holds, **no payment while identity is dead**, none while disabled, tokens conserved |
+| Cross-language byte parity | 31 | The same delegation encoded by Solidity, TypeScript and Go, byte-identical |
+| Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
+| Source verification | 8 of 8 | Read from Blockscout's **API**, not from what a browser displays |
 
-마지막 항목이 사소해 보이지만 아니다. `MockKRW`는 익스플로러에 소스가 보이고
-`forge verify-contract`도 "이미 검증됨"이라 답했는데 API는 `is_verified: false`였다 —
-Blockscout이 `verified_twin_address_hash`, 즉 바이트코드가 같은 **남의 주소에서 소스를 빌려**
-보여주고 있었다. 지금은 자기 자격으로 검증되어 있다.
+That last row is not pedantry. `MockKRW` showed source in the explorer and `forge verify-contract`
+reported "already verified", while the API said `is_verified: false` — Blockscout was borrowing
+source from a `verified_twin_address_hash`, a different address with identical bytecode that
+someone else had verified. It is verified in its own right now.
 
-**검증이 실제로 잡은 버그들:** 모드워드 패킹 오류가 실행 형태 가드 둘을 조용히 무력화하고
-있었고(all-zero 테스트가 공허하게 통과하는 동안 숨어 있다가 비-zero 왕복에 걸림), foundry
-설정 하나가 아무것도 브로드캐스트하지 않으면서 배포 성공을 보고했고(체인에서 코드를 되읽어
-발견), 계정 생성 서명이 잘 만들어졌는데 온체인에서 거부됐다(팩토리의 EIP-712 다이제스트가
-아니라 EIP-191로 서명하고 있었다).
+**Bugs verification actually caught:** a mode-word packing error that silently disabled two
+execution-shape guards, hiding while the all-zero test passed vacuously and surfacing on a
+non-zero round-trip; a foundry configuration that reported deployment success while broadcasting
+nothing, caught by reading code back from the chain; and an account-creation signature that was
+well-formed yet rejected on-chain because it was signed as EIP-191 rather than the factory's
+EIP-712 digest.
 
-## 14. 채택하지 않은 것과 그 이유
+## 13. What was deliberately not built
 
 | | |
 |---|---|
-| **지갑** | 기와 월렛의 자리다. ERC-7715 요청 경로를 미리 구현해 두었다([ERC7715.md](ERC7715.md)) — 월렛이 표준을 켜면 통합이 아니라 스위치다 |
-| **스테이블코인** | 원화 스테이블이 나오면 주소만 바꾼다. 테스트 토큰은 EIP-3009도 2612도 **일부러 구현하지 않은** 맨몸 ERC-20이고, 그 위에서 전부 동작한 것이 자산 불가지론의 증명이다 |
-| **위임 표준** | 발명하지 않고 채택했다. 감사된 조건들이 무수정으로 우리 매니저에서 돌고, 우리 신원 조건도 그들 매니저에 꽂힌다 |
-| **온체인 레지스트리** | 발급 시점 저장을 강요하면 "발급은 오프체인 서명, 트랜잭션 없음"이라는 ERC-7715 모델이 깨진다. `DojangGatePassed` 이벤트 한 줄이 역추적 고리를 닫는다 |
-| **ERC-8004** | 퍼미션리스 자가 등록은 책임 사슬에 아무것도 보태지 않는다(GIWA에 배포조차 안 된 것을 프로빙으로 확인). 에이전트 신원은 기와 방식으로 — `VerifiedCodeEnforcer`의 검증된 코드로 |
-| **자체 백엔드** | 권한이 유효한지는 체인만 답해야 한다. 조회를 빠르게 할 인덱서는 로드맵에 있지만, 그것은 가공과 캐시이지 진실의 원본이 아니다 |
+| **A wallet** | That is GIWA Wallet's place. The ERC-7715 request path is already implemented ([ERC7715.md](ERC7715.md)) — when the wallet turns the standard on, this is a switch rather than an integration |
+| **A stablecoin** | When a KRW stablecoin ships, only an address changes. The test token implements **no standard extension on purpose**, and everything working on top of a bare ERC-20 is the proof that the design is asset-agnostic |
+| **A delegation standard** | Adopted, not invented. Audited enforcers run unmodified on this manager, and this identity enforcer runs on theirs |
+| **An on-chain registry** | Requiring storage at grant time would break the model where a grant is an off-chain signature with no transaction. One gate event closes the traceback loop instead |
+| **ERC-8004** | Permissionless self-registration adds nothing to an accountability chain, and no registry exists on GIWA (verified by probing). Agent identity is gated the GIWA-native way, through attested code |
+| **A backend** | Whether an authority is valid must be answered by the chain. An index for fast queries is on the roadmap, but that is caching and shaping — not the source of truth |
 
-## 15. 배포 주소 — GIWA Sepolia (91342)
+## 14. Deployed — GIWA Sepolia (91342)
 
-| 컨트랙트 | 주소 |
+| Contract | Address |
 |---|---|
 | `MapaeDelegationManager` | [`0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd`](https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd) |
 | `MapaeAccountFactory` | [`0x157aF4D7b3f52685c817d5558b3468caD9b61299`](https://sepolia-explorer.giwa.io/address/0x157aF4D7b3f52685c817d5558b3468caD9b61299) |
@@ -250,31 +247,30 @@ Blockscout이 `verified_twin_address_hash`, 즉 바이트코드가 같은 **남�
 | `VerifiedCodeEnforcer` | [`0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e`](https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e) |
 | `MockKRW` | [`0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B`](https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B) |
 
-## 16. 다음
+## 15. Next
 
-**감사된 조건 38종 전부 탑재.** 지금은 결제에 필요한 5종이 올라가 있다. 표준 호환이라 나머지는
-수정이 아니라 검증의 일이다 — 건당 상한, 누적 총액, 호출 횟수, 허용 함수 셀렉터, 그리고
-결제를 목적에 묶는 주문 해시. 구독·법인 경비 같은 시나리오 프리셋으로 조합을 제품화한다.
+**All 38 audited conditions.** Five are deployed — the ones a payment needs. Because the
+structures are byte-compatible, the rest is verification work rather than authoring: per-payment
+ceiling, lifetime total, call count, allowed selector, and an approved-order hash that binds a
+payment to a purpose. Productised as scenario presets — subscription, corporate expense — so the
+combinations are a choice rather than an exercise.
 
-**MCP 왕복 완결.** 서명이 끝나면 대화로 자동 복귀하는 콜백, 지출 리포트, 에이전트별 프로필과
-예산 알림 — 발급부터 정산까지 대화 안에서 끝나도록.
+**Wallet integration and Dojang granularity.** The ERC-7715 request path exists; only the wallet
+side remains. And as per-exchange and per-tier attestations appear, the expressible conditions
+narrow **without a contract change**, because the issuer is a signed choice rather than a constant.
 
-**조회 인프라.** GIWA에는 도장을 조회할 오프체인 API가 없다([GAPS.md](GAPS.md)). 실 발급자
-attestation과 마패 사용 기록을 인덱싱해 생태계가 쓸 조회 계층을 연다.
+**A query layer.** GIWA has no off-chain Dojang query surface. Indexing real-issuer attestations
+and Mapae redemptions opens one for the ecosystem: truth stays on the chain, speed comes from the
+index.
 
-**EIP-7702 직접 위임.** GIWA에서 활성화되어 있음을 행동 테스트로 확인했다. 소유자 EOA가 직접
-위임자가 되면 계정 컨트랙트 없이 업비트 검증 주소 자체가 위임을 보유한다. 조건은 이 형태를
-이미 받아들인다(`principal == delegator`).
-
-**기와 월렛 연동.** ERC-7715 요청 경로는 구현되어 있다. 월렛 쪽 스위치만 남았다.
+**EIP-7702.** Verified active on GIWA by behavioural test. The owner EOA becomes the delegator
+directly, so the attested address itself holds the delegation with no account contract. The
+enforcer already accepts that shape (`principal == delegator`).
 
 ---
 
-## 더 읽을 것
-
-- [SPEC.md](SPEC.md) — 바이트 수준 terms 레이아웃, 타입해시, 표준 적합성 매트릭스
-- [DEMO.md](DEMO.md) — 라이브 트랜잭션 전표, 기대값 대비 온체인 결과
-- [GAPS.md](GAPS.md) — 직접 측정한 생태계 격차와 그 측정값
-- [ERC7715.md](ERC7715.md) — 지갑 통합 매핑
-- [DEPLOY.md](DEPLOY.md) — 익스플로러 배포와 백엔드가 없는 이유
-- [README](../README.md) — 영문 개요
+- **[mapae.pages.dev/tech](https://mapae.pages.dev/tech)** — 한국어판, 원페이저로 조판
+- [SPEC.md](SPEC.md) — byte-level terms layouts, typehashes, conformance matrix
+- [DEMO.md](DEMO.md) — every live transaction, expected vs. on-chain result
+- [GAPS.md](GAPS.md) — measured ecosystem gaps, with the measurements
+- [ERC7715.md](ERC7715.md) — the wallet-integration mapping
