@@ -23,6 +23,65 @@
 
 ---
 
+## [6/12] 프로젝트 한 줄 요약 (50자)
+
+### 채택안 (41자)
+
+AI 에이전트에게 지갑이 아니라 권한을 — 실명 위에 선 위임 결제 레이어
+
+덱 표지와 같은 문장 — 제출물 전체가 한 목소리를 낸다.
+
+---
+
+## [9/12] GIWA 테스트넷 검증 스마트 컨트랙트 링크 (500자)
+
+> 링크 8개를 다 넣으면 URL만 660자다. 두 개만 링크하고 — 기여물 하나, 코어 하나 —
+> 나머지는 부록으로 넘긴다. 심사자가 처음 여는 컨트랙트가 우리 논지가 되도록.
+
+### 안 A — 레포 비공개 유지 (481자, 오늘 그대로 제출 가능)
+
+GIWA Sepolia에 컨트랙트 8개를 배포하고 전부 소스 검증(Verified)을 마쳤습니다. solc 0.8.29.
+
+① DojangVerifiedEnforcer — 신원을 결제 조건으로 거는 컨트랙트(마패의 기여물). 결제 순간마다 도장을 다시 읽습니다.
+https://sepolia-explorer.giwa.io/address/0xb2906a5079702B82C2973423d8cf91e8B41e6371
+
+② MapaeDelegationManager — ERC-7710 위임 매니저. 서명·한도·수취인·기한·신원을 전수 검사한 뒤에만 이체합니다.
+https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd
+
+나머지 6개(수취인 제한·기간 한도·기한·검증 코드 enforcer, 계정 팩토리, 테스트 원화 토큰)의 주소는 제출한 피치덱 부록에 전부 정리했습니다.
+
+### 안 B — 레포 공개 시 (493자)
+
+소스: https://github.com/GrapeInTheTree/mapae
+
+GIWA Sepolia에 컨트랙트 8개를 배포하고 전부 소스 검증(Verified)을 마쳤습니다. solc 0.8.29.
+
+① DojangVerifiedEnforcer — 신원을 결제 조건으로 거는 컨트랙트(마패의 기여물). 결제 순간마다 도장을 다시 읽습니다.
+https://sepolia-explorer.giwa.io/address/0xb2906a5079702B82C2973423d8cf91e8B41e6371
+
+② MapaeDelegationManager — ERC-7710 위임 매니저. 서명·한도·수취인·기한·신원을 전수 검사한 뒤에만 이체합니다.
+https://sepolia-explorer.giwa.io/address/0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd
+
+나머지 6개 주소는 레포의 deployments/91342.json과 피치덱 부록에 있습니다.
+
+### 검증 실측 (2026-07-31, Blockscout API 직접 조회)
+
+8/8 `is_verified: true`, 전부 solc v0.8.29+commit.ab55807:
+Manager `0xfd0fCCCc…` · DojangVerified `0xb2906a50…` · AllowedPayee `0x7eF0f193…` ·
+ERC20PeriodTransfer `0xE33ba891…` · Timestamp `0x2911cB5D…` · VerifiedCode `0x1C640E0A…` ·
+AccountFactory `0x157aF4D7…` · MockKRW `0x8bd74916…`
+
+### 레포 공개 전 시크릿 스캔 (2026-07-31)
+
+- `.env` 커밋 이력 **없음** (전 히스토리). 추적되는 건 `.env.example`뿐이고 키 필드는 비어 있다.
+- 64-hex 매치는 전부 tx 해시·attesterId·타입해시. 개인키 대입 **0건**.
+- 커밋 메시지 AI/co-author 흔적 **0건**. 작성자 단일 `GrapeInTheTree <rightruth1202@gmail.com>`.
+- `.env.example`의 `faucet.giwa.io`는 403(Cloudflare 게이트) — 실재 도메인, 파일 설명과 일치.
+
+→ **공개해도 안전.** 다만 공개는 되돌리기 어려운 대외 행위라 사용자 승인 후 실행.
+
+---
+
 ## 근거 (제출하지 않음 — 내부 확인용)
 
 - **OpenClaw 사건**: 2026년 2월, OpenClaw 프레임워크로 만든 트레이딩 에이전트가 "4 SOL"
