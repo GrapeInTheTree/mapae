@@ -141,14 +141,45 @@ function decodeHeld(context: Hex): Held {
     };
 }
 
-/** Contexts are handed in - at startup via env, or mid-conversation via load_context - and never
- *  fetched from anywhere: the agent holds exactly what a human (or a parent agent) chose to give
- *  it, and cannot enumerate what else that human has granted. */
-const held: Held[] = (process.env.MAPAE_PERMISSION_CONTEXT ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter((s) => s.startsWith("0x"))
-    .map((s) => decodeHeld(s as Hex));
+/**
+ * Contexts are handed in - via env, via load_context, or from the last session's persisted
+ * file - and never fetched from anywhere: the agent holds exactly what a human (or a parent
+ * agent) chose to give it, and cannot enumerate what else that human has granted.
+ *
+ * Persistence closed the loop the first real session kept warning about: a context loaded in
+ * conversation now survives a restart, in the same ~/.mapae the identity lives in. Safe to
+ * store for the same reason it is safe to paste: a context is only spendable by the delegate
+ * it names, and this machine IS that delegate.
+ */
+const CONTEXTS_FILE = join(homedir(), ".mapae", "contexts.json");
+
+function persistedContexts(): Hex[] {
+    try {
+        const raw = JSON.parse(readFileSync(CONTEXTS_FILE, "utf8"));
+        return Array.isArray(raw) ? raw.filter((s): s is Hex => typeof s === "string" && s.startsWith("0x")) : [];
+    } catch {
+        return [];
+    }
+}
+
+function persistContexts() {
+    mkdirSync(join(homedir(), ".mapae"), {recursive: true});
+    writeFileSync(CONTEXTS_FILE, JSON.stringify(held.map((h) => h.context), null, 2) + "\n", {mode: 0o600});
+}
+
+const held: Held[] = [];
+for (const s of [
+    ...(process.env.MAPAE_PERMISSION_CONTEXT ?? "").split(",").map((x) => x.trim()),
+    ...persistedContexts(),
+]) {
+    if (!s.startsWith("0x")) continue;
+    try {
+        const h = decodeHeld(s as Hex);
+        if (!held.some((x) => x.hash === h.hash && x.leaf.delegate === h.leaf.delegate)) held.push(h);
+    } catch {
+        /* a corrupt entry must not take the server down */
+    }
+}
 
 const pick = (index?: number): Held => {
     const h = held[index ?? 0];
@@ -241,7 +272,7 @@ const bigintSafe = (_: string, v: unknown) => (typeof v === "bigint" ? v.toStrin
 /* ---------------------------------- tools ---------------------------------- */
 
 const server = new McpServer(
-    {name: "mapae", version: "0.3.1"},
+    {name: "mapae", version: "0.4.0"},
     {
         /** Read by the client's model at session start - this is where the server earns its
          *  Korean name, and where the kill-switch boundary is stated so no model ever promises
@@ -295,6 +326,31 @@ server.tool(
             }),
         );
         return text(out);
+    },
+);
+
+server.tool(
+    "agent_status",
+    "[마패] 이 에이전트의 신원·가스 잔액·대략 몇 번 더 결제할 수 있는지. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and where its identity and contexts persist. Gas cannot be fetched programmatically - GIWA's ETH faucets are web pages with captchas - so when the tank is low, hand the human this address to fund.",
+    {},
+    async () => {
+        const [balance, block] = await Promise.all([
+            pub.getBalance({address: agent.address}),
+            pub.getBlock(),
+        ]);
+        // ~1.5M gas ceiling per redemption at 3x base fee - the same posture pay uses.
+        const perPay = 1_500_000n * ((block.baseFeePerGas ?? 1_000_000n) * 3n);
+        return text({
+            agentAddress: agent.address,
+            gasBalanceEth: Number(balance) / 1e18,
+            approxPaymentsRemaining: perPay > 0n ? Number(balance / perPay) : null,
+            contextsHeld: held.length,
+            identityFile: join(homedir(), ".mapae", "agent.key"),
+            contextsFile: CONTEXTS_FILE,
+            fundingNote:
+                "Send GIWA Sepolia ETH to agentAddress from any funded wallet. There is no " +
+                "programmatic faucet - the human does this once, a fraction of a cent covers hundreds of payments.",
+        });
     },
 );
 
@@ -449,6 +505,7 @@ server.tool(
         const existing = held.findIndex((x) => x.hash === h.hash && x.leaf.delegate === h.leaf.delegate);
         if (existing >= 0) return text({index: existing, note: "already held"});
         held.push(h);
+        persistContexts();
         const live = await liveState(h);
         return text({
             index: held.length - 1,
@@ -456,7 +513,7 @@ server.tool(
             forThisAgent: h.leaf.delegate.toLowerCase() === agent.address.toLowerCase(),
             conditions: h.conditions.map(describe),
             remainingThisPeriod: live.available === null ? null : fmtWon(live.available),
-            note: "Held for this session. To keep it across restarts, add it to MAPAE_PERMISSION_CONTEXT.",
+            note: `Persisted to ${CONTEXTS_FILE} - future sessions on this machine hold it automatically.`,
         });
     },
 );
