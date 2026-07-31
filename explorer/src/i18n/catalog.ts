@@ -125,6 +125,10 @@ export const en = {
         getDojang: "Get a testnet Dojang",
         getDojangHint: "Self-service - your wallet shows the issuance fee before you confirm",
         gettingDojang: "Issuing your Dojang…",
+        identityFirst: "Identity comes first",
+        identityFirstBody: "A Mapae is authority rooted in a verified person, so issuance starts with your Dojang. One click issues a testnet attestation to this wallet.",
+        identityFirstUpbit: "This issuer's Dojang is granted only by Upbit, through its own channel. Connect a wallet that already holds one, or switch the required identity to the testnet issuer.",
+        blockedUpbitDojang: "Connect a wallet holding an Upbit Dojang",
         verified: "Dojang verified",
         checking: "Checking identity…",
 
@@ -479,6 +483,10 @@ export const ko: Catalog = {
         getDojang: "테스트넷 도장 받기",
         getDojangHint: "셀프서비스 — 발급 수수료는 확인 전에 지갑에 표시됩니다",
         gettingDojang: "도장을 발급하는 중…",
+        identityFirst: "도장이 먼저입니다",
+        identityFirstBody: "마패는 검증된 사람 위에서만 성립하는 권한입니다. 그래서 발급은 도장에서 시작합니다 — 버튼 한 번으로 이 지갑에 테스트넷 도장이 발급됩니다.",
+        identityFirstUpbit: "이 발급자의 도장은 업비트가 자체 채널로만 발급합니다. 보유한 지갑으로 연결하거나, 요구 신원을 테스트넷 발급자로 바꾸세요.",
+        blockedUpbitDojang: "업비트 도장을 보유한 지갑으로 연결하세요",
         verified: "도장 검증됨",
         checking: "신원 확인 중…",
 

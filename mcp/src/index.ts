@@ -240,11 +240,25 @@ const bigintSafe = (_: string, v: unknown) => (typeof v === "bigint" ? v.toStrin
 
 /* ---------------------------------- tools ---------------------------------- */
 
-const server = new McpServer({name: "mapae", version: "0.1.0"});
+const server = new McpServer(
+    {name: "mapae", version: "0.3.1"},
+    {
+        /** Read by the client's model at session start - this is where the server earns its
+         *  Korean name, and where the kill-switch boundary is stated so no model ever promises
+         *  a disable it cannot perform. */
+        instructions: [
+            "이 서버는 '마패'(Mapae)다. 사용자가 마패, 마패로 결제, 권한, 위임이라 말하면 이 도구들을 뜻한다.",
+            "마패 = GIWA 체인 위의 범위 제한·즉시 취소·실명 역추적 지출 권한. 에이전트는 사람이 서명해준 권한만 쓴다.",
+            "결제(pay)의 수취인·토큰은 서명된 정책에서 나오므로 임의 주소로는 보낼 수 없다. REFUSED는 오류가 아니라 시스템이 동작한 결과다 - 사유를 사람에게 설명하라.",
+            "비활성화·재활성화·도장 취소는 이 서버의 도구가 아니다. 킬스위치는 권한을 준 사람의 것이며(온체인이 delegator만 허용), 요청받으면 mapae.pages.dev/permissions 에서 직접 끄도록 안내하라.",
+            "발급(issue)도 없다: 발급은 사람의 서명이다. request_permission으로 요청서를 만들어 사람에게 링크를 건네라.",
+        ].join("\n"),
+    },
+);
 
 server.tool(
     "list_permissions",
-    "Every spending authority this agent holds, with its signed conditions and live on-chain state (disabled? identity still live? budget left?). Nothing here is stored anywhere - it is read from GIWA at call time.",
+    "[마패] 이 에이전트가 보유한 마패(지출 권한) 목록과 온체인 라이브 상태. Every spending authority this agent holds, with its signed conditions and live on-chain state (disabled? identity still live? budget left?). Nothing here is stored anywhere - it is read from GIWA at call time.",
     {},
     async () => {
         if (held.length === 0)
@@ -286,7 +300,7 @@ server.tool(
 
 server.tool(
     "check_budget",
-    "What remains of the period cap for one held authority, read live from the period enforcer.",
+    "[마패] 이 마패의 남은 한도 확인. What remains of the period cap for one held authority, read live from the period enforcer.",
     {contextIndex: z.number().int().min(0).optional().describe("Which held context (default 0)")},
     async ({contextIndex}) => {
         const h = pick(contextIndex);
@@ -306,7 +320,7 @@ server.tool(
 
 server.tool(
     "pay",
-    "Spend within a held authority. The payee and the token come from the SIGNED POLICY, not from arguments - this tool is structurally unable to pay anyone the human did not allow. A refusal is a normal result carrying the on-chain reason, because refusals are the product working.",
+    "[마패] 마패로 결제한다. Spend within a held authority. The payee and the token come from the SIGNED POLICY, not from arguments - this tool is structurally unable to pay anyone the human did not allow. A refusal is a normal result carrying the on-chain reason, because refusals are the product working.",
     {
         amount: z.number().int().positive().describe("Amount in mKRW base units (1 = ₩1)"),
         contextIndex: z.number().int().min(0).optional(),
@@ -393,7 +407,7 @@ server.tool(
 
 server.tool(
     "request_permission",
-    "Compose a permission REQUEST for the human to review and sign in their own wallet. This server cannot issue: issuance is the principal's signature, and holding that key would hand the agent the wallet. Returns a prefilled link - send it to the human.",
+    "[마패] 사람에게 마패 발급을 요청한다(서명 링크 생성). Compose a permission REQUEST for the human to review and sign in their own wallet. This server cannot issue: issuance is the principal's signature, and holding that key would hand the agent the wallet. Returns a prefilled link - send it to the human.",
     {
         agentName: z.string().min(1).describe("How the human should see this agent named"),
         amountPerPeriod: z.number().int().positive().describe("Requested cap in mKRW base units"),
@@ -422,7 +436,7 @@ server.tool(
 
 server.tool(
     "load_context",
-    "Load a permission context the human just handed over in conversation - the step after they signed what request_permission asked for. Pasting it here is safe by construction: a context is only spendable by the delegate it names, so it is a capability for that agent alone, not a secret.",
+    "[마패] 사람이 발급해준 마패(권한 컨텍스트)를 대화에서 인계받는다. Load a permission context the human just handed over in conversation - the step after they signed what request_permission asked for. Pasting it here is safe by construction: a context is only spendable by the delegate it names, so it is a capability for that agent alone, not a secret.",
     {context: z.string().describe("The permission context hex, copied from the Composer's issued screen")},
     async ({context}) => {
         if (!context.startsWith("0x")) return text({error: "not a permission context (expected 0x…)"});
@@ -449,7 +463,7 @@ server.tool(
 
 server.tool(
     "redelegate",
-    "Sign a NARROWER child of a held authority to another agent, without any transaction. The child can only narrow: its own cap rides on top of every parent condition, the root human's kill switch still severs the whole chain, and the identity gate still reads the root principal at every payment.",
+    "[마패] 보유한 마패를 더 좁혀 하위 에이전트에 재위임한다. Sign a NARROWER child of a held authority to another agent, without any transaction. The child can only narrow: its own cap rides on top of every parent condition, the root human's kill switch still severs the whole chain, and the identity gate still reads the root principal at every payment.",
     {
         to: z.string().describe("The sub-agent's address"),
         capAmount: z.number().int().positive().optional()

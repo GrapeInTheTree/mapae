@@ -153,21 +153,36 @@ export default function Create() {
     const amountOk = form.amount > 0n;
     const formOk = agentOk && merchantOk && amountOk && form.agentName.trim().length > 0;
 
+    /**
+     * Identity gates the signature, not just the payment.
+     *
+     * The first design let anyone sign and showed a warning that payments would be refused -
+     * technically honest, but it made the product's own thesis optional: a Mapae is authority
+     * ROOTED in verified identity, so composing one without the root should not complete. For
+     * the self-service issuer the gate is one click (the primary button becomes the issuance);
+     * for Upbit it is a hard stop stated plainly, because no button can click that Dojang into
+     * existence.
+     */
+    const needsDojang = Boolean(wallet.address && account.deployed && verified === false);
+    const dojangSelfService = form.issuer === TESTNET_FAUCET_ID;
+
     /** What stands between here and a signature, in order. A disabled control that will not say
      *  why is the commonest way a form loses someone; this is shown on the button itself. */
     const blocked: string | null = !wallet.address
         ? t("create", "blockedWallet")
         : !account.deployed
           ? t("create", "blockedAccount")
-          : form.agentName.trim().length === 0
-            ? t("create", "blockedName")
-            : !agentOk
-              ? t("create", "blockedAgent")
-              : !merchantOk
-                ? t("create", "blockedMerchant")
-                : !amountOk
-                  ? t("create", "blockedAmount")
-                  : null;
+          : needsDojang && !dojangSelfService
+            ? t("create", "blockedUpbitDojang")
+            : form.agentName.trim().length === 0
+              ? t("create", "blockedName")
+              : !agentOk
+                ? t("create", "blockedAgent")
+                : !merchantOk
+                  ? t("create", "blockedMerchant")
+                  : !amountOk
+                    ? t("create", "blockedAmount")
+                    : null;
 
     /**
      * Built as soon as the FORM is complete, not once a wallet is connected.
@@ -346,6 +361,13 @@ export default function Create() {
                                 verified={verified}
                                 checking={checkingIdentity}
                                 blocked={blocked}
+                                needsDojang={needsDojang}
+                                selfService={dojangSelfService}
+                                issuing={dojang.issuing}
+                                issueError={dojang.error}
+                                onIssue={async () => {
+                                    if (await dojang.issue()) refreshIdentity();
+                                }}
                                 onReview={() => setStage("review")}
                             />
                         </div>
@@ -796,6 +818,11 @@ export default function Create() {
         verified: isVerified,
         checking,
         blocked: reason,
+        needsDojang: identityMissing,
+        selfService,
+        issuing,
+        issueError,
+        onIssue,
         onReview,
     }: {
         form: PresetForm;
@@ -803,6 +830,11 @@ export default function Create() {
         verified: boolean | null;
         checking: boolean;
         blocked: string | null;
+        needsDojang: boolean;
+        selfService: boolean;
+        issuing: boolean;
+        issueError: string | null;
+        onIssue: () => void;
         onReview: () => void;
     }) {
         const merchantLabel = f.merchantName || (f.merchant ? short(String(f.merchant), 6) : "");
@@ -906,45 +938,43 @@ export default function Create() {
                         </>
                     )}
 
-                    {isVerified === false && (
-                        <div className="mt-5 rounded-lg border border-warn/40 bg-warn/10 p-3">
-                            <p className="text-[12.5px] leading-relaxed text-paper-ink-2">
-                                {t("create", "notVerified")}
+                    {/* The identity step, as a step - not a warning to scroll past. The primary
+                        button below BECOMES the issuance while identity is missing, so the flow
+                        reads: fill the policy, plant the root, then sign what grows from it. */}
+                    {identityMissing && (
+                        <div className="mt-5 rounded-xl border border-paper-line bg-paper-2/60 p-4">
+                            <p className="text-[13px] font-semibold text-paper-ink">
+                                {t("create", "identityFirst")}
                             </p>
-                            {/* Only the testnet issuer is self-service; an Upbit Dojang cannot be
-                                clicked into existence, and offering the button there would be a
-                                lie the chain immediately exposes. */}
-                            {f.issuer === TESTNET_FAUCET_ID && (
-                                <div className="mt-2.5 border-t border-warn/30 pt-2.5">
-                                    <button
-                                        onClick={async () => {
-                                            if (await dojang.issue()) refreshIdentity();
-                                        }}
-                                        disabled={dojang.issuing || !wallet.onGiwa}
-                                        className="rounded-lg bg-bronze-solid px-3 py-1.5 text-[12.5px] font-medium text-paper transition-colors hover:bg-bronze-solid-2 disabled:opacity-50"
-                                    >
-                                        {dojang.issuing
-                                            ? t("create", "gettingDojang")
-                                            : t("create", "getDojang")}
-                                    </button>
-                                    <span className="ml-2.5 text-[11.5px] text-paper-mute">
-                                        {t("create", "getDojangHint")}
-                                    </span>
-                                    {dojang.error && (
-                                        <p className="mt-1.5 text-[12px] text-reject-paper">{dojang.error}</p>
-                                    )}
-                                </div>
+                            <p className="mt-1.5 text-[12.5px] leading-relaxed text-paper-mute">
+                                {selfService
+                                    ? t("create", "identityFirstBody")
+                                    : t("create", "identityFirstUpbit")}
+                            </p>
+                            {issueError && (
+                                <p className="mt-2 text-[12px] leading-relaxed text-reject-paper">
+                                    {issueError}
+                                </p>
                             )}
                         </div>
                     )}
                 </div>
 
                 <div className="border-t border-paper-line bg-paper-2/40 px-6 py-5">
-                    <Button className="w-full" onClick={onReview} disabled={Boolean(reason)}>
-                        {reason ?? `${t("create", "reviewSign")} →`}
-                    </Button>
+                    {identityMissing && selfService ? (
+                        <Button className="w-full" onClick={onIssue} disabled={issuing}>
+                            {issuing ? <Spinner inline /> : null}
+                            {issuing ? t("create", "gettingDojang") : t("create", "getDojang")}
+                        </Button>
+                    ) : (
+                        <Button className="w-full" onClick={onReview} disabled={Boolean(reason)}>
+                            {reason ?? `${t("create", "reviewSign")} →`}
+                        </Button>
+                    )}
                     <p className="mt-2.5 text-center text-[11.5px] text-paper-mute">
-                        {t("create", "gasFree")}
+                        {identityMissing && selfService
+                            ? t("create", "getDojangHint")
+                            : t("create", "gasFree")}
                     </p>
                 </div>
             </Paper>

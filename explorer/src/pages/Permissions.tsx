@@ -273,18 +273,24 @@ export default function Permissions() {
                         )}
                     </div>
                     {verified === false && (
-                        <button
-                            onClick={async () => {
-                                if (await dojang.issue()) refreshIdentity();
-                            }}
-                            disabled={dojang.issuing || !wallet.onGiwa}
-                            className="mt-2 rounded-md border border-bronze-dim px-2.5 py-1 text-[11.5px] font-medium text-bronze-bright transition-colors hover:bg-bronze/10 disabled:opacity-50"
-                        >
-                            {dojang.issuing ? t("create", "gettingDojang") : t("create", "getDojang")}
-                        </button>
-                    )}
-                    {dojang.error && (
-                        <p className="mt-1.5 text-[11.5px] text-reject">{dojang.error}</p>
+                        <>
+                            <button
+                                onClick={async () => {
+                                    if (await dojang.issue()) refreshIdentity();
+                                }}
+                                disabled={dojang.issuing || !wallet.onGiwa}
+                                className="mt-2.5 w-full rounded-lg border border-bronze-dim px-3 py-1.5 text-[12px] font-medium text-bronze-bright transition-colors hover:bg-bronze/10 disabled:opacity-50"
+                            >
+                                {dojang.issuing
+                                    ? t("create", "gettingDojang")
+                                    : t("create", "getDojang")}
+                            </button>
+                            {dojang.error && (
+                                <p className="mt-1.5 text-[11.5px] leading-relaxed text-reject">
+                                    {dojang.error}
+                                </p>
+                            )}
+                        </>
                     )}
                 </Card>
             </div>
