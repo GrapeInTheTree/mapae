@@ -252,6 +252,7 @@ export function useIssueDojang() {
 
 export function useTokenBalance(token: Address | null, holder: Address | null) {
     const [balance, setBalance] = useState<bigint | null>(null);
+    const [tick, setTick] = useState(0);
     useEffect(() => {
         if (!token || !holder) {
             setBalance(null);
@@ -269,8 +270,47 @@ export function useTokenBalance(token: Address | null, holder: Address | null) {
         return () => {
             cancelled = true;
         };
-    }, [token, holder]);
-    return balance;
+    }, [token, holder, tick]);
+    return {balance, refresh: () => setTick((t) => t + 1)};
+}
+
+/**
+ * The mKRW faucet, as a button.
+ *
+ * Until now every account was funded by our own scripts - which meant a stranger walking the
+ * product path arrived at a working account with an invisible hand behind it. MockKRW's mint is
+ * deliberately permissionless (it is the asset-agnosticism placeholder, not a treasury), so the
+ * connected wallet can pour test funds into its own MapaeAccount directly. ₩100,000 per press.
+ */
+export function useMintTestKRW() {
+    const wallet = useWallet();
+    const [minting, setMinting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const mint = async (to: Address): Promise<boolean> => {
+        if (!wallet.walletClient || !wallet.address) return false;
+        setMinting(true);
+        setError(null);
+        try {
+            const hash = await wallet.walletClient.writeContract({
+                address: addresses.mockKRW,
+                abi: erc20Abi,
+                functionName: "mint",
+                args: [to, 100_000n],
+                account: wallet.address,
+                chain: null,
+            });
+            await client.waitForTransactionReceipt({hash, timeout: 90_000});
+            return true;
+        } catch (e) {
+            setError(readableError(e));
+            return false;
+        } finally {
+            setMinting(false);
+        }
+    };
+
+    return {mint, minting, error};
 }
 
 /** Wallet errors arrive as walls of JSON-RPC text; show the sentence a person can act on. */

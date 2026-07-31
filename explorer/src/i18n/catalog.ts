@@ -122,6 +122,9 @@ export const en = {
         creatingAccount: "Creating your account…",
         accountHint: "A Mapae account holds the funds. You keep the identity - your Dojang attestation stays on your own address, because an exchange attests people, never fresh contracts.",
         notVerified: "This address holds no live Dojang attestation from the issuer you selected. You can still sign, but every payment will be refused until it does.",
+        getKRW: "Get test mKRW (₩100,000)",
+        gettingKRW: "Minting…",
+        fundNote: "This account holds no test funds yet - a Mapae pays from here. One press mints ₩100,000 of mKRW (gas only; the mint is permissionless by design).",
         getDojang: "Get a testnet Dojang",
         getDojangHint: "Self-service - your wallet shows the issuance fee before you confirm",
         gettingDojang: "Issuing your Dojang…",
@@ -163,20 +166,20 @@ export const en = {
     },
 
     presets: {
-        api: {
-            name: "API Agent",
-            desc: "For programmatic access to paid APIs, data, and compute.",
-            long: "The clearest first market: an agent that buys the API calls it needs to do its job, under a daily ceiling, from one provider you named.",
+        micro: {
+            name: "Petty cash",
+            desc: "A pocket the agent can lose without hurting you.",
+            long: "Coffee-sized payments, daily, at one place you named. The cap is small enough that the worst case is an affordable case - the lowest-stakes first Mapae.",
         },
-        shopping: {
-            name: "Shopping Agent",
-            desc: "For autonomous purchases from merchants you allow.",
-            long: "A per-period budget at a merchant you chose, so an agent can buy without ever holding your card.",
+        burst: {
+            name: "Short burst",
+            desc: "Spend big, die fast.",
+            long: "A large daily allowance for jobs that finish in days - shopping, bookings, tickets - hard-capped at three days of life. Past a certain size, the real safety is lifespan, not limit.",
         },
         subscription: {
-            name: "Subscription Agent",
-            desc: "For recurring payments to one service.",
-            long: "A recurring allowance that renews each period and expires on a date you set, payable only to the service you named.",
+            name: "Subscription",
+            desc: "One service, a fixed amount per cycle.",
+            long: "A renewing allowance payable only to the service you name. Forget about it, and it still dies on schedule.",
         },
         custom: {
             name: "Custom",
@@ -480,6 +483,9 @@ export const ko: Catalog = {
         creatingAccount: "계정을 만드는 중…",
         accountHint: "마패 계정이 자금을 보관합니다. 신원은 당신에게 남습니다 — 도장 attestation은 당신 주소에 그대로 있습니다. 거래소는 사람에게 발급하지, 갓 배포된 컨트랙트에 발급하지 않기 때문입니다.",
         notVerified: "이 주소에는 선택한 발급자의 유효한 도장이 없습니다. 서명은 할 수 있지만, 도장이 생기기 전까지 모든 결제가 거부됩니다.",
+        getKRW: "테스트 mKRW 받기 (₩100,000)",
+        gettingKRW: "충전하는 중…",
+        fundNote: "계정에 테스트 자금이 없습니다 — 마패는 이 계정에서 지불합니다. 버튼 한 번으로 ₩100,000을 충전하세요 (가스만 들며, mint는 설계상 퍼미션리스입니다).",
         getDojang: "테스트넷 도장 받기",
         getDojangHint: "셀프서비스 — 발급 수수료는 확인 전에 지갑에 표시됩니다",
         gettingDojang: "도장을 발급하는 중…",
@@ -521,20 +527,20 @@ export const ko: Catalog = {
     },
 
     presets: {
-        api: {
-            name: "API 에이전트",
-            desc: "유료 API·데이터·컴퓨트에 프로그램으로 접근합니다.",
-            long: "가장 명확한 첫 시장입니다. 에이전트가 일을 하는 데 필요한 API 호출을, 당신이 지정한 한 공급자에게서, 하루 한도 안에서 직접 구매합니다.",
+        micro: {
+            name: "소액 자동결제",
+            desc: "잃어도 아프지 않은 잔돈 지갑.",
+            long: "커피값 수준의 결제를, 지정한 한 곳에서, 매일 한도 안에서. 한도가 작아 최악의 경우조차 감당 가능한 경우가 되는 — 가장 부담 없는 첫 마패입니다.",
         },
-        shopping: {
-            name: "쇼핑 에이전트",
-            desc: "허용한 곳에서만 자율적으로 구매합니다.",
-            long: "당신이 고른 곳에서 기간별 예산 안에서만 씁니다. 에이전트가 당신의 카드를 쥐는 일은 없습니다.",
+        burst: {
+            name: "단기 고액",
+            desc: "크게 쓰고, 빨리 죽는 권한.",
+            long: "쇼핑·예약·티켓팅처럼 며칠 안에 끝나는 일에 큰 한도를 주되, 수명을 3일로 못박습니다. 금액이 커질수록 진짜 안전장치는 한도가 아니라 수명입니다.",
         },
         subscription: {
-            name: "구독 에이전트",
-            desc: "한 서비스에 반복 결제합니다.",
-            long: "기간마다 갱신되고 지정한 날짜에 만료되는 한도를, 당신이 지정한 서비스에만 지불합니다.",
+            name: "정기 구독",
+            desc: "한 서비스에, 주기마다 정액만.",
+            long: "기간마다 갱신되는 정액을 지정한 서비스에만 지불합니다. 잊고 있어도, 정한 날짜에 스스로 죽습니다.",
         },
         custom: {
             name: "직접 구성",

@@ -13,7 +13,7 @@ import {TESTNET_FAUCET_ID} from "@mapae/protocol";
  * ahead of us are listed separately and marked as such.
  */
 
-export type PresetId = "api" | "shopping" | "subscription" | "custom";
+export type PresetId = "micro" | "burst" | "subscription" | "custom";
 
 export interface PresetForm {
     agentName: string;
@@ -52,28 +52,28 @@ const DAY = 86_400n;
 
 export const PRESETS: Preset[] = [
     {
-        id: "api",
+        id: "micro",
         fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
         composable: false,
         defaults: {
             token: addresses.mockKRW,
-            amount: 50_000n,
+            amount: 5_000n,
             period: DAY,
-            validDays: 7,
+            validDays: 30,
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,
         },
     },
     {
-        id: "shopping",
+        id: "burst",
         fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
         composable: false,
         defaults: {
             token: addresses.mockKRW,
-            amount: 200_000n,
+            amount: 500_000n,
             period: DAY,
-            validDays: 30,
+            validDays: 3,
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,

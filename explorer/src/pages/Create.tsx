@@ -28,7 +28,7 @@ import {
 import {ConnectButton} from "../components/Connect";
 import {useLang, usePreset} from "../i18n";
 import {addresses, giwaSepolia, short} from "../lib/config";
-import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount} from "../lib/account";
+import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount, useMintTestKRW, useTokenBalance} from "../lib/account";
 import {
     decodeCondition,
     encodeConditions,
@@ -59,7 +59,7 @@ import {useWallet} from "../lib/wallet";
 
 type Stage = "compose" | "review" | "issued";
 
-const PRESET_IDS: PresetId[] = ["api", "shopping", "subscription", "custom"];
+const PRESET_IDS: PresetId[] = ["micro", "burst", "subscription", "custom"];
 
 export default function Create() {
     const {t, lang} = useLang();
@@ -67,7 +67,7 @@ export default function Create() {
     const wallet = useWallet();
     const account = useMapaeAccount();
 
-    const [presetId, setPresetId] = useState<PresetId>("api");
+    const [presetId, setPresetId] = useState<PresetId>("micro");
     const [stage, setStage] = useState<Stage>("compose");
     const [signing, setSigning] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -91,7 +91,7 @@ export default function Create() {
             agent: "",
             merchantName: "",
             merchant: "",
-            ...preset("api").defaults,
+            ...preset("micro").defaults,
         };
         const num = (k: string): bigint | null => {
             const v = params.get(k);
@@ -127,6 +127,8 @@ export default function Create() {
         form.issuer,
     );
     const dojang = useIssueDojang();
+    const {balance, refresh: refreshBalance} = useTokenBalance(addresses.mockKRW, account.address ?? null);
+    const krw = useMintTestKRW();
 
     /**
      * Syntactic validity, not checksum validity.
@@ -310,6 +312,35 @@ export default function Create() {
 
             {wallet.address && !account.deployed && !account.loading && (
                 <CreateAccountFirst account={account} />
+            )}
+
+            {/* An empty paying account is the third silent wall a newcomer hits (after wallet
+                and identity) - so it gets the same treatment: stated, with the fix attached. */}
+            {wallet.address && account.deployed && balance === 0n && (
+                <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface px-5 py-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line-strong">
+                            <Mark size={15} />
+                        </span>
+                        <p className="min-w-0 text-[12.5px] leading-relaxed text-mute">
+                            {t("create", "fundNote")}
+                        </p>
+                    </div>
+                    <div className="shrink-0">
+                        <Button
+                            onClick={async () => {
+                                if (account.address && (await krw.mint(account.address))) refreshBalance();
+                            }}
+                            disabled={krw.minting || !wallet.onGiwa}
+                        >
+                            {krw.minting ? <Spinner inline /> : null}
+                            {krw.minting ? t("create", "gettingKRW") : t("create", "getKRW")}
+                        </Button>
+                        {krw.error && (
+                            <p className="mt-1.5 text-[12px] text-reject">{krw.error}</p>
+                        )}
+                    </div>
+                </div>
             )}
 
             {stage === "review" && conditions ? (

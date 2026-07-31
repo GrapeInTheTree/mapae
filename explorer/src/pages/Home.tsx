@@ -53,9 +53,20 @@ export default function Home() {
         fetchDelegationList().then(setDlist).catch(() => {});
     }, []);
 
+    /**
+     * The field promises "transaction, account, agent, delegation" - so every one of those
+     * shapes must go somewhere. 64 hex chars is a transaction (the trace page says so itself if
+     * it is not one of ours); 40 is an address, which lands on the catalogue filtered to every
+     * authority that touches it. Anything else gets told, instead of a button that eats the
+     * click silently - which is exactly the bug this replaced.
+     */
+    const [searchMiss, setSearchMiss] = useState(false);
     const go = () => {
         const h = q.trim();
-        if (/^0x[0-9a-fA-F]{64}$/.test(h)) nav(`/tx/${h}`);
+        if (/^0x[0-9a-fA-F]{64}$/.test(h)) return nav(`/tx/${h}`);
+        if (/^0x[0-9a-fA-F]{40}$/.test(h)) return nav(`/delegations?q=${h}`);
+        setSearchMiss(true);
+        setTimeout(() => setSearchMiss(false), 2400);
     };
 
     return (
@@ -96,6 +107,14 @@ export default function Home() {
                         {lang === "ko" ? "추적" : "Trace"}
                     </button>
                 </div>
+
+                {searchMiss && (
+                    <p className="mt-2.5 text-[12.5px] text-reject">
+                        {lang === "ko"
+                            ? "트랜잭션 해시(66자) 또는 주소(42자)를 붙여넣으세요"
+                            : "Paste a transaction hash (66 chars) or an address (42 chars)"}
+                    </p>
+                )}
 
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                     <span className="text-[12.5px] text-mute">

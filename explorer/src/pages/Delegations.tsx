@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {Link} from "react-router-dom";
+import {Link, useSearchParams} from "react-router-dom";
 import type {Hex} from "viem";
 import {fetchDelegationList, type DelegationSummary} from "../lib/data";
 import {Card, CopyButton, Mono, Pagination, Spinner, StatusPill, Tag, relTime} from "../components/ui";
@@ -28,12 +28,32 @@ export default function Delegations() {
     const [list, setList] = useState<DelegationSummary[] | null>(null);
     const [failed, setFailed] = useState(false);
     const [page, setPage] = useState(1);
+    const [params, setParams] = useSearchParams();
 
     useEffect(() => {
         fetchDelegationList()
             .then(setList)
             .catch(() => setFailed(true));
     }, []);
+
+    /** The home search hands addresses here as ?q=. An authority "touches" an address as its
+     *  payer, its agent, or an allowed payee - all three are worth finding by, plus the
+     *  delegation hash itself. */
+    const q = (params.get("q") ?? "").trim().toLowerCase();
+    const shown =
+        list === null || q === ""
+            ? list
+            : list.filter(
+                  (d) =>
+                      d.delegator.toLowerCase().includes(q) ||
+                      d.delegate.toLowerCase().includes(q) ||
+                      d.hash.toLowerCase().includes(q) ||
+                      d.conditions.some(
+                          (c) =>
+                              c.kind === "payee" &&
+                              c.payees.some((p) => p.toLowerCase().includes(q)),
+                      ),
+              );
 
     return (
         <div className="mx-auto max-w-4xl px-6 py-10">
@@ -49,27 +69,55 @@ export default function Delegations() {
                 <p className="text-[12.5px] leading-relaxed text-mute">{t("dlist", "boundary")}</p>
             </div>
 
+            {q !== "" && (
+                <div className="mb-4 flex flex-wrap items-center gap-2.5">
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-bronze-dim bg-bronze/8 px-3 py-1.5">
+                        <span className="text-[11px] text-mute">
+                            {lang === "ko" ? "이 주소가 닿는 마패" : "Authorities touching"}
+                        </span>
+                        <span className="font-mono text-[12px] text-bronze-bright">
+                            {q.slice(0, 10)}…{q.slice(-4)}
+                        </span>
+                    </span>
+                    {shown && (
+                        <span className="text-[12px] text-mute">
+                            {lang === "ko" ? `${shown.length}건` : `${shown.length} found`}
+                        </span>
+                    )}
+                    <button
+                        onClick={() => setParams({})}
+                        className="text-[12px] text-mute underline-offset-4 transition-colors hover:text-ink-2 hover:underline"
+                    >
+                        {lang === "ko" ? "필터 지우기" : "Clear"}
+                    </button>
+                </div>
+            )}
+
             {failed ? (
                 <div className="rounded-2xl border border-line px-8 py-14 text-center">
                     <p className="text-[14px] text-ink-2">{t("dlist", "loadFail")}</p>
                     <p className="mt-1.5 text-[12.5px] text-mute">{t("common", "errorHint")}</p>
                 </div>
-            ) : list === null ? (
+            ) : shown === null ? (
                 <Spinner />
-            ) : list.length === 0 ? (
+            ) : shown.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-line-strong px-8 py-14 text-center text-[14px] text-mute">
-                    {t("dlist", "empty")}
+                    {q === ""
+                        ? t("dlist", "empty")
+                        : lang === "ko"
+                          ? "이 주소가 닿는 마패가 아직 체인에 없습니다."
+                          : "No on-chain authority touches this address yet."}
                 </div>
             ) : (
                 <>
                     <div className="space-y-3">
-                        {list.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((d) => (
+                        {shown.slice((page - 1) * PER_PAGE, page * PER_PAGE).map((d) => (
                             <Row key={d.hash} d={d} />
                         ))}
                     </div>
                     <Pagination
                         page={page}
-                        pages={Math.ceil(list.length / PER_PAGE)}
+                        pages={Math.ceil(shown.length / PER_PAGE)}
                         onPage={(p) => {
                             setPage(p);
                             window.scrollTo({top: 0});

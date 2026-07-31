@@ -1,6 +1,7 @@
 import {useEffect, useRef} from "react";
 import {Link} from "react-router-dom";
 import {animate, motion, useInView, useMotionValue, useReducedMotion, useTransform} from "motion/react";
+import {CircleCheck, CircleX, Fingerprint, ScrollText, type LucideIcon} from "lucide-react";
 import {useLang} from "../i18n";
 import type {Stats as StatsData} from "../lib/data";
 
@@ -22,6 +23,7 @@ interface Figure {
     value?: number;
     tone?: "jade" | "reject";
     note: string;
+    icon: LucideIcon;
     /** Where the number expands into its list, when it has one. */
     to?: string;
 }
@@ -36,6 +38,7 @@ export function Stats({stats}: {stats: StatsData | null}) {
             label: t("home", "statActive"),
             value: stats?.delegations,
             note: lang === "ko" ? "서명되어 사용된 권한" : "signed, and used at least once",
+            icon: ScrollText,
             to: "/delegations",
         },
         {
@@ -43,17 +46,20 @@ export function Stats({stats}: {stats: StatsData | null}) {
             value: stats?.redemptions,
             tone: "jade",
             note: lang === "ko" ? "조건을 모두 통과함" : "passed every condition",
+            icon: CircleCheck,
         },
         {
             label: t("home", "statBlocked"),
             value: stats?.rejections,
             tone: "reject",
             note: lang === "ko" ? "조건 하나에 막힘" : "stopped by one condition",
+            icon: CircleX,
         },
         {
             label: t("home", "statPrincipals"),
             value: stats?.principals,
             note: lang === "ko" ? "도장으로 실명 확인됨" : "verified by a Dojang attestation",
+            icon: Fingerprint,
         },
     ];
 
@@ -76,14 +82,18 @@ export function Stats({stats}: {stats: StatsData | null}) {
                             }`}
                         >
                             <Cell to={f.to}>
-                                <div className="flex items-center gap-2">
-                                    {f.tone && (
-                                        <span
-                                            className={`h-1.5 w-1.5 rounded-full ${
-                                                f.tone === "jade" ? "bg-jade" : "bg-reject"
-                                            }`}
-                                        />
-                                    )}
+                                <div className="flex items-center gap-2.5">
+                                    <span
+                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${
+                                            f.tone === "jade"
+                                                ? "border-jade-dim/60 bg-jade/8 text-jade"
+                                                : f.tone === "reject"
+                                                  ? "border-reject-dim/60 bg-reject/8 text-reject"
+                                                  : "border-line-strong bg-surface-2 text-bronze-bright"
+                                        }`}
+                                    >
+                                        <f.icon size={15} strokeWidth={1.8} />
+                                    </span>
                                     <span className="caps text-[11px] font-semibold text-mute">
                                         {f.label}
                                     </span>

@@ -10,7 +10,7 @@ import {ConnectButton} from "../components/Connect";
 import {useLang} from "../i18n";
 import {addresses, BLOCKSCOUT, short} from "../lib/config";
 import {client} from "../lib/data";
-import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount, useTokenBalance} from "../lib/account";
+import {readableError, useDojangStatus, useIssueDojang, useMapaeAccount, useMintTestKRW, useTokenBalance} from "../lib/account";
 import {decodeConditions, fmtDate, fmtToken, renderCondition, type Condition} from "../lib/policy";
 import * as store from "../lib/store";
 import {useWallet} from "../lib/wallet";
@@ -44,9 +44,10 @@ export default function Permissions() {
     const [busy, setBusy] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const balance = useTokenBalance(addresses.mockKRW, account.address);
+    const {balance, refresh: refreshBalance} = useTokenBalance(addresses.mockKRW, account.address);
     const {verified, refresh: refreshIdentity} = useDojangStatus(wallet.address ?? null, TESTNET_FAUCET_ID);
     const dojang = useIssueDojang();
+    const krw = useMintTestKRW();
 
     const reload = useCallback(() => {
         setItems(store.list(account.address ?? undefined));
@@ -254,6 +255,20 @@ export default function Permissions() {
                     <div className="tnum mt-1 text-[15px] text-ink">
                         {balance === null ? "—" : fmtToken(addresses.mockKRW, balance)}
                     </div>
+                    {balance === 0n && account.address && (
+                        <button
+                            onClick={async () => {
+                                if (account.address && (await krw.mint(account.address))) refreshBalance();
+                            }}
+                            disabled={krw.minting || !wallet.onGiwa}
+                            className="mt-2.5 w-full rounded-lg border border-bronze-dim px-3 py-1.5 text-[12px] font-medium text-bronze-bright transition-colors hover:bg-bronze/10 disabled:opacity-50"
+                        >
+                            {krw.minting ? t("create", "gettingKRW") : t("create", "getKRW")}
+                        </button>
+                    )}
+                    {krw.error && (
+                        <p className="mt-1.5 text-[11.5px] leading-relaxed text-reject">{krw.error}</p>
+                    )}
                 </Card>
                 <Card className="px-5 py-4">
                     <div className="text-[12px] text-mute">{t("permissions", "identity")}</div>
