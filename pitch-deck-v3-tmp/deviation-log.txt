@@ -1,8 +1,0 @@
-No intentional fidelity deviations.
-
-Adaptations within the template system:
-- Korean typography uses Apple SD Gothic Neo for legibility.
-- Slide 4 image placeholder is replaced by the real Korean Composer screen.
-- Slide 9 image placeholder is replaced by the real Korean x402-settled transaction trace.
-- Footer label changes from "2026 Market Report" to "MAPAE · GASOK PHASE 2".
-- Source slide numbers are replaced with final output slide numbers.
