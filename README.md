@@ -277,6 +277,7 @@ pnpm trace <any T1 hash>
 
 ## Documentation
 
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 한국어 기술 문서: 아키텍처와 구현 결정의 이유
 - [docs/DEMO.md](docs/DEMO.md) — every live transaction, expected vs. on-chain result
 - [docs/SPEC.md](docs/SPEC.md) — byte-level terms layouts, typehashes, conformance
 - [docs/GAPS.md](docs/GAPS.md) — measured ecosystem gaps, with the measurements
