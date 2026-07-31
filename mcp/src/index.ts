@@ -67,11 +67,21 @@ import {addresses, APP_URL, giwaSepolia} from "./config.js";
  * strictly safer than asking a person to make one elsewhere and paste it through a terminal.
  * The file never leaves ~/.mapae, is chmod 600, and no tool ever returns it.
  */
+/**
+ * MAPAE_PROFILE selects WHICH identity this registration runs as - "work" and "research" each
+ * get their own key and their own contexts under ~/.mapae/<profile>/. Chosen at registration
+ * time, deliberately not by a tool: an identity switch is the human's configuration act, and a
+ * model that could rotate its own key mid-conversation could be talked into abandoning one.
+ */
+const PROFILE_DIR = process.env.MAPAE_PROFILE
+    ? join(homedir(), ".mapae", process.env.MAPAE_PROFILE.replace(/[^a-zA-Z0-9_-]/g, "_"))
+    : join(homedir(), ".mapae");
+
 function loadOrCreateKey(): Hex {
     const fromEnv = (process.env.MAPAE_AGENT_PRIVATE_KEY ?? process.env.AGENT_PRIVATE_KEY) as Hex | undefined;
     if (fromEnv?.startsWith("0x")) return fromEnv;
 
-    const dir = join(homedir(), ".mapae");
+    const dir = PROFILE_DIR;
     const file = join(dir, "agent.key");
     if (existsSync(file)) {
         const onDisk = readFileSync(file, "utf8").trim() as Hex;
@@ -151,7 +161,7 @@ function decodeHeld(context: Hex): Held {
  * store for the same reason it is safe to paste: a context is only spendable by the delegate
  * it names, and this machine IS that delegate.
  */
-const CONTEXTS_FILE = join(homedir(), ".mapae", "contexts.json");
+const CONTEXTS_FILE = join(PROFILE_DIR, "contexts.json");
 
 function persistedContexts(): Hex[] {
     try {
@@ -163,7 +173,7 @@ function persistedContexts(): Hex[] {
 }
 
 function persistContexts() {
-    mkdirSync(join(homedir(), ".mapae"), {recursive: true});
+    mkdirSync(PROFILE_DIR, {recursive: true});
     writeFileSync(CONTEXTS_FILE, JSON.stringify(held.map((h) => h.context), null, 2) + "\n", {mode: 0o600});
 }
 
@@ -345,7 +355,8 @@ server.tool(
             gasBalanceEth: Number(balance) / 1e18,
             approxPaymentsRemaining: perPay > 0n ? Number(balance / perPay) : null,
             contextsHeld: held.length,
-            identityFile: join(homedir(), ".mapae", "agent.key"),
+            identityFile: join(PROFILE_DIR, "agent.key"),
+            profile: process.env.MAPAE_PROFILE ?? "(default)",
             contextsFile: CONTEXTS_FILE,
             fundingNote:
                 "Send GIWA Sepolia ETH to agentAddress from any funded wallet. There is no " +
