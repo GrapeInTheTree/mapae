@@ -22,6 +22,8 @@ docs/pitch/OUTLINE.md
 docs/pitch/*.pdf
 docs/pitch/*.png
 docs/pitch/*.b64
+docs/pitch/assets/
+output/
 docs/team/
 
 # Local agent config
