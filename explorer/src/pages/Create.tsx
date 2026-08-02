@@ -152,8 +152,20 @@ export default function Create() {
         /[a-f]/.test(v.slice(2)) &&
         /[A-F]/.test(v.slice(2)) &&
         !isAddress(v, {strict: true});
+    /**
+     * The token address is a plausible thing to paste into a payee field - it is the other
+     * address on this screen - and the contract will faithfully enforce it, because it was
+     * signed. The tokens then sit in the token contract with nothing able to move them. It
+     * has happened here on testnet; with a real stablecoin it burns money, so refuse it.
+     */
+    const merchantIsToken =
+        form.usePayee &&
+        form.merchant !== "" &&
+        isAddress(form.merchant, {strict: false}) &&
+        form.merchant.toLowerCase() === addresses.mockKRW.toLowerCase();
     const amountOk = form.amount > 0n;
-    const formOk = agentOk && merchantOk && amountOk && form.agentName.trim().length > 0;
+    const formOk =
+        agentOk && merchantOk && !merchantIsToken && amountOk && form.agentName.trim().length > 0;
 
     /**
      * Identity gates the signature, not just the payment.
@@ -182,6 +194,8 @@ export default function Create() {
                 ? t("create", "blockedAgent")
                 : !merchantOk
                   ? t("create", "blockedMerchant")
+                  : merchantIsToken
+                    ? t("create", "blockedMerchantIsToken")
                   : !amountOk
                     ? t("create", "blockedAmount")
                     : null;

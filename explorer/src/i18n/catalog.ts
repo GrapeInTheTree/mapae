@@ -155,6 +155,8 @@ export const en = {
         blockedName: "Name the agent",
         blockedAgent: "Enter the agent's address",
         blockedMerchant: "Enter the merchant's address",
+        blockedMerchantIsToken:
+            "That is the mKRW token's own address. Tokens sent there cannot be moved again - use the merchant's address.",
         blockedAmount: "Set a spending limit above zero",
         blockedAccount: "Create your Mapae account first",
         blockedWallet: "Connect a wallet",
@@ -516,6 +518,8 @@ export const ko: Catalog = {
         blockedName: "에이전트 이름을 지어주세요",
         blockedAgent: "에이전트 주소를 입력하세요",
         blockedMerchant: "사용처 주소를 입력하세요",
+        blockedMerchantIsToken:
+            "mKRW 토큰 자신의 주소입니다. 그리로 보낸 토큰은 다시 꺼낼 수 없습니다 — 받는 곳의 주소를 넣으세요.",
         blockedAmount: "0보다 큰 지출 한도를 정하세요",
         blockedAccount: "마패 계정을 먼저 만드세요",
         blockedWallet: "지갑을 연결하세요",
