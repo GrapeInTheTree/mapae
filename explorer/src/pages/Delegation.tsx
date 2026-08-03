@@ -230,7 +230,7 @@ export default function Delegation() {
                         onClick={() => toggle(!d.disabled)}
                     >
                         {busy
-                            ? t("permissions", "working")
+                            ? t("permissions", d.disabled ? "enabling" : "disabling")
                             : d.disabled
                               ? t("permissions", "enable")
                               : t("permissions", "disable")}
