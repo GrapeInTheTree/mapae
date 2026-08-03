@@ -174,6 +174,26 @@ export const en = {
         gasFree: "Signing is free. No transaction, no gas.",
     },
 
+    dpage: {
+        notFound: "No Mapae with that hash has appeared on-chain.",
+        backToList: "All delegations",
+        untitled: "Delegation",
+        attempts: "Attempts",
+        settled: "Settled",
+        refused: "Refused",
+        lastUsed: "Last used",
+        perPeriod: "per period",
+        periodNote: "Unused allowance is forfeited when the period rolls over; it never accumulates.",
+        conditions: "What was signed",
+        history: "Every attempt",
+        rawCalls: "Raw calls on Blockscout",
+        historyNote: "Refusals are kept for the same reason settlements are: an authority is only as legible as its failures.",
+        switchOnTitle: "This Mapae is live",
+        switchOnNote: "Turning it off refuses the next payment. The allowance already spent stays spent, so turning it back on resumes rather than resets.",
+        switchOffTitle: "This Mapae is switched off",
+        switchOffNote: "Payments are refused while it is off. Turning it back on resumes against the allowance it had already used.",
+    },
+
     presets: {
         micro: {
             name: "Petty cash",
@@ -542,6 +562,26 @@ export const ko: Catalog = {
         paste: "붙여넣기",
         perPeriodSuffix: "{period}당",
         gasFree: "서명은 무료입니다. 트랜잭션도, 가스도 없습니다.",
+    },
+
+    dpage: {
+        notFound: "그 해시를 가진 마패가 체인에 없습니다.",
+        backToList: "전체 마패",
+        untitled: "마패",
+        attempts: "시도",
+        settled: "승인",
+        refused: "거부",
+        lastUsed: "마지막 사용",
+        perPeriod: "기간당",
+        periodNote: "쓰지 않은 한도는 기간이 넘어가면 소멸하며, 누적되지 않습니다.",
+        conditions: "무엇이 서명되었나",
+        history: "모든 시도",
+        rawCalls: "Blockscout에서 원본 호출 보기",
+        historyNote: "거부도 승인과 같은 이유로 남깁니다. 권한은 실패까지 보일 때만 읽을 수 있습니다.",
+        switchOnTitle: "이 마패는 살아 있습니다",
+        switchOnNote: "끄면 다음 결제부터 거부됩니다. 이미 쓴 한도는 그대로라, 다시 켜면 리셋이 아니라 이어집니다.",
+        switchOffTitle: "이 마패는 꺼져 있습니다",
+        switchOffNote: "꺼져 있는 동안 결제가 거부됩니다. 다시 켜면 이미 쓰던 한도에서 이어집니다.",
     },
 
     presets: {

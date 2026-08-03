@@ -20,7 +20,7 @@ import {
     managerAbi,
     periodEnforcerAbi,
 } from "@mapae/abi";
-import {delegationHash} from "@mapae/sdk";
+import {delegationHash, type Delegation} from "@mapae/sdk";
 import {addresses, giwaSepolia, BLOCKSCOUT} from "./config";
 import {decodeConditions, type Condition} from "./policy";
 import snapshot from "../data/snapshot.json";
@@ -261,6 +261,15 @@ export interface DelegationSummary {
     delegate: Address;
     conditions: Condition[];
     raw: {enforcer: Address; terms: Hex; args: Hex}[];
+    /**
+     * The signed root, recovered whole from the calldata that redeemed it.
+     *
+     * Kept because the kill switch needs it: `disableDelegation` takes the delegation struct, not
+     * its hash. Without this only a browser that still holds its own issuance record could throw
+     * the switch - which is backwards, since the authority to disable is the delegator's and
+     * belongs to them wherever they are signed in.
+     */
+    delegation: Delegation;
     chainLength: number;
     /** Every attempt against this authority, newest first - refusals included. */
     txs: {hash: Hex; ok: boolean; timestamp: string}[];
@@ -330,6 +339,14 @@ export async function fetchDelegationList(): Promise<DelegationSummary[]> {
                         delegate: chain[0].delegate,
                         conditions: decodeConditions(root.caveats.map((c) => ({...c}))),
                         raw: root.caveats.map((c) => ({...c})),
+                        delegation: {
+                            delegate: root.delegate,
+                            delegator: root.delegator,
+                            authority: root.authority,
+                            caveats: root.caveats.map((c) => ({...c})),
+                            salt: root.salt,
+                            signature: root.signature,
+                        },
                         chainLength: chain.length,
                         txs: [{hash: t.hash, ok: t.status === "ok", timestamp: t.timestamp}],
                         settled: 0,

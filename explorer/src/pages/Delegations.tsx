@@ -255,8 +255,22 @@ export default function Delegations() {
                             <span className="text-[11px] text-mute">+{d.txs.length - 3}</span>
                         )}
                     </span>
+                    {/* The hash IS the Mapae, so it is also the way into it. Kept as a link
+                        rather than making the whole card clickable: the card already holds copy
+                        buttons and transaction links, and nesting those inside a link breaks
+                        both. */}
                     <span className="ml-auto flex items-center gap-0.5">
-                        <Mono className="!text-[11px] text-mute">{short(d.hash, 6)}</Mono>
+                        <Link
+                            to={`/delegation/${d.hash}`}
+                            className="group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors hover:bg-surface-2"
+                        >
+                            <Mono className="!text-[11px] text-mute transition-colors group-hover:text-ink-2">
+                                {short(d.hash, 6)}
+                            </Mono>
+                            <svg width="10" height="10" viewBox="0 0 16 16" className="text-mute transition-colors group-hover:text-bronze-bright" aria-hidden="true">
+                                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+                            </svg>
+                        </Link>
                         <CopyButton
                             value={d.hash}
                             label={t("tx", "copy")}
