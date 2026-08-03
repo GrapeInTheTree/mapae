@@ -94,6 +94,419 @@ function prefillPayees(params: URLSearchParams): {address: Address | ""; name: s
     return null;
 }
 
+/**
+ * EIP-55 as a warning, not a gate.
+ *
+ * viem's `isAddress` is strict by default, so a mixed-case address whose checksum does not match
+ * is reported invalid - and so is an all-uppercase one. The chain accepts both perfectly well, and
+ * rejecting them here would block someone who copied an address correctly from a source that
+ * mangled its casing. So validity stays loose and the checksum is surfaced separately. An
+ * all-lowercase address carries no checksum information at all and must pass silently.
+ */
+const badChecksum = (v: string) =>
+    v !== "" &&
+    isAddress(v, {strict: false}) &&
+    /[a-f]/.test(v.slice(2)) &&
+    /[A-F]/.test(v.slice(2)) &&
+    !isAddress(v, {strict: true});
+
+/*
+ * The screens below live at module scope on purpose.
+ *
+ * Defining a component inside another component gives it a NEW function identity on every render.
+ * React compares element types by reference, so it tears the whole subtree down and builds it
+ * again - which loses the focus of whatever input the person was typing into, one keystroke at a
+ * time. Anything with an input or state of its own must be declared out here.
+ */
+
+function Row({k, v}: {k: string; v: string}) {
+    return (
+        <div className="flex items-baseline justify-between gap-6 py-2.5">
+            <dt className="shrink-0 text-[13px] text-paper-mute">{k}</dt>
+            <dd className="text-right text-[13.5px] text-paper-ink">{v}</dd>
+        </div>
+    );
+}
+
+function Issued({record, onAnother}: {record: store.StoredMapae; onAnother: () => void}) {
+    const {t, lang} = useLang();
+    const [copied, setCopied] = useState(false);
+    const context = encodePermissionContext([record.delegation]);
+    // Decoded from the caveats, never from the form: the receipt describes what was signed,
+    // not what was typed. If those two ever disagree, this is where it shows.
+    const conds = record.delegation.caveats.map((c) =>
+        renderCondition(decodeCondition(c.enforcer, c.terms), t as never, lang),
+    );
+
+    return (
+        <div className="mx-auto max-w-3xl px-6 py-12">
+            <div className="rise">
+                <Paper className="p-8">
+                    <div className="flex items-center gap-3">
+                        <Mark size={30} tone="ink" />
+                        <div>
+                            <h1 className="text-[20px] font-semibold text-paper-ink">
+                                {t("create", "issued")}
+                            </h1>
+                            <p className="text-[13px] text-paper-mute">
+                                {t("create", "delegationHash")} ·{" "}
+                                <span className="font-mono">{short(record.hash, 10)}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <p className="mt-4 text-[13.5px] leading-relaxed text-paper-ink-2">
+                        {t("create", "issuedLede")}
+                    </p>
+
+                    <dl className="mt-6 divide-y divide-paper-line border-y border-paper-line">
+                        <Row k={t("create", "agent")} v={`${record.agentName} · ${short(record.delegation.delegate, 6)}`} />
+                        {conds.map((c, i) => (
+                            <Row key={i} k={c.title} v={c.lines[0] ?? ""} />
+                        ))}
+                    </dl>
+
+                    <div className="mt-6 flex flex-wrap gap-2.5">
+                        <Button
+                            onClick={() => {
+                                void navigator.clipboard.writeText(context);
+                                setCopied(true);
+                                setTimeout(() => setCopied(false), 1600);
+                            }}
+                        >
+                            {copied ? t("create", "copied") : t("create", "copyContext")}
+                        </Button>
+                        <Button
+                            variant="paper"
+                            onClick={() =>
+                                store.download(
+                                    `mapae-${record.hash.slice(0, 10)}.json`,
+                                    JSON.stringify(
+                                        {
+                                            delegationHash: record.hash,
+                                            chainId: record.chainId,
+                                            delegationManager: record.manager,
+                                            permissionContext: context,
+                                            agent: record.delegation.delegate,
+                                            agentName: record.agentName,
+                                        },
+                                        null,
+                                        2,
+                                    ),
+                                )
+                            }
+                        >
+                            {t("create", "downloadJson")}
+                        </Button>
+                        <Button variant="paper" onClick={() => nav("/permissions")}>
+                            {t("create", "viewPermissions")}
+                        </Button>
+                    </div>
+                </Paper>
+
+                <div className="mt-4 text-center">
+                    <button
+                        onClick={onAnother}
+                        className="text-[13px] text-mute underline-offset-4 hover:text-ink-2 hover:underline"
+                    >
+                        {t("create", "createAnother")}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function PolicyForm({
+    form: f,
+    set: setF,
+    fields,
+    agentValid,
+    agentChecksumWarn,
+    composable,
+}: {
+    form: PresetForm;
+    set: <K extends keyof PresetForm>(k: K, v: PresetForm[K]) => void;
+    fields: (keyof PresetForm)[];
+    agentValid: boolean | null;
+    agentChecksumWarn: boolean;
+    composable: boolean;
+}) {
+    const {t, lang} = useLang();
+    const periodLabel =
+        f.period === 86_400n
+            ? lang === "ko" ? "하루" : "day"
+            : f.period === 604_800n
+              ? lang === "ko" ? "한 주" : "week"
+              : lang === "ko" ? "30일" : "30 days";
+
+    return (
+        <Card className="p-7">
+            <div className="space-y-7">
+                <FormSection title={t("create", "groupAgent")}>
+                    {fields.includes("agentName") && (
+                        <Field label={t("create", "agentName")}>
+                            <Input
+                                value={f.agentName}
+                                onChange={(v) => setF("agentName", v)}
+                                placeholder={lang === "ko" ? "예: 데이터 에이전트" : "e.g. Data Agent"}
+                            />
+                        </Field>
+                    )}
+                    {fields.includes("agent") && (
+                        <Field
+                            label={t("create", "agentAddress")}
+                            suffix={
+                                agentValid === false ? (
+                                    <span className="text-[12px] text-reject-paper">
+                                        {t("create", "invalidAddress")}
+                                    </span>
+                                ) : undefined
+                            }
+                            hint={agentChecksumWarn ? t("create", "checksumWarn") : undefined}
+                        >
+                            <AddressInput
+                                value={f.agent}
+                                valid={agentValid}
+                                onChange={(v) => setF("agent", v as Address)}
+                                pasteLabel={t("create", "paste")}
+                            />
+                        </Field>
+                    )}
+                </FormSection>
+
+                <div className="h-px bg-line" />
+
+                <FormSection title={t("create", "groupLimits")}>
+                    {composable && (
+                        <>
+                            {/* The two conditions a person may genuinely drop. Identity and
+                                the cap are not offered as switches: the first is the thesis,
+                                the second is the difference between a permission and a
+                                wallet. */}
+                            <div className="grid gap-2.5 sm:grid-cols-2">
+                                <Toggle
+                                    on={f.usePayee}
+                                    onChange={(v) => setF("usePayee", v)}
+                                    label={t("create", "togglePayee")}
+                                    hint={t("create", "togglePayeeHint")}
+                                />
+                                <Toggle
+                                    on={f.useWindow}
+                                    onChange={(v) => setF("useWindow", v)}
+                                    label={t("create", "toggleWindow")}
+                                    hint={t("create", "toggleWindowHint")}
+                                />
+                            </div>
+                            <p className="text-[12px] leading-relaxed text-mute">
+                                {t("create", "customHint")}
+                            </p>
+                        </>
+                    )}
+                    {fields.includes("payees") && f.usePayee && (
+                        <Field
+                            label={t("create", "merchant")}
+                            hint={t("create", "payeesHint")}
+                        >
+                            <div className="flex flex-col gap-2">
+                                {f.payees.map((row, i) => {
+                                    const filled = row.address !== "";
+                                    const ok = filled && isAddress(row.address, {strict: false});
+                                    const isToken =
+                                        ok &&
+                                        row.address.toLowerCase() ===
+                                            addresses.mockKRW.toLowerCase();
+                                    const dupe =
+                                        ok &&
+                                        f.payees.some(
+                                            (o, k) =>
+                                                k < i &&
+                                                o.address.toLowerCase() ===
+                                                    row.address.toLowerCase(),
+                                        );
+                                    const setRow = (patch: Partial<(typeof f.payees)[number]>) =>
+                                        setF(
+                                            "payees",
+                                            f.payees.map((o, k) => (k === i ? {...o, ...patch} : o)),
+                                        );
+                                    return (
+                                        <div key={i} className="flex flex-col gap-1">
+                                            <div className="flex items-start gap-2">
+                                                <div className="min-w-0 flex-1">
+                                                    <AddressInput
+                                                        value={row.address}
+                                                        valid={filled ? ok && !isToken && !dupe : null}
+                                                        onChange={(v) =>
+                                                            setRow({address: v as Address})
+                                                        }
+                                                        pasteLabel={t("create", "paste")}
+                                                    />
+                                                </div>
+                                                <input
+                                                    value={row.name}
+                                                    onChange={(e) =>
+                                                        setRow({name: e.target.value.slice(0, 40)})
+                                                    }
+                                                    placeholder={t("create", "payeeNamePlaceholder")}
+                                                    className="h-[38px] w-[104px] shrink-0 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-ink outline-none placeholder:text-mute focus:border-line-strong sm:w-[128px]"
+                                                />
+                                                {/* The first row is the policy; the rest are additions,
+                                                    so only they can be taken away. */}
+                                                {f.payees.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        aria-label={t("create", "payeeRemove")}
+                                                        onClick={() =>
+                                                            setF(
+                                                                "payees",
+                                                                f.payees.filter((_, k) => k !== i),
+                                                            )
+                                                        }
+                                                        className="flex h-[38px] w-[30px] shrink-0 items-center justify-center rounded-lg text-mute transition-colors hover:text-reject"
+                                                    >
+                                                        <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+                                                            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {filled && !ok && (
+                                                <p className="text-[12px] text-reject-paper">
+                                                    {t("create", "invalidAddress")}
+                                                </p>
+                                            )}
+                                            {dupe && (
+                                                <p className="text-[12px] text-reject-paper">
+                                                    {t("create", "payeeDuplicate")}
+                                                </p>
+                                            )}
+                                            {badChecksum(row.address) && (
+                                                <p className="text-[12px] text-mute">
+                                                    {t("create", "checksumWarn")}
+                                                </p>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                <div className="flex items-center justify-between">
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setF("payees", [...f.payees, {address: "", name: ""}])
+                                        }
+                                        disabled={f.payees.length >= MAX_PAYEES}
+                                        className="inline-flex items-center gap-1.5 text-[12.5px] text-bronze-bright transition-opacity hover:opacity-80 disabled:opacity-40"
+                                    >
+                                        <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                                            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" fill="none"/>
+                                        </svg>
+                                        {t("create", "payeeAdd")}
+                                    </button>
+                                    {/* Width is the thing a person must feel. One address and ten
+                                        look identical in a form; the count says otherwise. */}
+                                    {f.payees.filter((x) => x.address !== "").length > 1 && (
+                                        <span className="text-[12px] text-mute">
+                                            {t("create", "payeeCount", {
+                                                n: f.payees.filter((x) => x.address !== "").length,
+                                            })}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </Field>
+                    )}
+                    <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr]">
+                        {fields.includes("amount") && (
+                            <Field label={t("create", "perPeriod")}>
+                                <AmountInput
+                                    value={f.amount}
+                                    onChange={(v) => setF("amount", v)}
+                                    prefix="₩"
+                                    suffix={t("create", "perPeriodSuffix", {period: periodLabel})}
+                                />
+                            </Field>
+                        )}
+                        {fields.includes("period") && (
+                            <Field label={t("create", "period")}>
+                                <Select
+                                    value={f.period.toString()}
+                                    onChange={(v) => setF("period", BigInt(v))}
+                                    options={[
+                                        {value: "86400", label: lang === "ko" ? "하루" : "Day"},
+                                        {value: "604800", label: lang === "ko" ? "한 주" : "Week"},
+                                        {value: "2592000", label: lang === "ko" ? "30일" : "30 days"},
+                                    ]}
+                                />
+                            </Field>
+                        )}
+                    </div>
+                    {fields.includes("validDays") && f.useWindow && (
+                        <Field label={t("create", "duration")}>
+                            <Select
+                                value={String(f.validDays)}
+                                onChange={(v) => setF("validDays", Number(v))}
+                                options={[
+                                    {value: "7", label: lang === "ko" ? "7일" : "7 days"},
+                                    {value: "30", label: lang === "ko" ? "30일" : "30 days"},
+                                    {value: "90", label: lang === "ko" ? "90일" : "90 days"},
+                                    {value: "365", label: lang === "ko" ? "1년" : "1 year"},
+                                ]}
+                            />
+                        </Field>
+                    )}
+                </FormSection>
+
+                <div className="h-px bg-line" />
+
+                <FormSection title={t("create", "groupIdentity")}>
+                    <Field label={t("create", "issuer")}>
+                        <Select
+                            value={f.issuer}
+                            onChange={(v) => setF("issuer", v as Hex)}
+                            options={[
+                                {value: TESTNET_FAUCET_ID, label: issuerName(TESTNET_FAUCET_ID, lang)},
+                                {value: UPBIT_KOREA_ID, label: issuerName(UPBIT_KOREA_ID, lang)},
+                            ]}
+                        />
+                    </Field>
+                    <Field label={t("create", "asset")}>
+                        <Select
+                            value={f.token}
+                            onChange={(v) => setF("token", v as Address)}
+                            options={[{value: addresses.mockKRW, label: "mKRW"}]}
+                        />
+                    </Field>
+                </FormSection>
+            </div>
+
+            <div className="mt-7 border-t border-line pt-4">
+                <p className="caps mb-2 text-[11px] font-semibold text-mute">
+                    {t("create", "comingNext")}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                    {COMING_NEXT.map((c) => (
+                        <span
+                            key={c.id}
+                            className="rounded-md border border-line px-2 py-0.5 text-[11.5px] text-mute"
+                        >
+                            {lang === "ko" ? c.ko : c.en}
+                        </span>
+                    ))}
+                </div>
+            </div>
+        </Card>
+    );
+}
+
+/**
+ * The panel is the permission, not a table about it.
+ *
+ * A grid of dashes teaches nobody what they are about to grant. As the form fills, this
+ * writes the authority out as one sentence - the same sentence the review step shows and the
+ * same structure the bytes are built from - so the thing being composed is legible the whole
+ * way through rather than only at the end.
+ */
+
 export default function Create() {
     const {t, lang} = useLang();
     const nav = useNavigate();
@@ -187,12 +600,7 @@ export default function Create() {
     const duplicatePayee =
         form.usePayee &&
         new Set(filledPayees.map((x) => x.address.toLowerCase())).size < filledPayees.length;
-    const badChecksum = (v: string) =>
-        v !== "" &&
-        isAddress(v, {strict: false}) &&
-        /[a-f]/.test(v.slice(2)) &&
-        /[A-F]/.test(v.slice(2)) &&
-        !isAddress(v, {strict: true});
+
     /**
      * The token address is a plausible thing to paste into a payee field - it is the other
      * address on this screen - and the contract will faithfully enforce it, because it was
@@ -443,10 +851,9 @@ export default function Create() {
                             form={form}
                             set={set}
                             fields={p.fields}
+                            composable={p.composable}
                             agentValid={form.agent === "" ? null : agentOk}
-
                             agentChecksumWarn={badChecksum(form.agent)}
-
                         />
                         {/* Sticky: the thing being composed should not scroll away from the
                             controls composing it. */}
@@ -523,103 +930,6 @@ export default function Create() {
                 <p className="mt-2.5 border-t border-line pt-2.5 text-[12px] leading-relaxed text-mute">
                     {t("create", "accountHint")}
                 </p>
-            </div>
-        );
-    }
-
-    function Issued({record, onAnother}: {record: store.StoredMapae; onAnother: () => void}) {
-        const [copied, setCopied] = useState(false);
-        const context = encodePermissionContext([record.delegation]);
-        // Decoded from the caveats, never from the form: the receipt describes what was signed,
-        // not what was typed. If those two ever disagree, this is where it shows.
-        const conds = record.delegation.caveats.map((c) =>
-            renderCondition(decodeCondition(c.enforcer, c.terms), t as never, lang),
-        );
-
-        return (
-            <div className="mx-auto max-w-3xl px-6 py-12">
-                <div className="rise">
-                    <Paper className="p-8">
-                        <div className="flex items-center gap-3">
-                            <Mark size={30} tone="ink" />
-                            <div>
-                                <h1 className="text-[20px] font-semibold text-paper-ink">
-                                    {t("create", "issued")}
-                                </h1>
-                                <p className="text-[13px] text-paper-mute">
-                                    {t("create", "delegationHash")} ·{" "}
-                                    <span className="font-mono">{short(record.hash, 10)}</span>
-                                </p>
-                            </div>
-                        </div>
-
-                        <p className="mt-4 text-[13.5px] leading-relaxed text-paper-ink-2">
-                            {t("create", "issuedLede")}
-                        </p>
-
-                        <dl className="mt-6 divide-y divide-paper-line border-y border-paper-line">
-                            <Row k={t("create", "agent")} v={`${record.agentName} · ${short(record.delegation.delegate, 6)}`} />
-                            {conds.map((c, i) => (
-                                <Row key={i} k={c.title} v={c.lines[0] ?? ""} />
-                            ))}
-                        </dl>
-
-                        <div className="mt-6 flex flex-wrap gap-2.5">
-                            <Button
-                                onClick={() => {
-                                    void navigator.clipboard.writeText(context);
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 1600);
-                                }}
-                            >
-                                {copied ? t("create", "copied") : t("create", "copyContext")}
-                            </Button>
-                            <Button
-                                variant="paper"
-                                onClick={() =>
-                                    store.download(
-                                        `mapae-${record.hash.slice(0, 10)}.json`,
-                                        JSON.stringify(
-                                            {
-                                                delegationHash: record.hash,
-                                                chainId: record.chainId,
-                                                delegationManager: record.manager,
-                                                permissionContext: context,
-                                                agent: record.delegation.delegate,
-                                                agentName: record.agentName,
-                                            },
-                                            null,
-                                            2,
-                                        ),
-                                    )
-                                }
-                            >
-                                {t("create", "downloadJson")}
-                            </Button>
-                            <Button variant="paper" onClick={() => nav("/permissions")}>
-                                {t("create", "viewPermissions")}
-                            </Button>
-                        </div>
-                    </Paper>
-
-                    <div className="mt-4 text-center">
-                        <button
-                            onClick={onAnother}
-                            className="text-[13px] text-mute underline-offset-4 hover:text-ink-2 hover:underline"
-                        >
-                            {t("create", "createAnother")}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    function Row({k, v}: {k: string; v: string}) {
-        return (
-            <div className="flex items-baseline justify-between gap-6 py-2.5">
-                <dt className="shrink-0 text-[13px] text-paper-mute">{k}</dt>
-                <dd className="text-right text-[13.5px] text-paper-ink">{v}</dd>
             </div>
         );
     }
@@ -706,292 +1016,6 @@ export default function Create() {
         );
     }
 
-    function PolicyForm({
-        form: f,
-        set: setF,
-        fields,
-        agentValid,
-        agentChecksumWarn,
-    }: {
-        form: PresetForm;
-        set: <K extends keyof PresetForm>(k: K, v: PresetForm[K]) => void;
-        fields: (keyof PresetForm)[];
-        agentValid: boolean | null;
-        agentChecksumWarn: boolean;
-    }) {
-        const periodLabel =
-            f.period === 86_400n
-                ? lang === "ko" ? "하루" : "day"
-                : f.period === 604_800n
-                  ? lang === "ko" ? "한 주" : "week"
-                  : lang === "ko" ? "30일" : "30 days";
-
-        return (
-            <Card className="p-7">
-                <div className="space-y-7">
-                    <FormSection title={t("create", "groupAgent")}>
-                        {fields.includes("agentName") && (
-                            <Field label={t("create", "agentName")}>
-                                <Input
-                                    value={f.agentName}
-                                    onChange={(v) => setF("agentName", v)}
-                                    placeholder={lang === "ko" ? "예: 데이터 에이전트" : "e.g. Data Agent"}
-                                />
-                            </Field>
-                        )}
-                        {fields.includes("agent") && (
-                            <Field
-                                label={t("create", "agentAddress")}
-                                suffix={
-                                    agentValid === false ? (
-                                        <span className="text-[12px] text-reject-paper">
-                                            {t("create", "invalidAddress")}
-                                        </span>
-                                    ) : undefined
-                                }
-                                hint={agentChecksumWarn ? t("create", "checksumWarn") : undefined}
-                            >
-                                <AddressInput
-                                    value={f.agent}
-                                    valid={agentValid}
-                                    onChange={(v) => setF("agent", v as Address)}
-                                    pasteLabel={t("create", "paste")}
-                                />
-                            </Field>
-                        )}
-                    </FormSection>
-
-                    <div className="h-px bg-line" />
-
-                    <FormSection title={t("create", "groupLimits")}>
-                        {p.composable && (
-                            <>
-                                {/* The two conditions a person may genuinely drop. Identity and
-                                    the cap are not offered as switches: the first is the thesis,
-                                    the second is the difference between a permission and a
-                                    wallet. */}
-                                <div className="grid gap-2.5 sm:grid-cols-2">
-                                    <Toggle
-                                        on={f.usePayee}
-                                        onChange={(v) => setF("usePayee", v)}
-                                        label={t("create", "togglePayee")}
-                                        hint={t("create", "togglePayeeHint")}
-                                    />
-                                    <Toggle
-                                        on={f.useWindow}
-                                        onChange={(v) => setF("useWindow", v)}
-                                        label={t("create", "toggleWindow")}
-                                        hint={t("create", "toggleWindowHint")}
-                                    />
-                                </div>
-                                <p className="text-[12px] leading-relaxed text-mute">
-                                    {t("create", "customHint")}
-                                </p>
-                            </>
-                        )}
-                        {fields.includes("payees") && f.usePayee && (
-                            <Field
-                                label={t("create", "merchant")}
-                                hint={t("create", "payeesHint")}
-                            >
-                                <div className="flex flex-col gap-2">
-                                    {f.payees.map((row, i) => {
-                                        const filled = row.address !== "";
-                                        const ok = filled && isAddress(row.address, {strict: false});
-                                        const isToken =
-                                            ok &&
-                                            row.address.toLowerCase() ===
-                                                addresses.mockKRW.toLowerCase();
-                                        const dupe =
-                                            ok &&
-                                            f.payees.some(
-                                                (o, k) =>
-                                                    k < i &&
-                                                    o.address.toLowerCase() ===
-                                                        row.address.toLowerCase(),
-                                            );
-                                        const setRow = (patch: Partial<(typeof f.payees)[number]>) =>
-                                            setF(
-                                                "payees",
-                                                f.payees.map((o, k) => (k === i ? {...o, ...patch} : o)),
-                                            );
-                                        return (
-                                            <div key={i} className="flex flex-col gap-1">
-                                                <div className="flex items-start gap-2">
-                                                    <div className="min-w-0 flex-1">
-                                                        <AddressInput
-                                                            value={row.address}
-                                                            valid={filled ? ok && !isToken && !dupe : null}
-                                                            onChange={(v) =>
-                                                                setRow({address: v as Address})
-                                                            }
-                                                            pasteLabel={t("create", "paste")}
-                                                        />
-                                                    </div>
-                                                    <input
-                                                        value={row.name}
-                                                        onChange={(e) =>
-                                                            setRow({name: e.target.value.slice(0, 40)})
-                                                        }
-                                                        placeholder={t("create", "payeeNamePlaceholder")}
-                                                        className="h-[38px] w-[104px] shrink-0 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-ink outline-none placeholder:text-mute focus:border-line-strong sm:w-[128px]"
-                                                    />
-                                                    {/* The first row is the policy; the rest are additions,
-                                                        so only they can be taken away. */}
-                                                    {f.payees.length > 1 && (
-                                                        <button
-                                                            type="button"
-                                                            aria-label={t("create", "payeeRemove")}
-                                                            onClick={() =>
-                                                                setF(
-                                                                    "payees",
-                                                                    f.payees.filter((_, k) => k !== i),
-                                                                )
-                                                            }
-                                                            className="flex h-[38px] w-[30px] shrink-0 items-center justify-center rounded-lg text-mute transition-colors hover:text-reject"
-                                                        >
-                                                            <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
-                                                                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
-                                                            </svg>
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                {filled && !ok && (
-                                                    <p className="text-[12px] text-reject-paper">
-                                                        {t("create", "invalidAddress")}
-                                                    </p>
-                                                )}
-                                                {dupe && (
-                                                    <p className="text-[12px] text-reject-paper">
-                                                        {t("create", "payeeDuplicate")}
-                                                    </p>
-                                                )}
-                                                {badChecksum(row.address) && (
-                                                    <p className="text-[12px] text-mute">
-                                                        {t("create", "checksumWarn")}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        );
-                                    })}
-                                    <div className="flex items-center justify-between">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setF("payees", [...f.payees, {address: "", name: ""}])
-                                            }
-                                            disabled={f.payees.length >= MAX_PAYEES}
-                                            className="inline-flex items-center gap-1.5 text-[12.5px] text-bronze-bright transition-opacity hover:opacity-80 disabled:opacity-40"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-                                                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" fill="none"/>
-                                            </svg>
-                                            {t("create", "payeeAdd")}
-                                        </button>
-                                        {/* Width is the thing a person must feel. One address and ten
-                                            look identical in a form; the count says otherwise. */}
-                                        {f.payees.filter((x) => x.address !== "").length > 1 && (
-                                            <span className="text-[12px] text-mute">
-                                                {t("create", "payeeCount", {
-                                                    n: f.payees.filter((x) => x.address !== "").length,
-                                                })}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </Field>
-                        )}
-                        <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr]">
-                            {fields.includes("amount") && (
-                                <Field label={t("create", "perPeriod")}>
-                                    <AmountInput
-                                        value={f.amount}
-                                        onChange={(v) => setF("amount", v)}
-                                        prefix="₩"
-                                        suffix={t("create", "perPeriodSuffix", {period: periodLabel})}
-                                    />
-                                </Field>
-                            )}
-                            {fields.includes("period") && (
-                                <Field label={t("create", "period")}>
-                                    <Select
-                                        value={f.period.toString()}
-                                        onChange={(v) => setF("period", BigInt(v))}
-                                        options={[
-                                            {value: "86400", label: lang === "ko" ? "하루" : "Day"},
-                                            {value: "604800", label: lang === "ko" ? "한 주" : "Week"},
-                                            {value: "2592000", label: lang === "ko" ? "30일" : "30 days"},
-                                        ]}
-                                    />
-                                </Field>
-                            )}
-                        </div>
-                        {fields.includes("validDays") && f.useWindow && (
-                            <Field label={t("create", "duration")}>
-                                <Select
-                                    value={String(f.validDays)}
-                                    onChange={(v) => setF("validDays", Number(v))}
-                                    options={[
-                                        {value: "7", label: lang === "ko" ? "7일" : "7 days"},
-                                        {value: "30", label: lang === "ko" ? "30일" : "30 days"},
-                                        {value: "90", label: lang === "ko" ? "90일" : "90 days"},
-                                        {value: "365", label: lang === "ko" ? "1년" : "1 year"},
-                                    ]}
-                                />
-                            </Field>
-                        )}
-                    </FormSection>
-
-                    <div className="h-px bg-line" />
-
-                    <FormSection title={t("create", "groupIdentity")}>
-                        <Field label={t("create", "issuer")}>
-                            <Select
-                                value={f.issuer}
-                                onChange={(v) => setF("issuer", v as Hex)}
-                                options={[
-                                    {value: TESTNET_FAUCET_ID, label: issuerName(TESTNET_FAUCET_ID, lang)},
-                                    {value: UPBIT_KOREA_ID, label: issuerName(UPBIT_KOREA_ID, lang)},
-                                ]}
-                            />
-                        </Field>
-                        <Field label={t("create", "asset")}>
-                            <Select
-                                value={f.token}
-                                onChange={(v) => setF("token", v as Address)}
-                                options={[{value: addresses.mockKRW, label: "mKRW"}]}
-                            />
-                        </Field>
-                    </FormSection>
-                </div>
-
-                <div className="mt-7 border-t border-line pt-4">
-                    <p className="caps mb-2 text-[11px] font-semibold text-mute">
-                        {t("create", "comingNext")}
-                    </p>
-                    <div className="flex flex-wrap gap-1.5">
-                        {COMING_NEXT.map((c) => (
-                            <span
-                                key={c.id}
-                                className="rounded-md border border-line px-2 py-0.5 text-[11.5px] text-mute"
-                            >
-                                {lang === "ko" ? c.ko : c.en}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            </Card>
-        );
-    }
-
-    /**
-     * The panel is the permission, not a table about it.
-     *
-     * A grid of dashes teaches nobody what they are about to grant. As the form fills, this
-     * writes the authority out as one sentence - the same sentence the review step shows and the
-     * same structure the bytes are built from - so the thing being composed is legible the whole
-     * way through rather than only at the end.
-     */
     function Preview({
         form: f,
         rendered: rs,
