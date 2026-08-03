@@ -15,11 +15,28 @@ import {TESTNET_FAUCET_ID} from "@mapae/protocol";
 
 export type PresetId = "micro" | "burst" | "subscription" | "custom";
 
+/**
+ * One entry in the payee allowlist.
+ *
+ * The name is local only - it never reaches the signed terms, which carry addresses. It exists
+ * because an allowlist of raw addresses is unreadable, and a person cannot meaningfully consent
+ * to a list they cannot check.
+ */
+export interface Payee {
+    address: Address | "";
+    name: string;
+}
+
 export interface PresetForm {
     agentName: string;
     agent: Address | "";
-    merchantName: string;
-    merchant: Address | "";
+    /**
+     * The payee allowlist, in the order it was entered. The enforcer accepts N >= 1 packed
+     * addresses and scans them linearly, so this is a list rather than a single address - a
+     * benefit card or an expense policy names several merchants, not one. Always holds at least
+     * one row so the form has something to render; empty rows are dropped before encoding.
+     */
+    payees: Payee[];
     token: Address;
     /** Token base units. mKRW has zero decimals by design, so this is won. */
     amount: bigint;
@@ -45,7 +62,7 @@ export interface Preset {
     fields: (keyof PresetForm)[];
     /** Only the custom preset exposes the condition toggles; the named presets ARE the opinion. */
     composable: boolean;
-    defaults: Omit<PresetForm, "agentName" | "agent" | "merchantName" | "merchant">;
+    defaults: Omit<PresetForm, "agentName" | "agent" | "payees">;
 }
 
 const DAY = 86_400n;
@@ -53,7 +70,7 @@ const DAY = 86_400n;
 export const PRESETS: Preset[] = [
     {
         id: "micro",
-        fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
+        fields: ["agentName", "agent", "token", "payees", "amount", "period", "validDays"],
         composable: false,
         defaults: {
             token: addresses.mockKRW,
@@ -67,7 +84,7 @@ export const PRESETS: Preset[] = [
     },
     {
         id: "burst",
-        fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
+        fields: ["agentName", "agent", "token", "payees", "amount", "period", "validDays"],
         composable: false,
         defaults: {
             token: addresses.mockKRW,
@@ -81,7 +98,7 @@ export const PRESETS: Preset[] = [
     },
     {
         id: "subscription",
-        fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
+        fields: ["agentName", "agent", "token", "payees", "amount", "period", "validDays"],
         composable: false,
         defaults: {
             token: addresses.mockKRW,
@@ -95,7 +112,7 @@ export const PRESETS: Preset[] = [
     },
     {
         id: "custom",
-        fields: ["agentName", "agent", "token", "merchant", "amount", "period", "validDays"],
+        fields: ["agentName", "agent", "token", "payees", "amount", "period", "validDays"],
         composable: true,
         defaults: {
             token: addresses.mockKRW,
@@ -137,7 +154,8 @@ export const COMING_NEXT = [
  */
 export function buildConditions(form: PresetForm, principal: Address, now: number): Condition[] {
     if (!form.agent) throw new Error("agent address is required");
-    if (form.usePayee && !form.merchant) throw new Error("merchant address is required");
+    const payees = form.payees.map((p) => p.address).filter(Boolean) as Address[];
+    if (form.usePayee && payees.length === 0) throw new Error("at least one payee is required");
 
     const start = BigInt(Math.floor(now / 1000));
     const conditions: Condition[] = [
@@ -150,7 +168,7 @@ export function buildConditions(form: PresetForm, principal: Address, now: numbe
             start,
         },
     ];
-    if (form.usePayee && form.merchant) conditions.push({kind: "payee", payees: [form.merchant]});
+    if (form.usePayee) conditions.push({kind: "payee", payees});
     if (form.useWindow)
         conditions.push({
             kind: "window",

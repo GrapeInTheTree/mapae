@@ -61,6 +61,34 @@ type Stage = "compose" | "review" | "issued";
 
 const PRESET_IDS: PresetId[] = ["micro", "burst", "subscription", "custom"];
 
+/** A list long enough for a real expense policy, short enough to still be readable when signed. */
+const MAX_PAYEES = 10;
+
+/**
+ * Reads a payee list out of the query string.
+ *
+ * Two shapes are accepted because two callers exist: the MCP server (and every link already in the
+ * wild) sends `merchant`/`merchantName` for a single payee, while `merchants` carries a
+ * comma-separated list. Returns null when neither is present, so the caller keeps its default.
+ */
+function prefillPayees(params: URLSearchParams): {address: Address | ""; name: string}[] | null {
+    const many = params.get("merchants");
+    if (many) {
+        const rows = many
+            .split(",")
+            .map((x) => x.trim())
+            .filter((x) => isAddress(x, {strict: false}))
+            .slice(0, MAX_PAYEES)
+            .map((address) => ({address: address as Address, name: ""}));
+        if (rows.length > 0) return rows;
+    }
+    const one = params.get("merchant");
+    if (one && isAddress(one, {strict: false})) {
+        return [{address: one as Address, name: params.get("merchantName")?.slice(0, 40) ?? ""}];
+    }
+    return null;
+}
+
 export default function Create() {
     const {t, lang} = useLang();
     const nav = useNavigate();
@@ -89,8 +117,7 @@ export default function Create() {
         const base: PresetForm = {
             agentName: "",
             agent: "",
-            merchantName: "",
-            merchant: "",
+            payees: [{address: "", name: ""}],
             ...preset("micro").defaults,
         };
         const num = (k: string): bigint | null => {
@@ -105,8 +132,9 @@ export default function Create() {
             ...base,
             agentName: params.get("agentName")?.slice(0, 64) ?? base.agentName,
             agent: addr("agent") ?? base.agent,
-            merchant: addr("merchant") ?? base.merchant,
-            merchantName: params.get("merchantName")?.slice(0, 64) ?? base.merchantName,
+            // `merchant`/`merchantName` are the single-payee form the MCP server and older links
+            // send; `merchants` carries a comma-separated list. Either fills the same list.
+            payees: prefillPayees(params) ?? base.payees,
             amount: num("amount") ?? base.amount,
             period: num("period") ?? base.period,
             validDays: num("validDays") ? Number(num("validDays")) : base.validDays,
@@ -143,9 +171,17 @@ export default function Create() {
      * address carries no checksum information at all and must pass silently.
      */
     const agentOk = form.agent !== "" && isAddress(form.agent, {strict: false});
-    // A merchant is only required while the payee condition is part of the policy.
+    // Payees are only required while the payee condition is part of the policy. Every filled
+    // row must be a real address; a blank trailing row is how you add one, not an error.
+    const filledPayees = form.payees.filter((x) => x.address !== "");
     const merchantOk =
-        !form.usePayee || (form.merchant !== "" && isAddress(form.merchant, {strict: false}));
+        !form.usePayee ||
+        (filledPayees.length > 0 &&
+            filledPayees.every((x) => isAddress(x.address, {strict: false})));
+    /** The same address twice is not wrong on-chain, but it is always a mistake in the UI. */
+    const duplicatePayee =
+        form.usePayee &&
+        new Set(filledPayees.map((x) => x.address.toLowerCase())).size < filledPayees.length;
     const badChecksum = (v: string) =>
         v !== "" &&
         isAddress(v, {strict: false}) &&
@@ -160,12 +196,15 @@ export default function Create() {
      */
     const merchantIsToken =
         form.usePayee &&
-        form.merchant !== "" &&
-        isAddress(form.merchant, {strict: false}) &&
-        form.merchant.toLowerCase() === addresses.mockKRW.toLowerCase();
+        filledPayees.some((x) => x.address.toLowerCase() === addresses.mockKRW.toLowerCase());
     const amountOk = form.amount > 0n;
     const formOk =
-        agentOk && merchantOk && !merchantIsToken && amountOk && form.agentName.trim().length > 0;
+        agentOk &&
+        merchantOk &&
+        !merchantIsToken &&
+        !duplicatePayee &&
+        amountOk &&
+        form.agentName.trim().length > 0;
 
     /**
      * Identity gates the signature, not just the payment.
@@ -196,6 +235,8 @@ export default function Create() {
                   ? t("create", "blockedMerchant")
                   : merchantIsToken
                     ? t("create", "blockedMerchantIsToken")
+                    : duplicatePayee
+                      ? t("create", "blockedDuplicatePayee")
                   : !amountOk
                     ? t("create", "blockedAmount")
                     : null;
@@ -210,6 +251,15 @@ export default function Create() {
      * `sign()` still refuses without a real account and a real wallet.
      */
     const PREVIEW_PRINCIPAL = "0x0000000000000000000000000000000000000000" as Address;
+    /** Address -> display name, so the conditions list shows "Coupang" rather than 0x8ACD…a617. */
+    const payeeNames = useMemo(
+        () =>
+            Object.fromEntries(
+                filledPayees.map((x) => [x.address.toLowerCase(), x.name.trim() || short(x.address, 6)]),
+            ),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [JSON.stringify(filledPayees)],
+    );
     const conditions: Condition[] | null = useMemo(() => {
         if (!formOk) return null;
         try {
@@ -218,10 +268,10 @@ export default function Create() {
             const normalised = {
                 ...form,
                 agent: getAddress(form.agent as string),
-                merchant:
-                    form.usePayee && form.merchant !== ""
-                        ? getAddress(form.merchant as string)
-                        : ("" as const),
+                payees: filledPayees.map((x) => ({
+                    ...x,
+                    address: getAddress(x.address as string),
+                })),
             };
             return buildConditions(normalised, (wallet.address ?? PREVIEW_PRINCIPAL) as Address, Date.now());
         } catch {
@@ -231,12 +281,8 @@ export default function Create() {
 
     const rendered = useMemo(
         () =>
-            conditions?.map((c) =>
-                renderCondition(c, t as never, lang, {
-                    [String(form.merchant).toLowerCase()]: form.merchantName || short(String(form.merchant)),
-                }),
-            ) ?? [],
-        [conditions, t, lang, form.merchant, form.merchantName],
+            conditions?.map((c) => renderCondition(c, t as never, lang, payeeNames)) ?? [],
+        [conditions, t, lang, payeeNames],
     );
 
     async function sign() {
@@ -284,7 +330,7 @@ export default function Create() {
             const record = store.save({
                 delegation: signed,
                 agentName: form.agentName.trim(),
-                merchantName: form.merchantName.trim() || undefined,
+                merchantName: filledPayees[0]?.name.trim() || undefined,
                 presetId,
             });
             setIssued(record);
@@ -393,9 +439,9 @@ export default function Create() {
                             set={set}
                             fields={p.fields}
                             agentValid={form.agent === "" ? null : agentOk}
-                            merchantValid={form.merchant === "" ? null : merchantOk}
+
                             agentChecksumWarn={badChecksum(form.agent)}
-                            merchantChecksumWarn={badChecksum(form.merchant)}
+
                         />
                         {/* Sticky: the thing being composed should not scroll away from the
                             controls composing it. */}
@@ -660,17 +706,13 @@ export default function Create() {
         set: setF,
         fields,
         agentValid,
-        merchantValid,
         agentChecksumWarn,
-        merchantChecksumWarn,
     }: {
         form: PresetForm;
         set: <K extends keyof PresetForm>(k: K, v: PresetForm[K]) => void;
         fields: (keyof PresetForm)[];
         agentValid: boolean | null;
-        merchantValid: boolean | null;
         agentChecksumWarn: boolean;
-        merchantChecksumWarn: boolean;
     }) {
         const periodLabel =
             f.period === 86_400n
@@ -742,28 +784,116 @@ export default function Create() {
                                 </p>
                             </>
                         )}
-                        {fields.includes("merchant") && f.usePayee && (
+                        {fields.includes("payees") && f.usePayee && (
                             <Field
                                 label={t("create", "merchant")}
-                                hint={
-                                    merchantChecksumWarn
-                                        ? t("create", "checksumWarn")
-                                        : t("create", "merchantHint")
-                                }
-                                suffix={
-                                    merchantValid === false ? (
-                                        <span className="text-[12px] text-reject-paper">
-                                            {t("create", "invalidAddress")}
-                                        </span>
-                                    ) : undefined
-                                }
+                                hint={t("create", "payeesHint")}
                             >
-                                <AddressInput
-                                    value={f.merchant}
-                                    valid={merchantValid}
-                                    onChange={(v) => setF("merchant", v as Address)}
-                                    pasteLabel={t("create", "paste")}
-                                />
+                                <div className="flex flex-col gap-2">
+                                    {f.payees.map((row, i) => {
+                                        const filled = row.address !== "";
+                                        const ok = filled && isAddress(row.address, {strict: false});
+                                        const isToken =
+                                            ok &&
+                                            row.address.toLowerCase() ===
+                                                addresses.mockKRW.toLowerCase();
+                                        const dupe =
+                                            ok &&
+                                            f.payees.some(
+                                                (o, k) =>
+                                                    k < i &&
+                                                    o.address.toLowerCase() ===
+                                                        row.address.toLowerCase(),
+                                            );
+                                        const setRow = (patch: Partial<(typeof f.payees)[number]>) =>
+                                            setF(
+                                                "payees",
+                                                f.payees.map((o, k) => (k === i ? {...o, ...patch} : o)),
+                                            );
+                                        return (
+                                            <div key={i} className="flex flex-col gap-1">
+                                                <div className="flex items-start gap-2">
+                                                    <div className="min-w-0 flex-1">
+                                                        <AddressInput
+                                                            value={row.address}
+                                                            valid={filled ? ok && !isToken && !dupe : null}
+                                                            onChange={(v) =>
+                                                                setRow({address: v as Address})
+                                                            }
+                                                            pasteLabel={t("create", "paste")}
+                                                        />
+                                                    </div>
+                                                    <input
+                                                        value={row.name}
+                                                        onChange={(e) =>
+                                                            setRow({name: e.target.value.slice(0, 40)})
+                                                        }
+                                                        placeholder={t("create", "payeeNamePlaceholder")}
+                                                        className="h-[38px] w-[104px] shrink-0 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-ink outline-none placeholder:text-mute focus:border-line-strong sm:w-[128px]"
+                                                    />
+                                                    {/* The first row is the policy; the rest are additions,
+                                                        so only they can be taken away. */}
+                                                    {f.payees.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            aria-label={t("create", "payeeRemove")}
+                                                            onClick={() =>
+                                                                setF(
+                                                                    "payees",
+                                                                    f.payees.filter((_, k) => k !== i),
+                                                                )
+                                                            }
+                                                            className="flex h-[38px] w-[30px] shrink-0 items-center justify-center rounded-lg text-mute transition-colors hover:text-reject"
+                                                        >
+                                                            <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true">
+                                                                <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" fill="none"/>
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {filled && !ok && (
+                                                    <p className="text-[12px] text-reject-paper">
+                                                        {t("create", "invalidAddress")}
+                                                    </p>
+                                                )}
+                                                {dupe && (
+                                                    <p className="text-[12px] text-reject-paper">
+                                                        {t("create", "payeeDuplicate")}
+                                                    </p>
+                                                )}
+                                                {badChecksum(row.address) && (
+                                                    <p className="text-[12px] text-mute">
+                                                        {t("create", "checksumWarn")}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    <div className="flex items-center justify-between">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setF("payees", [...f.payees, {address: "", name: ""}])
+                                            }
+                                            disabled={f.payees.length >= MAX_PAYEES}
+                                            className="inline-flex items-center gap-1.5 text-[12.5px] text-bronze-bright transition-opacity hover:opacity-80 disabled:opacity-40"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+                                                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" fill="none"/>
+                                            </svg>
+                                            {t("create", "payeeAdd")}
+                                        </button>
+                                        {/* Width is the thing a person must feel. One address and ten
+                                            look identical in a form; the count says otherwise. */}
+                                        {f.payees.filter((x) => x.address !== "").length > 1 && (
+                                            <span className="text-[12px] text-mute">
+                                                {t("create", "payeeCount", {
+                                                    n: f.payees.filter((x) => x.address !== "").length,
+                                                })}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </Field>
                         )}
                         <div className="grid gap-3 sm:grid-cols-[1.2fr_1fr]">
@@ -882,7 +1012,13 @@ export default function Create() {
         onIssue: () => void;
         onReview: () => void;
     }) {
-        const merchantLabel = f.merchantName || (f.merchant ? short(String(f.merchant), 6) : "");
+        const filled = f.payees.filter((x) => x.address !== "");
+        const merchantLabel =
+            filled.length === 0
+                ? ""
+                : filled.length === 1
+                  ? filled[0].name.trim() || short(String(filled[0].address), 6)
+                  : t("create", "payeeCount", {n: filled.length});
         const periodLabel = fmtDuration(f.period, lang);
         const until = fmtDate(
             BigInt(Math.floor(Date.now() / 1000) + f.validDays * 86_400),
