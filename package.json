@@ -11,7 +11,8 @@
     "fleet": "tsx scripts/fleet.ts",
     "verify-signing": "tsx scripts/verify-signing.ts",
     "check-verified": "tsx scripts/check-verified.ts",
-    "ship": "pnpm --dir explorer build && npx wrangler pages deploy explorer/dist --project-name mapae --branch main"
+    "ship": "pnpm --dir explorer build && npx wrangler pages deploy explorer/dist --project-name mapae --branch main",
+    "multipayee": "tsx scripts/multipayee.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
