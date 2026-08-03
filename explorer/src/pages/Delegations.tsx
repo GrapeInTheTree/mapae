@@ -155,7 +155,14 @@ export default function Delegations() {
         const period = d.conditions.find((c) => c.kind === "period");
 
         return (
-            <Card className="overflow-hidden">
+            <Card className="group relative overflow-hidden transition-colors hover:bg-surface-2/40">
+                {/* Covers the card so any dead space opens the Mapae. The controls inside sit
+                    above it on their own stacking level and keep their own clicks. */}
+                <Link
+                    to={`/delegation/${d.hash}`}
+                    aria-label={mine?.agentName ?? short(d.hash, 6)}
+                    className="absolute inset-0 z-[1]"
+                />
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-5 pt-4">
                     <StatusPill ok={status.ok} label={status.label} />
                     {mine && (
@@ -171,7 +178,7 @@ export default function Delegations() {
                     )}
                     {/* Wraps between the two label+address pairs, never inside an address - a hash
                         broken mid-glyph reads as two different values. */}
-                    <span className="ml-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-mute">
+                    <span className="relative z-[2] ml-auto flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-mute">
                         <span className="inline-flex items-center gap-2 whitespace-nowrap">
                             <span>{t("tx", "delegator")}</span>
                             <Mono className="!text-[11.5px] text-ink-2">{short(d.delegator, 4)}</Mono>
@@ -245,7 +252,7 @@ export default function Delegations() {
                     <span className="text-[12px] text-mute">
                         {t("dlist", "lastUsed")} {relTime(d.lastUsed, lang)}
                     </span>
-                    <span className="flex items-center gap-1.5">
+                    <span className="relative z-[2] flex items-center gap-1.5">
                         {/* Named, so the pills read as destinations rather than as more tags. */}
                         <span className="text-[11px] text-mute">{t("dlist", "recent")}</span>
                         {d.txs.slice(0, 3).map((x) => (
@@ -255,22 +262,10 @@ export default function Delegations() {
                             <span className="text-[11px] text-mute">+{d.txs.length - 3}</span>
                         )}
                     </span>
-                    {/* The hash IS the Mapae, so it is also the way into it. Kept as a link
-                        rather than making the whole card clickable: the card already holds copy
-                        buttons and transaction links, and nesting those inside a link breaks
-                        both. */}
-                    <span className="ml-auto flex items-center gap-0.5">
-                        <Link
-                            to={`/delegation/${d.hash}`}
-                            className="group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-colors hover:bg-surface-2"
-                        >
-                            <Mono className="!text-[11px] text-mute transition-colors group-hover:text-ink-2">
-                                {short(d.hash, 6)}
-                            </Mono>
-                            <svg width="10" height="10" viewBox="0 0 16 16" className="text-mute transition-colors group-hover:text-bronze-bright" aria-hidden="true">
-                                <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
-                            </svg>
-                        </Link>
+                    <span className="relative z-[2] ml-auto flex items-center gap-0.5">
+                        <Mono className="!text-[11px] text-mute transition-colors group-hover:text-ink-2">
+                            {short(d.hash, 6)}
+                        </Mono>
                         <CopyButton
                             value={d.hash}
                             label={t("tx", "copy")}

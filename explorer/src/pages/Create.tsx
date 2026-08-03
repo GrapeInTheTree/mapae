@@ -744,6 +744,11 @@ export default function Create() {
                 delegation: signed,
                 agentName: form.agentName.trim(),
                 merchantName: filledPayees[0]?.name.trim() || undefined,
+                payeeNames: Object.fromEntries(
+                    filledPayees
+                        .filter((x) => x.name.trim())
+                        .map((x) => [x.address.toLowerCase(), x.name.trim()]),
+                ),
                 presetId,
             });
             setIssued(record);

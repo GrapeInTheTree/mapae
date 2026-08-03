@@ -29,7 +29,11 @@ export interface StoredMapae {
     delegation: Delegation;
     /** Labels the user typed. Presentation only - never part of the signed payload. */
     agentName: string;
+    /** Kept for records written before the allowlist could hold more than one payee. */
     merchantName?: string;
+    /** Lowercased address -> the label typed for it. Presentation only; the signed terms carry
+     *  addresses, so a missing or wrong name here can never change what the chain enforces. */
+    payeeNames?: Record<string, string>;
     presetId?: string;
     createdAt: number;
 }

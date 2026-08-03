@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from "react";
 import {Link, useParams} from "react-router-dom";
-import {encodeFunctionData, type Hex} from "viem";
+import {encodeFunctionData, getAddress, type Hex} from "viem";
 import {accountAbi, managerAbi} from "@mapae/abi";
 import {MODE_SIMPLE_SINGLE} from "@mapae/protocol";
 import {encodeExecutionSingle} from "@mapae/sdk";
@@ -139,6 +139,7 @@ export default function Delegation() {
 
     const rendered = d.conditions.map((c, i) => ({
         ...renderCondition(c, t as never, lang),
+        condition: c,
         enforcer: d.raw[i]?.enforcer,
     }));
 
@@ -262,16 +263,65 @@ export default function Delegation() {
                                 </span>
                             )}
                         </div>
-                        {r.lines.map((line, k) => (
-                            <p
-                                key={k}
-                                className={`mt-1.5 leading-relaxed ${
-                                    k === 0 ? "text-[13.5px] text-ink-2" : "text-[12px] text-mute"
-                                }`}
-                            >
-                                {line}
-                            </p>
-                        ))}
+                        {r.condition.kind === "payee" ? (
+                            <>
+                                <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-2">
+                                    {t("dpage", "payeeHeading", {n: r.condition.payees.length})}
+                                </p>
+                                <ol className="mt-3 flex flex-col gap-1.5">
+                                    {r.condition.payees.map((raw, k) => {
+                                        // Terms carry the raw 20 bytes, so they decode lowercase.
+                                        // Shown checksummed: EIP-55 exists so that a transcription
+                                        // error is visible, and this row is here to be compared.
+                                        const addr = getAddress(raw);
+                                        const name = mine?.payeeNames?.[raw.toLowerCase()];
+                                        return (
+                                            <li
+                                                key={addr}
+                                                className="flex items-center gap-3 rounded-lg border border-line bg-surface-2/40 px-3 py-2"
+                                            >
+                                                <span className="tnum w-4 shrink-0 text-[11px] text-mute">
+                                                    {k + 1}
+                                                </span>
+                                                {name && (
+                                                    <span className="shrink-0 text-[12.5px] font-medium text-ink">
+                                                        {name}
+                                                    </span>
+                                                )}
+                                                {/* The full address, not an ellipsis: this row exists
+                                                    so someone can check it against what they meant. */}
+                                                <ExtLink path={`/address/${addr}`}>
+                                                    <Mono className="!text-[11.5px] break-all">{addr}</Mono>
+                                                </ExtLink>
+                                                <span className="ml-auto shrink-0">
+                                                    <CopyButton
+                                                        value={addr}
+                                                        label={t("tx", "copy")}
+                                                        copiedLabel={t("tx", "copied")}
+                                                    />
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ol>
+                                {r.lines.slice(1).map((line, k) => (
+                                    <p key={k} className="mt-2.5 text-[12px] leading-relaxed text-mute">
+                                        {line}
+                                    </p>
+                                ))}
+                            </>
+                        ) : (
+                            r.lines.map((line, k) => (
+                                <p
+                                    key={k}
+                                    className={`mt-1.5 leading-relaxed ${
+                                        k === 0 ? "text-[13.5px] text-ink-2" : "text-[12px] text-mute"
+                                    }`}
+                                >
+                                    {line}
+                                </p>
+                            ))
+                        )}
                     </Card>
                 ))}
             </div>

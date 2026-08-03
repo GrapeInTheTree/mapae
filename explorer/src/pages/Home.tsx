@@ -312,7 +312,7 @@ function DelegationMini({d}: {d: DelegationSummary}) {
 
     return (
         <Link
-            to="/delegations"
+            to={`/delegation/${d.hash}`}
             className="group flex h-[54px] flex-col justify-center px-5 transition-colors hover:bg-surface-2/60"
         >
             <div className="flex items-center gap-2.5">
