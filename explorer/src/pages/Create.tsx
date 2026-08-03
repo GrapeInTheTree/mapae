@@ -130,6 +130,7 @@ function Row({k, v}: {k: string; v: string}) {
 
 function Issued({record, onAnother}: {record: store.StoredMapae; onAnother: () => void}) {
     const {t, lang} = useLang();
+    const nav = useNavigate();
     const [copied, setCopied] = useState(false);
     const context = encodePermissionContext([record.delegation]);
     // Decoded from the caveats, never from the form: the receipt describes what was signed,
@@ -509,7 +510,6 @@ function PolicyForm({
 
 export default function Create() {
     const {t, lang} = useLang();
-    const nav = useNavigate();
     const wallet = useWallet();
     const account = useMapaeAccount();
 
