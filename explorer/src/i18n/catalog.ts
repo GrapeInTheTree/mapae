@@ -170,13 +170,13 @@ export const en = {
     presets: {
         micro: {
             name: "Petty cash",
-            desc: "A pocket the agent can lose without hurting you.",
-            long: "Coffee-sized payments, daily, at one place you named. The cap is small enough that the worst case is an affordable case - the lowest-stakes first Mapae.",
+            desc: "For an agent that pays small amounts every day.",
+            long: "Pays one place you named, up to a fixed amount each day. The cap is small, so if something goes wrong the loss stops at a single day. This is the one to pick the first time you hand authority to software.",
         },
         burst: {
             name: "Short burst",
-            desc: "Spend big, die fast.",
-            long: "A large daily allowance for jobs that finish in days - shopping, bookings, tickets - hard-capped at three days of life. Past a certain size, the real safety is lifespan, not limit.",
+            desc: "For a job that finishes in a few days.",
+            long: "Shopping, a booking, tickets - work with an end date. The allowance is large, so the protection comes from the expiry instead: three days, and it stops working. The bigger the amount, the shorter the window should be.",
         },
         subscription: {
             name: "Subscription",
@@ -533,13 +533,13 @@ export const ko: Catalog = {
     presets: {
         micro: {
             name: "소액 자동결제",
-            desc: "잃어도 아프지 않은 잔돈 지갑.",
-            long: "커피값 수준의 결제를, 지정한 한 곳에서, 매일 한도 안에서. 한도가 작아 최악의 경우조차 감당 가능한 경우가 되는 — 가장 부담 없는 첫 마패입니다.",
+            desc: "매일 소액을 결제하는 에이전트에게.",
+            long: "지정한 한 곳에, 하루 한도 안에서만 결제합니다. 한도가 작아서 무언가 잘못되더라도 손실은 하루치에서 멈춥니다. 소프트웨어에 권한을 처음 넘길 때 고르면 되는 마패입니다.",
         },
         burst: {
             name: "단기 고액",
-            desc: "크게 쓰고, 빨리 죽는 권한.",
-            long: "쇼핑·예약·티켓팅처럼 며칠 안에 끝나는 일에 큰 한도를 주되, 수명을 3일로 못박습니다. 금액이 커질수록 진짜 안전장치는 한도가 아니라 수명입니다.",
+            desc: "며칠 안에 끝나는 일을 맡길 때.",
+            long: "쇼핑, 예약, 티켓팅처럼 끝나는 날이 있는 일에 씁니다. 한도가 큰 대신 유효 기간이 3일이라, 일이 끝나면 권한도 함께 멈춥니다. 금액이 클수록 기간을 짧게 잡는 편이 안전합니다.",
         },
         subscription: {
             name: "정기 구독",
