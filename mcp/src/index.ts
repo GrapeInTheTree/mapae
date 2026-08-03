@@ -282,7 +282,7 @@ const bigintSafe = (_: string, v: unknown) => (typeof v === "bigint" ? v.toStrin
 /* ---------------------------------- tools ---------------------------------- */
 
 const server = new McpServer(
-    {name: "mapae", version: "0.4.0"},
+    {name: "mapae", version: "0.5.0"},
     {
         /** Read by the client's model at session start - this is where the server earns its
          *  Korean name, and where the kill-switch boundary is stated so no model ever promises
@@ -479,21 +479,39 @@ server.tool(
         agentName: z.string().min(1).describe("How the human should see this agent named"),
         amountPerPeriod: z.number().int().positive().describe("Requested cap in mKRW base units"),
         period: z.enum(["day", "week", "30d"]).default("day"),
-        merchant: z.string().describe("The one address this authority should be able to pay"),
-        merchantName: z.string().optional(),
+        merchants: z
+            .array(z.string())
+            .min(1)
+            .max(10)
+            .describe(
+                "Every address this authority may pay. One is the common case; a benefit card or an expense policy names several. The allowlist denies by default - an address not listed here cannot be paid.",
+            ),
+        merchantNames: z
+            .array(z.string())
+            .optional()
+            .describe(
+                "Optional labels, matched by position to merchants. Shown to the human so the list is checkable; they never reach the signed terms, which carry addresses.",
+            ),
         validDays: z.number().int().positive().max(365).default(30),
     },
-    async ({agentName, amountPerPeriod, period, merchant, merchantName, validDays}) => {
-        if (!isAddress(merchant, {strict: false})) return text({error: "merchant is not an address"});
+    async ({agentName, amountPerPeriod, period, merchants, merchantNames, validDays}) => {
+        const bad = merchants.find((m) => !isAddress(m, {strict: false}));
+        if (bad) return text({error: `not an address: ${bad}`});
+        const canonical = merchants.map((m) => getAddress(m));
+        if (new Set(canonical.map((m) => m.toLowerCase())).size !== canonical.length) {
+            return text({error: "the same address is listed twice"});
+        }
         const q = new URLSearchParams({
             agentName,
             agent: agent.address,
             amount: String(amountPerPeriod),
             period: {day: "86400", week: "604800", "30d": "2592000"}[period],
-            merchant: getAddress(merchant),
+            merchants: canonical.join(","),
             validDays: String(validDays),
         });
-        if (merchantName) q.set("merchantName", merchantName);
+        if (merchantNames?.some((n) => n.trim())) {
+            q.set("merchantNames", merchantNames.map((n) => n.trim()).join(","));
+        }
         return text({
             askTheHuman: `${APP_URL}/create?${q.toString()}`,
             note: "The human reviews the policy as a sentence and signs in their own wallet; nothing is issued until they do. Once issued, they hand back the permission context.",

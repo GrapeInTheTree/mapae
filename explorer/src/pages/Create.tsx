@@ -74,12 +74,17 @@ const MAX_PAYEES = 10;
 function prefillPayees(params: URLSearchParams): {address: Address | ""; name: string}[] | null {
     const many = params.get("merchants");
     if (many) {
+        // Names ride alongside positionally. A short list is missing names, not misaligned.
+        const names = (params.get("merchantNames") ?? "").split(",").map((x) => x.trim());
         const rows = many
             .split(",")
             .map((x) => x.trim())
             .filter((x) => isAddress(x, {strict: false}))
             .slice(0, MAX_PAYEES)
-            .map((address) => ({address: address as Address, name: ""}));
+            .map((address, i) => ({
+                address: address as Address,
+                name: (names[i] ?? "").slice(0, 40),
+            }));
         if (rows.length > 0) return rows;
     }
     const one = params.get("merchant");
@@ -251,7 +256,7 @@ export default function Create() {
      * `sign()` still refuses without a real account and a real wallet.
      */
     const PREVIEW_PRINCIPAL = "0x0000000000000000000000000000000000000000" as Address;
-    /** Address -> display name, so the conditions list shows "Coupang" rather than 0x8ACD…a617. */
+    /** Address -> display name, so the conditions list shows a label rather than 0x8ACD…a617. */
     const payeeNames = useMemo(
         () =>
             Object.fromEntries(
