@@ -11,49 +11,106 @@ import {useLang} from "../i18n";
  *
  * A payment leaves the account and runs at the conditions the principal signed. Switch one off
  * and it stops there, visibly, with the reason. The identity gate is the one that matters: turn
- * it off and a valid signature, an unspent limit and an allowed payee are not enough. Nobody has
- * to be told that; they watch it happen in about three seconds.
+ * it off and a valid signature, an unspent limit and an allowed payee are not enough.
  *
- * The travelling dot is the point at the centre of the Split Seal - the seal being pressed, and
- * the only part of the mark that has to be earned each time.
+ * The gates are drawn as the object the product is named for: slender tablets, like the copper
+ * mapae a rider carried, hung above the ledger line. The travelling point is the centre of the
+ * Split Seal - the only part of the mark that has to be earned each time. The earlier version
+ * drew labelled boxes with "on/off" captions, which explained itself like a toy; a tablet that
+ * dims when revoked needs no caption.
  *
- * Motion, not rAF-into-setState. The first version re-rendered React on every frame and moved at
- * a constant speed, which reads as mechanical however pretty the colours are. Here the dot is on
- * a spring, so it gathers speed and settles; a refusal arrives hard and rings; and none of it
- * touches the render cycle.
+ * Motion, not rAF-into-setState: the pulse rides a spring, a refusal lands hard and rings, and
+ * none of it touches the render cycle.
  */
 
-type GateId = "identity" | "period" | "payee" | "window";
+type GateId = "identity" | "period" | "perTx" | "payee" | "window";
+
+const RAIL = 108; // y of the ledger line inside the track
+const TABLET_H = 78;
 
 /** Fraction along the track, 0 at the account and 1 at the merchant. */
 const GATES: {id: GateId; at: number}[] = [
-    {id: "identity", at: 0.28},
-    {id: "period", at: 0.43},
-    {id: "payee", at: 0.58},
-    {id: "window", at: 0.73},
+    {id: "identity", at: 0.22},
+    {id: "period", at: 0.36},
+    {id: "perTx", at: 0.5},
+    {id: "payee", at: 0.64},
+    {id: "window", at: 0.78},
 ];
 
-/** On a phone-width track the desktop fractions put 80px gates ~50px apart - they overlap into
- *  an unreadable pile. Below the breakpoint the gates shrink and spread nearly edge to edge. */
+/** Phone widths spread the five tablets nearly edge to edge; labels are dropped there (the
+ *  glyphs carry the meaning, aria carries the words) so nothing collides with the endpoints. */
 const GATES_COMPACT: Record<GateId, number> = {
-    identity: 0.14,
-    period: 0.38,
-    payee: 0.62,
-    window: 0.86,
+    identity: 0.1,
+    period: 0.3,
+    perTx: 0.5,
+    payee: 0.7,
+    window: 0.9,
+};
+
+const ALL_OPEN: Record<GateId, boolean> = {
+    identity: true,
+    period: true,
+    perTx: true,
+    payee: true,
+    window: true,
 };
 
 const HOLD_MS = 2400;
+
+/** Engraved marks, one per condition - read at a glance, no caption needed. */
+function Glyph({id}: {id: GateId}) {
+    const common = {
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: 1.6,
+        strokeLinecap: "round" as const,
+        strokeLinejoin: "round" as const,
+    };
+    switch (id) {
+        case "identity": // the seal: a ring earned around a centre
+            return (
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <circle cx="9" cy="9" r="5.6" {...common} />
+                    <circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none" />
+                </svg>
+            );
+        case "period": // the won mark: what a window may spend
+            return (
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path d="M4 5.2l2.1 7 1.9-5.2 1.9 5.2 2.1-7" {...common} />
+                    <path d="M3.4 8.6h11.2" {...common} />
+                </svg>
+            );
+        case "perTx": // one coin, bracketed: the single payment, bounded
+            return (
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path d="M5.2 4.2H3.6v9.6h1.6" {...common} />
+                    <path d="M12.8 4.2h1.6v9.6h-1.6" {...common} />
+                    <circle cx="9" cy="9" r="2.3" {...common} />
+                </svg>
+            );
+        case "payee": // an arrow that must land on the named door
+            return (
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path d="M3 9h7.6M8 6.4 10.6 9 8 11.6" {...common} />
+                    <path d="M14.4 4.6v8.8" {...common} />
+                </svg>
+            );
+        case "window": // the clock the signature dies by
+            return (
+                <svg width="18" height="18" viewBox="0 0 18 18">
+                    <circle cx="9" cy="9" r="5.6" {...common} />
+                    <path d="M9 6v3.2l2.1 1.3" {...common} />
+                </svg>
+            );
+    }
+}
 
 export function AuthorityFlow() {
     const {t} = useLang();
     const reduced = useReducedMotion();
 
-    const [open, setOpen] = useState<Record<GateId, boolean>>({
-        identity: true,
-        period: true,
-        payee: true,
-        window: true,
-    });
+    const [open, setOpen] = useState<Record<GateId, boolean>>(ALL_OPEN);
     /** Bumped to replay the run - a fresh key restarts the spring from the account. */
     const [run, setRun] = useState(0);
     const [arrived, setArrived] = useState(false);
@@ -70,7 +127,7 @@ export function AuthorityFlow() {
         return () => ro.disconnect();
     }, []);
 
-    const compact = width > 0 && width < 560;
+    const compact = width > 0 && width < 620;
     const pos = (g: {id: GateId; at: number}) => (compact ? GATES_COMPACT[g.id] : g.at);
 
     const blocker = GATES.find((g) => !open[g.id]);
@@ -91,6 +148,7 @@ export function AuthorityFlow() {
         : {tone: "jade" as const, title: t("home", "flowOkTitle"), body: t("home", "flowOk")};
 
     const target = width * stopAt;
+    const spring = {type: "spring" as const, stiffness: 26, damping: 14, mass: 1.1};
 
     return (
         <motion.div
@@ -98,9 +156,19 @@ export function AuthorityFlow() {
             whileInView={{opacity: 1, y: 0}}
             viewport={{once: true, margin: "-80px"}}
             transition={{duration: 0.5, ease: [0.2, 0.7, 0.3, 1]}}
-            className="overflow-hidden rounded-2xl border border-line bg-surface"
+            className="relative overflow-hidden rounded-2xl border border-line bg-surface"
         >
-            <div className="flex flex-wrap items-end justify-between gap-3 px-6 pt-6 sm:px-8">
+            {/* A quiet wash from above - the stage lit, not decorated. */}
+            <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                    background:
+                        "radial-gradient(110% 130% at 50% -30%, color-mix(in srgb, var(--color-bronze) 7%, transparent), transparent 62%)",
+                }}
+            />
+
+            <div className="relative flex flex-wrap items-end justify-between gap-3 px-6 pt-6 sm:px-8">
                 <div>
                     <h2 className="text-[17px] font-semibold text-ink">{t("home", "flowTitle")}</h2>
                     <p className="mt-1.5 max-w-xl text-[13.5px] leading-relaxed text-mute">
@@ -114,9 +182,7 @@ export function AuthorityFlow() {
                             animate={{opacity: 1, scale: 1}}
                             exit={{opacity: 0, scale: 0.94}}
                             transition={{duration: 0.18}}
-                            onClick={() =>
-                                setOpen({identity: true, period: true, payee: true, window: true})
-                            }
+                            onClick={() => setOpen(ALL_OPEN)}
                             className="rounded-lg border border-line px-3 py-1.5 text-[12.5px] text-mute transition-colors hover:border-line-strong hover:text-ink"
                         >
                             {t("home", "flowReset")}
@@ -126,105 +192,146 @@ export function AuthorityFlow() {
             </div>
 
             {/* -------------------------------- the track ------------------------------- */}
-            {/* Gates sit ABOVE the rail on short stems, the way stations sit above a line.
-                Drawing them on the rail meant the line cut straight through each card and the
-                travelling dot came to rest inside one - overlap that reads as broken rather than
-                as layered. Nothing crosses anything now. */}
-            <div className="px-6 pt-9 pb-5 sm:px-8">
-                <div ref={trackRef} className="relative h-[132px]">
+            {/* Tablets hang ABOVE the ledger line on stems; names sit below it. Nothing crosses
+                anything: the earlier box-on-the-rail layout parked the pulse inside a card. */}
+            <div className="relative px-6 pt-8 pb-4 sm:px-8">
+                <div ref={trackRef} className="relative h-[164px]">
                     {GATES.map((g) => {
                         const isOpen = open[g.id];
                         const passed = isOpen && arrived && (!blocker || g.at < blocker.at);
-                        // The gate that is refusing stays red for as long as it is off: it is the
-                        // reason, not an event. Only the shake is tied to the moment of arrival.
+                        // The refusing gate stays red for as long as it is off: it is the reason,
+                        // not an event. Only the shake is tied to the moment of arrival.
                         const blocking = blocker?.id === g.id;
                         const justBlocked = blocking && arrived;
+                        const dimmedOff = !isOpen && !blocking;
                         return (
                             <button
                                 key={g.id}
                                 onClick={() => setOpen((o) => ({...o, [g.id]: !o[g.id]}))}
                                 style={{left: `${pos(g) * 100}%`}}
                                 aria-pressed={!isOpen}
-                                /* z below the sticky header (z-30): at z-20 the gates tied the
-                                   old header z and, being later in the DOM, painted on top of
-                                   the chrome while scrolling past. */
+                                aria-label={t("home", `flow${cap(g.id)}` as never)}
+                                title={t("home", `flow${cap(g.id)}` as never)}
                                 className="group absolute top-0 z-[5] -translate-x-1/2 focus:outline-none"
                             >
+                                {/* The tablet. Revoking it dims the stone; no caption needed. */}
                                 <motion.span
                                     animate={
                                         justBlocked && !reduced
                                             ? {x: [0, -5, 5, -3, 3, 0], scale: 1.04}
-                                            : {x: 0, scale: passed ? 1.02 : 1}
+                                            : {x: 0, scale: passed ? 1.03 : 1}
                                     }
                                     transition={
                                         justBlocked
                                             ? {duration: 0.42, ease: "easeOut"}
                                             : {type: "spring", stiffness: 320, damping: 22}
                                     }
-                                    className={`flex flex-col items-center justify-center gap-1 rounded-xl border shadow-lg shadow-black/30 transition-colors duration-300 ${
-                                        compact ? "h-[56px] w-[64px]" : "h-[64px] w-[80px]"
-                                    } ${
+                                    style={{
+                                        height: compact ? 60 : TABLET_H,
+                                        width: compact ? 34 : 40,
+                                        background: blocking
+                                            ? "linear-gradient(180deg, color-mix(in srgb, var(--color-reject) 16%, var(--color-surface-2)), var(--color-surface))"
+                                            : dimmedOff
+                                              ? "var(--color-ink-bg, #141311)"
+                                              : "linear-gradient(180deg, var(--color-surface-2), var(--color-surface))",
+                                        boxShadow: passed
+                                            ? "0 0 18px color-mix(in srgb, var(--color-bronze) 22%, transparent), 0 8px 18px rgba(0,0,0,.35)"
+                                            : "0 8px 18px rgba(0,0,0,.35)",
+                                    }}
+                                    className={`flex flex-col items-center justify-center rounded-[11px] border transition-colors duration-300 ${
                                         blocking
-                                            ? "border-reject bg-reject/15 text-reject"
-                                            : !isOpen
-                                              ? "border-line-strong bg-surface-2 text-mute"
+                                            ? "border-reject text-reject"
+                                            : dimmedOff
+                                              ? "border-line text-mute/60"
                                               : passed
-                                                ? "border-jade-dim bg-jade/10 text-jade"
-                                                : "border-line-strong bg-surface-2 text-ink-2 group-hover:border-bronze-dim"
+                                                ? "border-bronze-dim text-bronze-bright"
+                                                : "border-line-strong text-ink-2 group-hover:border-bronze-dim group-hover:text-bronze-bright"
                                     }`}
                                 >
-                                    <span className={compact ? "text-[11px] font-medium" : "text-[12px] font-medium"}>
-                                        {t("home", `flow${cap(g.id)}` as never)}
-                                    </span>
-                                    <span className={compact ? "text-[10px] opacity-70" : "text-[10.5px] opacity-70"}>
-                                        {isOpen ? t("home", "flowLive") : t("home", "flowOff")}
-                                    </span>
+                                    <Glyph id={g.id} />
+                                    {/* The tablet's own seal point: lit while the condition holds. */}
+                                    <span
+                                        className={`mt-2 block h-1 w-1 rounded-full transition-colors duration-300 ${
+                                            blocking
+                                                ? "bg-reject"
+                                                : dimmedOff
+                                                  ? "bg-line-strong"
+                                                  : passed
+                                                    ? "bg-bronze-bright"
+                                                    : "bg-jade"
+                                        }`}
+                                    />
                                 </motion.span>
-                                {/* Stem down to the rail. */}
+                                {/* Stem down to the ledger line. */}
                                 <span
                                     className={`mx-auto block w-px transition-colors duration-300 ${
-                                        blocking
-                                            ? "bg-reject"
-                                            : passed
-                                              ? "bg-jade-dim"
-                                              : "bg-line-strong"
+                                        blocking ? "bg-reject/70" : passed ? "bg-bronze-dim" : "bg-line-strong"
                                     }`}
-                                    style={{height: compact ? 30 : 22}}
+                                    style={{height: RAIL - (compact ? 60 : TABLET_H)}}
                                 />
                             </button>
                         );
                     })}
 
-                    {/* Rail, with the distance actually travelled drawn over it. */}
-                    <div className="absolute top-[86px] right-0 left-0 h-px bg-line-strong" />
+                    {/* Names, under the line - the tablets stay stone. */}
+                    {!compact &&
+                        GATES.map((g) => (
+                            <span
+                                key={`label-${g.id}`}
+                                style={{left: `${pos(g) * 100}%`, top: RAIL + 12}}
+                                className={`caps absolute -translate-x-1/2 text-[10px] font-semibold transition-colors duration-300 ${
+                                    blocker?.id === g.id
+                                        ? "text-reject"
+                                        : open[g.id]
+                                          ? "text-mute"
+                                          : "text-mute/50"
+                                }`}
+                            >
+                                {t("home", `flow${cap(g.id)}` as never)}
+                            </span>
+                        ))}
+
+                    {/* The ledger line, and over it the distance actually travelled - drawn as
+                        light: a glow layer under a bright core. */}
+                    <div className="absolute right-0 left-0 h-px bg-line-strong" style={{top: RAIL}} />
+                    <motion.div
+                        key={`glow-${run}`}
+                        initial={{scaleX: 0}}
+                        animate={{scaleX: stopAt}}
+                        transition={reduced ? {duration: 0} : spring}
+                        style={{
+                            originX: 0,
+                            top: RAIL - 2,
+                            background: blocker
+                                ? "linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-reject) 45%, transparent))"
+                                : "linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-bronze) 55%, transparent))",
+                            filter: "blur(5px)",
+                        }}
+                        className="absolute right-0 left-0 h-[5px]"
+                    />
                     <motion.div
                         key={`rail-${run}`}
                         initial={{scaleX: 0}}
                         animate={{scaleX: stopAt}}
-                        transition={
-                            reduced
-                                ? {duration: 0}
-                                : {type: "spring", stiffness: 26, damping: 14, mass: 1.1}
-                        }
-                        style={{originX: 0}}
-                        className={`absolute top-[86px] right-0 left-0 h-px ${
-                            blocker ? "bg-reject/70" : "bg-bronze"
-                        }`}
+                        transition={reduced ? {duration: 0} : spring}
+                        style={{
+                            originX: 0,
+                            top: RAIL,
+                            background: blocker
+                                ? "linear-gradient(90deg, color-mix(in srgb, var(--color-reject) 25%, transparent), var(--color-reject))"
+                                : "linear-gradient(90deg, color-mix(in srgb, var(--color-bronze) 30%, transparent), var(--color-bronze-bright))",
+                        }}
+                        className="absolute right-0 left-0 h-px"
                     />
 
-                    {/* The seal point, travelling on the rail - never inside a card. */}
+                    {/* The seal point, travelling the line. */}
                     {width > 0 && (
                         <motion.div
                             key={`dot-${run}`}
                             initial={{x: 0, opacity: 0}}
                             animate={{x: target, opacity: 1}}
                             transition={
-                                reduced
-                                    ? {duration: 0}
-                                    : {
-                                          x: {type: "spring", stiffness: 26, damping: 14, mass: 1.1},
-                                          opacity: {duration: 0.25},
-                                      }
+                                reduced ? {duration: 0} : {x: spring, opacity: {duration: 0.25}}
                             }
                             onAnimationComplete={() => {
                                 setArrived(true);
@@ -234,7 +341,8 @@ export function AuthorityFlow() {
                                     setRun((r) => r + 1);
                                 }, HOLD_MS);
                             }}
-                            className="absolute top-[86px] left-0 z-[6] -translate-y-1/2"
+                            className="absolute left-0 z-[6] -translate-y-1/2"
+                            style={{top: RAIL}}
                         >
                             <span className="relative block">
                                 <motion.span
@@ -243,21 +351,30 @@ export function AuthorityFlow() {
                                             ? "var(--color-reject)"
                                             : "var(--color-bronze-bright)",
                                     }}
-                                    className="block h-2.5 w-2.5 -translate-x-1/2 rounded-full"
+                                    className="block h-[9px] w-[9px] -translate-x-1/2 rounded-full"
                                     style={{
                                         boxShadow: blocker
-                                            ? "0 0 12px 3px color-mix(in srgb, var(--color-reject) 45%, transparent)"
-                                            : "0 0 12px 3px color-mix(in srgb, var(--color-bronze) 40%, transparent)",
+                                            ? "0 0 14px 4px color-mix(in srgb, var(--color-reject) 45%, transparent)"
+                                            : "0 0 14px 4px color-mix(in srgb, var(--color-bronze) 45%, transparent), 0 0 34px 10px color-mix(in srgb, var(--color-bronze) 14%, transparent)",
                                     }}
                                 />
                                 <AnimatePresence>
                                     {arrived && blocker && !reduced && (
                                         <motion.span
                                             initial={{scale: 0.4, opacity: 0.85}}
-                                            animate={{scale: 3.4, opacity: 0}}
+                                            animate={{scale: 3.6, opacity: 0}}
                                             exit={{opacity: 0}}
                                             transition={{duration: 0.7, ease: "easeOut"}}
-                                            className="absolute top-1/2 left-0 block h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-reject"
+                                            className="absolute top-1/2 left-0 block h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-reject"
+                                        />
+                                    )}
+                                    {arrived && !blocker && !reduced && (
+                                        <motion.span
+                                            initial={{scale: 0.4, opacity: 0.7}}
+                                            animate={{scale: 3, opacity: 0}}
+                                            exit={{opacity: 0}}
+                                            transition={{duration: 0.8, ease: "easeOut"}}
+                                            className="absolute top-1/2 left-0 block h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-jade"
                                         />
                                     )}
                                 </AnimatePresence>
@@ -265,15 +382,19 @@ export function AuthorityFlow() {
                         </motion.div>
                     )}
 
-                    {/* Endpoints, below the rail so they clear the stems. */}
-                    <div className="absolute top-[98px] left-0 text-[13px] font-medium text-ink">
+                    {/* Endpoints. */}
+                    <div
+                        className="absolute left-0 text-[13px] font-medium text-ink"
+                        style={{top: RAIL + 26}}
+                    >
                         {t("home", "chainAccount")}
                     </div>
                     <motion.div
                         animate={{
                             color: arrived && !blocker ? "var(--color-jade)" : "var(--color-mute)",
                         }}
-                        className="absolute top-[98px] right-0 text-[13px] font-medium"
+                        className="absolute right-0 text-[13px] font-medium"
+                        style={{top: RAIL + 26}}
                     >
                         {t("home", "chainMerchant")}
                     </motion.div>
@@ -288,7 +409,7 @@ export function AuthorityFlow() {
                         : "color-mix(in srgb, var(--color-jade) 4%, transparent)",
                 }}
                 transition={{duration: 0.3}}
-                className="flex items-start gap-3 border-t border-line px-6 py-4 sm:px-8"
+                className="relative flex items-start gap-3 border-t border-line px-6 py-4 sm:px-8"
             >
                 <motion.span
                     animate={{
@@ -305,11 +426,7 @@ export function AuthorityFlow() {
                         transition={{duration: 0.22}}
                         className="text-[13.5px] leading-relaxed text-ink-2"
                     >
-                        <span
-                            className={`font-medium ${
-                                blocker ? "text-reject" : "text-jade"
-                            }`}
-                        >
+                        <span className={`font-medium ${blocker ? "text-reject" : "text-jade"}`}>
                             {verdict.title}
                         </span>
                         {" — "}
