@@ -208,7 +208,7 @@ made shows both facts — proven valid then by the gate event, revoked now by th
 | Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding |
 | Integration | 13 | The full scenario end to end, batch atomicity, the 2×2 matrix |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: the cap holds, **no payment while identity is dead**, none while disabled, tokens conserved |
-| Cross-language byte parity | 31 | The same delegation encoded by Solidity, TypeScript and Go, byte-identical |
+| Cross-language byte parity | 37 | The same delegation encoded by Solidity, TypeScript and Go, byte-identical |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
 | Source verification | 8 of 8 | Read from Blockscout's **API**, not from what a browser displays |
 

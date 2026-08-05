@@ -226,7 +226,7 @@ test behind it. **155 tests**, all passing.
 | Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding, and the vendored MetaMask code exercised rather than merely present |
 | Integration | 13 | The full T1–T8 demo through the real manager; batch atomicity; the 2×2 kill-switch matrix |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
-| Cross-language byte parity | 4 + 27 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
+| Cross-language byte parity | 4 + 33 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
 | Live transactions | 20 | The T1–T8 demo, the facilitator flow, and four signed in MetaMask through the Composer |
 | Source verification | 8 of 8 | Every deployed contract, checked against Blockscout's API by `pnpm check-verified` |
