@@ -59,7 +59,7 @@ import {useWallet} from "../lib/wallet";
 
 type Stage = "compose" | "review" | "issued";
 
-const PRESET_IDS: PresetId[] = ["micro", "burst", "subscription", "custom"];
+const PRESET_IDS: PresetId[] = ["custom", "micro", "burst", "subscription"];
 
 /** A list long enough for a real expense policy, short enough to still be readable when signed. */
 const MAX_PAYEES = 10;
@@ -534,7 +534,7 @@ export default function Create() {
     const wallet = useWallet();
     const account = useMapaeAccount();
 
-    const [presetId, setPresetId] = useState<PresetId>("micro");
+    const [presetId, setPresetId] = useState<PresetId>("custom");
     const [stage, setStage] = useState<Stage>("compose");
     const [signing, setSigning] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -557,7 +557,7 @@ export default function Create() {
             agentName: "",
             agent: "",
             payees: [{address: "", name: ""}],
-            ...preset("micro").defaults,
+            ...preset("custom").defaults,
         };
         const num = (k: string): bigint | null => {
             const v = params.get(k);
