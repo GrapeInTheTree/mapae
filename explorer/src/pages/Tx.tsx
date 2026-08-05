@@ -50,20 +50,36 @@ export default function Tx() {
     const [trace, setTrace] = useState<Trace | null>(null);
     const [error, setError] = useState(false);
 
+    const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         setTrace(null);
         setError(false);
         if (hash) traceTx(hash).then(setTrace).catch(() => setError(true));
-    }, [hash]);
+    }, [hash, attempt]);
 
+    // Two different failures, two different sentences. A read the RPC shed is retryable and says
+    // so; only a transaction that LOADED and does not decode as a redemption earns that claim.
     if (error)
+        return (
+            <div className="mx-auto max-w-2xl px-6 py-24 text-center">
+                <p className="text-[15px] text-ink-2">{t("tx", "loadFailed")}</p>
+                <p className="mt-2 font-mono text-[12px] break-all text-mute">{hash}</p>
+                <button
+                    onClick={() => setAttempt((a) => a + 1)}
+                    className="mt-6 rounded-lg border border-line px-4 py-2 text-[13px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+                >
+                    {t("tx", "retry")}
+                </button>
+            </div>
+        );
+    if (!trace) return <Spinner />;
+    if (trace.chain.length === 0)
         return (
             <div className="mx-auto max-w-2xl px-6 py-24 text-center">
                 <p className="text-[15px] text-ink-2">{t("tx", "notFound")}</p>
                 <p className="mt-2 font-mono text-[12px] break-all text-mute">{hash}</p>
             </div>
         );
-    if (!trace) return <Spinner />;
 
     const id = trace.identity;
     const att = id?.attestation;

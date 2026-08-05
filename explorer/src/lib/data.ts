@@ -496,11 +496,27 @@ const transferEventAbi = parseAbi([
     "event Transfer(address indexed from, address indexed to, uint256 value)",
 ]);
 
+/** GIWA's public RPC load-balances across backends that lag each other by a few blocks; a read
+ *  that one backend answers, another 404s a second later. Retried with backoff because the
+ *  alternative was worse than an error: a transient miss rendered as the confident, false claim
+ *  that the transaction is not a Mapae redemption. */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 5, delayMs = 900): Promise<T> {
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            last = e;
+            if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+        }
+    }
+    throw last;
+}
+
 export async function traceTx(hash: Hex): Promise<Trace> {
-    const [receipt, tx] = await Promise.all([
-        client.getTransactionReceipt({hash}),
-        client.getTransaction({hash}),
-    ]);
+    const [receipt, tx] = await withRetry(() =>
+        Promise.all([client.getTransactionReceipt({hash}), client.getTransaction({hash})]),
+    );
     const ok = receipt.status === "success";
 
     const trace: Trace = {
