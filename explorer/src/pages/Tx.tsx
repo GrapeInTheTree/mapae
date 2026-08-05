@@ -493,7 +493,12 @@ export default function Tx() {
                         </p>
                     ) : (
                         <>
-                            <div className="grid items-stretch gap-2 sm:grid-cols-2">
+                            {/* One column, always. A two-column grid was tidy at four
+                                conditions and orphaned a card at five - and the count grows
+                                with the enforcer set. A list is the only layout where every
+                                card is the same shape at every count, and it is what the
+                                delegation page already does. */}
+                            <div className="flex flex-col gap-2">
                                 {conditions.map((c, i) => {
                                     const refused = culprit !== null && c.kind === culprit;
                                     const headline =

@@ -13,11 +13,12 @@ import {useLang} from "../i18n";
  * and it stops there, visibly, with the reason. The identity gate is the one that matters: turn
  * it off and a valid signature, an unspent limit and an allowed payee are not enough.
  *
- * The gates are seal nodes ON the ledger line - small diamonds, the stamp of the Split Seal.
- * A node fills with light as the payment passes it, goes hollow when its condition is revoked,
- * and turns red when it is the one refusing. Two earlier versions drew boxes above the line
- * (first captioned "on/off" like a toy, then engraved tablets); both made the line carry
- * furniture. The line is the picture - the gates had to live on it.
+ * The gates are the mark itself. The Split Seal is two facing wedges - principal and agent -
+ * with the delegation point between them, and that gap is exactly what a gate is: open while
+ * the condition holds, sliding shut when it is revoked. The pulse threads the gap; when a gate
+ * has genuinely been passed, the centre dot appears - the one part of the seal that must be
+ * earned. A refusing gate closes red. Earlier drafts hung boxes and tablets above the line;
+ * the geometry the product already owns says it better.
  *
  * Motion, not rAF-into-setState: the pulse rides a spring, a refusal lands hard and rings, and
  * none of it touches the render cycle.
@@ -164,13 +165,15 @@ export function AuthorityFlow() {
                                 title={t("home", `flow${cap(g.id)}` as never)}
                                 className="group absolute z-[5] flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center focus:outline-none"
                             >
-                                {/* The seal: a diamond stamped on the line. Filled while lit,
-                                    hollow when revoked, red when refusing. */}
+                                {/* The gate: the Split Seal's two wedges, the rail threading
+                                    the gap. Open while the condition holds; shut when revoked;
+                                    the earned centre dot appears only once the pulse has
+                                    actually passed. */}
                                 <motion.span
                                     animate={
                                         justBlocked && !reduced
-                                            ? {rotate: [45, 38, 52, 42, 48, 45], scale: 1.12}
-                                            : {rotate: 45, scale: passed ? 1.15 : blocking ? 1.12 : 1}
+                                            ? {x: [0, -4, 4, -2, 2, 0], scale: 1.06}
+                                            : {x: 0, scale: passed ? 1.1 : 1}
                                     }
                                     transition={
                                         justBlocked
@@ -178,22 +181,56 @@ export function AuthorityFlow() {
                                             : {type: "spring", stiffness: 320, damping: 20}
                                     }
                                     style={{
-                                        boxShadow: blocking
-                                            ? "0 0 16px color-mix(in srgb, var(--color-reject) 45%, transparent)"
+                                        filter: blocking
+                                            ? "drop-shadow(0 0 7px color-mix(in srgb, var(--color-reject) 55%, transparent))"
                                             : passed
-                                              ? "0 0 16px color-mix(in srgb, var(--color-bronze) 40%, transparent)"
+                                              ? "drop-shadow(0 0 7px color-mix(in srgb, var(--color-bronze) 45%, transparent))"
                                               : "none",
                                     }}
-                                    className={`block h-[13px] w-[13px] rounded-[3px] border transition-colors duration-300 ${
+                                    className={`block transition-colors duration-300 ${
                                         blocking
-                                            ? "border-reject bg-reject/80"
+                                            ? "text-reject"
                                             : dimmedOff
-                                              ? "border-line-strong bg-surface"
+                                              ? "text-mute/40"
                                               : passed
-                                                ? "border-bronze-bright bg-bronze-bright"
-                                                : "border-bronze-dim bg-surface-2 group-hover:border-bronze-bright"
+                                                ? "text-bronze-bright"
+                                                : "text-ink-2 group-hover:text-bronze-bright"
                                     }`}
-                                />
+                                >
+                                    <svg width="26" height="19" viewBox="0 0 26 19" aria-hidden="true">
+                                        {/* Left wedge - the principal's half. Slides toward the
+                                            centre when the gate is shut. */}
+                                        <motion.path
+                                            d="M1.2 0.8 L8 3.6 L8 15.4 L1.2 18.2 Z"
+                                            fill="currentColor"
+                                            animate={{x: isOpen ? 0 : 4.6}}
+                                            transition={{type: "spring", stiffness: 300, damping: 24}}
+                                        />
+                                        {/* Right wedge - the agent's half. */}
+                                        <motion.path
+                                            d="M24.8 0.8 L18 3.6 L18 15.4 L24.8 18.2 Z"
+                                            fill="currentColor"
+                                            animate={{x: isOpen ? 0 : -4.6}}
+                                            transition={{type: "spring", stiffness: 300, damping: 24}}
+                                        />
+                                        {/* The earned point: only a payment that has passed
+                                            through leaves it. */}
+                                        <AnimatePresence>
+                                            {passed && (
+                                                <motion.circle
+                                                    cx="13"
+                                                    cy="9.5"
+                                                    r="1.7"
+                                                    fill="currentColor"
+                                                    initial={{opacity: 0, scale: 0}}
+                                                    animate={{opacity: 1, scale: 1}}
+                                                    exit={{opacity: 0, scale: 0}}
+                                                    transition={{type: "spring", stiffness: 380, damping: 20}}
+                                                />
+                                            )}
+                                        </AnimatePresence>
+                                    </svg>
+                                </motion.span>
                                 {/* The name, floating above its node. Hidden on phones - the
                                     verdict line carries the words there. */}
                                 {!compact && (
