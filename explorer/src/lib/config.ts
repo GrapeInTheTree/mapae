@@ -19,6 +19,7 @@ export const addresses = {
     payeeEnforcer: deployments.AllowedPayeeEnforcer as `0x${string}`,
     periodEnforcer: deployments.ERC20PeriodTransferEnforcer as `0x${string}`,
     timestampEnforcer: deployments.TimestampEnforcer as `0x${string}`,
+    perPaymentEnforcer: (deployments as Record<string, unknown>).PerPaymentLimitEnforcer as `0x${string}`,
     verifiedCodeEnforcer: (deployments as Record<string, unknown>).VerifiedCodeEnforcer as `0x${string}`,
     mockKRW: deployments.MockKRW as `0x${string}`,
     dojangScroll: deployments.DojangScroll as `0x${string}`,

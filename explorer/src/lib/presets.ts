@@ -54,6 +54,10 @@ export interface PresetForm {
      */
     usePayee: boolean;
     useWindow: boolean;
+    /** The per-payment ceiling. Off by default everywhere: the named presets predate it and their
+     *  published shapes must not change under their users; the custom composer offers it. */
+    usePerTx: boolean;
+    perTx: bigint;
 }
 
 export interface Preset {
@@ -80,6 +84,8 @@ export const PRESETS: Preset[] = [
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,
+            usePerTx: false,
+            perTx: 0n,
         },
     },
     {
@@ -94,6 +100,8 @@ export const PRESETS: Preset[] = [
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,
+            usePerTx: false,
+            perTx: 0n,
         },
     },
     {
@@ -108,6 +116,8 @@ export const PRESETS: Preset[] = [
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,
+            usePerTx: false,
+            perTx: 0n,
         },
     },
     {
@@ -122,6 +132,8 @@ export const PRESETS: Preset[] = [
             issuer: TESTNET_FAUCET_ID,
             usePayee: true,
             useWindow: true,
+            usePerTx: false,
+            perTx: 0n,
         },
     },
 ];
@@ -138,7 +150,6 @@ export function preset(id: PresetId): Preset {
  * see what is coming, and should never be able to sign it by accident.
  */
 export const COMING_NEXT = [
-    {id: "perTx", en: "Per-payment ceiling", ko: "회당 한도"},
     {id: "total", en: "Lifetime total", ko: "총액 한도"},
     {id: "count", en: "Call count", ko: "호출 횟수"},
     {id: "selector", en: "Allowed function", ko: "허용 함수"},
@@ -168,6 +179,10 @@ export function buildConditions(form: PresetForm, principal: Address, now: numbe
             start,
         },
     ];
+    if (form.usePerTx) {
+        if (form.perTx <= 0n) throw new Error("per-payment ceiling must be positive");
+        conditions.push({kind: "perPayment", max: form.perTx});
+    }
     if (form.usePayee) conditions.push({kind: "payee", payees});
     if (form.useWindow)
         conditions.push({

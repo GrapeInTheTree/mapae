@@ -5,6 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import {AllowedPayeeEnforcer} from "../../src/enforcers/AllowedPayeeEnforcer.sol";
+import {PerPaymentLimitEnforcer} from "../../src/enforcers/PerPaymentLimitEnforcer.sol";
 import {ERC20PeriodTransferEnforcer} from "../../src/enforcers/ERC20PeriodTransferEnforcer.sol";
 import {TimestampEnforcer} from "../../src/enforcers/TimestampEnforcer.sol";
 import {ModeCode, ModePayload} from "../../src/utils/Types.sol";
@@ -24,6 +25,7 @@ import {ExecutionLib} from "../../src/libraries/ExecutionLib.sol";
 ///         the pragma and import adaptations must be shown to change nothing.
 contract PaymentEnforcersTest is Test {
     AllowedPayeeEnforcer internal payeeEnforcer;
+    PerPaymentLimitEnforcer internal perPaymentEnforcer;
     ERC20PeriodTransferEnforcer internal periodEnforcer;
     TimestampEnforcer internal timestampEnforcer;
 
@@ -38,6 +40,7 @@ contract PaymentEnforcersTest is Test {
 
     function setUp() public {
         payeeEnforcer = new AllowedPayeeEnforcer();
+        perPaymentEnforcer = new PerPaymentLimitEnforcer();
         periodEnforcer = new ERC20PeriodTransferEnforcer();
         timestampEnforcer = new TimestampEnforcer();
         mode = ModeLib.encodeSimpleSingle();
@@ -239,6 +242,127 @@ contract PaymentEnforcersTest is Test {
     /* -------------------------------------------------------------------------- */
     /*                                   Helpers                                   */
     /* -------------------------------------------------------------------------- */
+
+    /* -------------------------------------------------------------------------- */
+    /*                           PerPaymentLimitEnforcer                            */
+    /* -------------------------------------------------------------------------- */
+
+    function test_PerPayment_AtCap_Allows() public view {
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(10_000)), "", mode, _transfer(merchant, 10_000), HASH, address(0), agent
+        );
+    }
+
+    /// @notice The boundary is exact: the cap itself passes, one unit past it does not. This pair
+    ///         is the enforcer's whole contract with its signer.
+    function test_RevertWhen_PerPayment_OneAboveCap() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(PerPaymentLimitEnforcer.PerPaymentCapExceeded.selector, 10_001, 10_000)
+        );
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(10_000)), "", mode, _transfer(merchant, 10_001), HASH, address(0), agent
+        );
+    }
+
+    function test_PerPayment_ZeroAmount_Allows() public view {
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(10_000)), "", mode, _transfer(merchant, 0), HASH, address(0), agent
+        );
+    }
+
+    /// @notice A zero cap is an unset form field, not a policy: refused at use, loudly.
+    function test_RevertWhen_PerPayment_ZeroCap() public {
+        vm.expectRevert(PerPaymentLimitEnforcer.InvalidZeroCap.selector);
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(0)), "", mode, _transfer(merchant, 1), HASH, address(0), agent
+        );
+    }
+
+    function test_RevertWhen_PerPayment_TermsWrongLength() public {
+        vm.expectRevert(abi.encodeWithSelector(PerPaymentLimitEnforcer.InvalidTermsLength.selector, 31));
+        perPaymentEnforcer.beforeHook(
+            new bytes(31), "", mode, _transfer(merchant, 1), HASH, address(0), agent
+        );
+    }
+
+    /// @notice `approve` within the cap would delegate onwards off-ledger, where the cap no
+    ///         longer holds - same refusal as the payee gate, for the same reason.
+    function test_RevertWhen_PerPayment_ApproveRefused() public {
+        bytes memory exec =
+            ExecutionLib.encodeSingle(token, 0, abi.encodeWithSelector(IERC20.approve.selector, merchant, 1));
+        vm.expectRevert(
+            abi.encodeWithSelector(PerPaymentLimitEnforcer.InvalidMethod.selector, IERC20.approve.selector)
+        );
+        perPaymentEnforcer.beforeHook(abi.encode(uint256(10_000)), "", mode, exec, HASH, address(0), agent);
+    }
+
+    function test_RevertWhen_PerPayment_TruncatedCalldata() public {
+        bytes memory exec = ExecutionLib.encodeSingle(
+            token, 0, abi.encodePacked(IERC20.transfer.selector, bytes32(uint256(uint160(merchant))))
+        );
+        vm.expectRevert(abi.encodeWithSelector(PerPaymentLimitEnforcer.InvalidExecutionLength.selector, 36));
+        perPaymentEnforcer.beforeHook(abi.encode(uint256(10_000)), "", mode, exec, HASH, address(0), agent);
+    }
+
+    function test_RevertWhen_PerPayment_BatchMode() public {
+        ModeCode batch = ModeLib.encode(CALLTYPE_BATCH, EXECTYPE_DEFAULT, MODE_DEFAULT, ModePayload.wrap(0));
+        vm.expectRevert("CaveatEnforcer:invalid-call-type");
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(10_000)), "", batch, _transfer(merchant, 100), HASH, address(0), agent
+        );
+    }
+
+    function test_RevertWhen_PerPayment_TryMode() public {
+        ModeCode tryMode = ModeLib.encode(CALLTYPE_SINGLE, EXECTYPE_TRY, MODE_DEFAULT, ModePayload.wrap(0));
+        vm.expectRevert("CaveatEnforcer:invalid-execution-type");
+        perPaymentEnforcer.beforeHook(
+            abi.encode(uint256(10_000)), "", tryMode, _transfer(merchant, 100), HASH, address(0), agent
+        );
+    }
+
+    /// @notice The pair this enforcer exists for: a period budget shaped by a per-payment ceiling.
+    ///         Both are conjunctions on the same execution - a payment must satisfy each alone.
+    function test_PerPayment_ComposesWithPeriodCap() public {
+        bytes memory periodTerms_ = _periodTerms(50_000, 1 days, block.timestamp);
+        bytes memory perPaymentTerms_ = abi.encode(uint256(10_000));
+
+        // Within both: passes both hooks.
+        periodEnforcer.beforeHook(
+            periodTerms_, "", mode, _transfer(merchant, 10_000), HASH, address(0), agent
+        );
+        perPaymentEnforcer.beforeHook(
+            perPaymentTerms_, "", mode, _transfer(merchant, 10_000), HASH, address(0), agent
+        );
+
+        // Within the window budget but above the per-payment ceiling: the period cap would have
+        // allowed it, which is exactly why the ceiling must refuse it.
+        periodEnforcer.beforeHook(
+            periodTerms_, "", mode, _transfer(merchant, 20_000), HASH, address(0), agent
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(PerPaymentLimitEnforcer.PerPaymentCapExceeded.selector, 20_000, 10_000)
+        );
+        perPaymentEnforcer.beforeHook(
+            perPaymentTerms_, "", mode, _transfer(merchant, 20_000), HASH, address(0), agent
+        );
+    }
+
+    function test_PerPayment_TermsRoundTrip() public view {
+        assertEq(perPaymentEnforcer.getTermsInfo(abi.encode(uint256(123_456))), 123_456);
+    }
+
+    /// @notice Any amount <= cap passes and any amount > cap reverts, across the whole range.
+    function testFuzz_PerPayment_Boundary(uint256 cap, uint256 amount) public {
+        cap = bound(cap, 1, type(uint256).max);
+        if (amount > cap) {
+            vm.expectRevert(
+                abi.encodeWithSelector(PerPaymentLimitEnforcer.PerPaymentCapExceeded.selector, amount, cap)
+            );
+        }
+        perPaymentEnforcer.beforeHook(
+            abi.encode(cap), "", mode, _transfer(merchant, amount), HASH, address(0), agent
+        );
+    }
 
     function _transfer(address to, uint256 amount) internal view returns (bytes memory) {
         return

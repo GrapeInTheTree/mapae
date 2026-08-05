@@ -85,6 +85,9 @@ export const enforcerErrorsAbi = parseAbi([
     "error InvalidMethod(bytes4 selector)",
     "error DirtyRecipientWord(bytes32 word)",
     "error PayeeNotAllowed(address payee)",
+    // PerPaymentLimitEnforcer
+    "error InvalidZeroCap()",
+    "error PerPaymentCapExceeded(uint256 amount, uint256 cap)",
     // MapaeAccount
     "error NotDelegationManager(address caller)",
     "error NotOwner(address caller)",

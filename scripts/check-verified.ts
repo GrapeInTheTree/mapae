@@ -36,6 +36,7 @@ const OURS = [
     "AllowedPayeeEnforcer",
     "ERC20PeriodTransferEnforcer",
     "TimestampEnforcer",
+    "PerPaymentLimitEnforcer",
     "VerifiedCodeEnforcer",
     "MockKRW",
 ];

@@ -7,8 +7,9 @@
   "MapaeAccountFactory": "0x157aF4D7b3f52685c817d5558b3468caD9b61299",
   "MapaeDelegationManager": "0xfd0fCCCcF8071852783b5133b3CC47461f33e6Cd",
   "MockKRW": "0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B",
+  "PerPaymentLimitEnforcer": "0x8900b56d714b902b7AfdbeC4722a9b098C8993d8",
   "TimestampEnforcer": "0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02",
+  "VerifiedCodeEnforcer": "0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e",
   "chainId": 91342,
-  "deployBlock": 31935476,
-  "VerifiedCodeEnforcer": "0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e"
+  "deployBlock": 31935476
 }

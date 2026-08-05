@@ -239,8 +239,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <p>마패는 세 번째 길이다. 위임 메커니즘 자체는 발명하지 않았다 — ERC-7710/7715와 x402를
        채택하고, <em>어디에도 없던 조건 하나</em>를 기여한다: <strong>위임자의 신원</strong>.</p>
     <div class="scroll"><table>
-        <tr><td>컨트랙트</td><td class="n">8</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
-        <tr><td>테스트</td><td class="n">153</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
+        <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
+        <tr><td>테스트</td><td class="n">155</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
         <tr><td>라이브 트랜잭션</td><td class="n">20+</td><td>정상 결제와 모든 거부 유형, 사유가 디코딩된 채로</td></tr>
         <tr><td>백엔드 서버</td><td class="n">0</td><td>권한의 유효성은 체인만 답한다</td></tr>
     </table></div>
@@ -256,6 +256,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         잘못 읽어 보유 토큰 5,243만 개(당시 약 25만 달러) 전량을 전송했다. 해킹도 컨트랙트
         취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도가 사람의 서명에 고정되어 있었다면, 에이전트가 오해해도 그 이상은 이동할 수 없다.
     </div>
+    <p>수탁형 접근에는 이제 이름이 있다 — 2026년 8월 Cloudflare가 발표한 Wallets가 같은 문제를
+       수탁 계정과 서버측 한도로 푼다. 탐색 예산에는 맞는 답이다. 다만 한도를 강제하는 주체가
+       발급자 자신이고, 신원은 자기 선언에 머문다 — 책임이 필요한 자리에 남는 공백이 이
+       문서의 주제다.</p>
     <p>그리고 한도만으로는 부족하다. 사고가 났을 때 <strong>누가 이 권한을 줬는지</strong>가
        남지 않으면 책임 주체를 특정할 수 없고, 가맹점은 에이전트 결제를 받을 이유가 없다.
        이 마지막 조각이 기와에만 있다 — 다른 체인에는 조건으로 걸 신원 자체가 없다.</p>
@@ -290,6 +294,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>DojangVerifiedEnforcer</code></td><td><strong>기여물.</strong> 위임자의 실명 증명을 결제 조건으로 건다</td></tr>
         <tr><td><code>AllowedPayeeEnforcer</code></td><td>이체 calldata의 수취인을 검사 — 타겟이 아니라</td></tr>
         <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask 감사본을 무수정 vendoring — 호환성의 실증</td></tr>
+        <tr><td><code>PerPaymentLimitEnforcer</code></td><td>결제 한 건의 금액을 제한 — 기간 예산을 조각으로 나눈다</td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td>사람 확인 티어. 살아 있는 오프체인 확인이 있을 때만 통과</td></tr>
     </table></div>
 </section>
@@ -348,6 +353,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>기간 한도</td><td class="n">116</td><td><code>token(20) ‖ periodAmount(32) ‖ periodDuration(32) ‖ startDate(32)</code></td></tr>
         <tr><td>수취인</td><td class="n">20×N</td><td>패킹된 주소 목록. 빈 목록은 전체 허용이 아니라 <strong>에러</strong></td></tr>
         <tr><td>기한</td><td class="n">32</td><td><code>afterThreshold(uint128) ‖ beforeThreshold(uint128)</code></td></tr>
+        <tr><td>회당 한도</td><td class="n">32</td><td><code>maxPerPayment(uint256)</code>. 0은 거부 — 비어 있는 필드는 정책이 아니라 실수다</td></tr>
     </table></div>
 </section>
 
@@ -565,6 +571,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>AllowedPayeeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1">0x7eF0f193B721B1749d890F1e231C8074670f1bD1</a></td></tr>
         <tr><td><code>ERC20PeriodTransferEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892">0xE33ba891fa502A075D3E422258723eF4cB6AC892</a></td></tr>
         <tr><td><code>TimestampEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02">0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02</a></td></tr>
+        <tr><td><code>PerPaymentLimitEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8900b56d714b902b7AfdbeC4722a9b098C8993d8">0x8900b56d714b902b7AfdbeC4722a9b098C8993d8</a></td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e">0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e</a></td></tr>
         <tr><td><code>MockKRW</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B">0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B</a></td></tr>
     </table></div>
@@ -574,10 +581,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <h2><span class="num">17</span>다음</h2>
     <div class="card key">
         <h4>감사된 조건 38종 전부 탑재</h4>
-        <p>지금은 결제에 필요한 5종이 올라가 있다. 표준 호환이라 나머지는 수정이 아니라
-           <strong>검증의 일</strong>이다 — 건당 상한, 누적 총액, 호출 횟수, 허용 함수 셀렉터,
-           결제를 목적에 묶는 주문 해시. 구독·법인 경비 같은 시나리오 프리셋으로 조합을
-           제품화한다.</p>
+        <p>지금은 결제에 필요한 6종이 올라가 있다 — 회당 한도가 방금 합류해, 배포·검증과
+           정산/거부 쌍의 라이브 증명까지 마쳤다. 표준 호환이라 나머지는 수정이 아니라
+           <strong>검증의 일</strong>이다 — 누적 총액, 호출 횟수, 허용 함수 셀렉터, 결제를
+           목적에 묶는 주문 해시. 구독·법인 경비 같은 시나리오 프리셋으로 조합을 제품화한다.</p>
     </div>
     <div class="card key">
         <h4>기와 월렛 연동 · 도장 세분화</h4>
@@ -687,8 +694,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        ERC-7710/7715 and x402 are adopted as they stand, and the contribution is
        <em>one condition that did not exist anywhere</em>: <strong>the identity of the delegator</strong>.</p>
     <div class="scroll"><table>
-        <tr><td>Contracts</td><td class="n">8</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
-        <tr><td>Tests</td><td class="n">153</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
+        <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
+        <tr><td>Tests</td><td class="n">155</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
         <tr><td>Live transactions</td><td class="n">20+</td><td>Settlements and every category of refusal, each with its decoded reason</td></tr>
         <tr><td>Backend servers</td><td class="n">0</td><td>Whether an authority is valid is answered by the chain alone</td></tr>
     </table></div>
@@ -706,6 +713,11 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <strong>a single misunderstanding by the agent</strong>. Had the cap been fixed in a human
         signature, no misunderstanding could have moved more than that cap.
     </div>
+    <p>The custodial approach now has a name: Cloudflare Wallets, announced in August 2026,
+       answers the same problem with custodial accounts and server-side limits. For an exploration
+       budget that is the right answer. But the limits are enforced by their issuer, and identity
+       stays self-declared &mdash; the gap that remains where accountability is required is this
+       document's subject.</p>
     <p>And a cap alone is not enough. If <strong>who granted the authority</strong> does not
        survive the incident, no party can be held responsible, and a merchant has no reason to
        accept agent payments at all. That last piece exists only on GIWA &mdash; no other chain has
@@ -741,6 +753,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>DojangVerifiedEnforcer</code></td><td><strong>The contribution.</strong> Conditions a delegation on the delegator's real-world identity</td></tr>
         <tr><td><code>AllowedPayeeEnforcer</code></td><td>Inspects the recipient inside the transfer calldata, not merely the target</td></tr>
         <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask's audited enforcers, vendored unmodified &mdash; compatibility demonstrated rather than claimed</td></tr>
+        <tr><td><code>PerPaymentLimitEnforcer</code></td><td>Caps a single payment &mdash; shapes the period budget into pieces</td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td>Human-in-the-loop tier: redeems only while a live off-chain confirmation stands</td></tr>
     </table></div>
 </section>
@@ -803,6 +816,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>Period cap</td><td class="n">116</td><td><code>token(20) &Vert; periodAmount(32) &Vert; periodDuration(32) &Vert; startDate(32)</code></td></tr>
         <tr><td>Payee</td><td class="n">20&times;N</td><td>Packed addresses. An empty list is an <strong>error</strong>, never an allow-all</td></tr>
         <tr><td>Window</td><td class="n">32</td><td><code>afterThreshold(uint128) &Vert; beforeThreshold(uint128)</code></td></tr>
+        <tr><td>Per-payment</td><td class="n">32</td><td><code>maxPerPayment(uint256)</code>. Zero is refused &mdash; an unset field is a mistake, not a policy</td></tr>
     </table></div>
 </section>
 
@@ -1032,6 +1046,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>AllowedPayeeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1">0x7eF0f193B721B1749d890F1e231C8074670f1bD1</a></td></tr>
         <tr><td><code>ERC20PeriodTransferEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892">0xE33ba891fa502A075D3E422258723eF4cB6AC892</a></td></tr>
         <tr><td><code>TimestampEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02">0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02</a></td></tr>
+        <tr><td><code>PerPaymentLimitEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8900b56d714b902b7AfdbeC4722a9b098C8993d8">0x8900b56d714b902b7AfdbeC4722a9b098C8993d8</a></td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e">0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e</a></td></tr>
         <tr><td><code>MockKRW</code></td><td class="mono"><a href="https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B">0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B</a></td></tr>
     </table></div>
@@ -1041,11 +1056,12 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <h2><span class="num">17</span>Next</h2>
     <div class="card key">
         <h4>All 38 audited conditions</h4>
-        <p>Five are deployed &mdash; the ones a payment needs. Because the structures are
-           byte-compatible, the rest is verification work rather than authoring: per-payment
-           ceiling, lifetime total, call count, allowed selector, and an approved-order hash that
-           binds a payment to a purpose. Productised as scenario presets, so the combinations are a
-           choice rather than an exercise.</p>
+        <p>Six are deployed &mdash; the ones a payment needs, the per-payment ceiling having just
+           joined: deployed, verified, and proven live with a settle/refuse pair. Because the
+           structures are byte-compatible, the rest is verification work rather than authoring:
+           lifetime total, call count, allowed selector, and an approved-order hash that binds a
+           payment to a purpose. Productised as scenario presets, so the combinations are a choice
+           rather than an exercise.</p>
     </div>
     <div class="card key">
         <h4>Wallet integration and Dojang granularity</h4>

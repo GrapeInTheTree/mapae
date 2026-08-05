@@ -50,6 +50,21 @@ T5-T8 form a 2x2 matrix: each kill switch (disable-delegation / revoke-identity)
 while the other is untouched, and each is reversible. No ordering assumptions - the manager checks
 disabled-state before any caveat, so the errors never bleed into each other.
 
+## The per-payment ceiling - the sixth condition, proven live
+
+One delegation carrying all five payment conditions at once - identity, 50,000/day period cap,
+10,000 per-payment ceiling, one allowlisted payee, 7-day window - redeemed twice. The pair is
+chosen so only the ceiling can refuse: the day budget had 40,000 of room when the second payment
+was attempted.
+
+| Step | Expected | On-chain | Tx |
+|---|---|---|---|
+| pay 10,000 - exactly at the ceiling | success | success | [0x3e922d55…](https://sepolia-explorer.giwa.io/tx/0x3e922d55e1dfbbe705aaf80fef79ea4ad5a2042e6476d0b204aaebccdc159b0a) |
+| pay 10,001 - one over | revert: PerPaymentCapExceeded | **reverted** `PerPaymentCapExceeded(10001, 10000)` | [0xdac9db98…](https://sepolia-explorer.giwa.io/tx/0xdac9db98fe72c7aa67f043f7728e68815cd65ee9b1515b85494e4bf84a5c5eac) |
+
+Delegation `0xbecc5c5f7790413bf21d87c99861553021c890408d2546c97ab3f7af28415260`. Reproduce with
+`pnpm tsx scripts/perpayment-proof.ts`.
+
 ## Traceback
 
 `pnpm trace 0xa01e6e8696d4fe4d505c8636ed1f09a0a0da3d4dcf01bd045f0046d99757e568` resolves T1's hash backwards:

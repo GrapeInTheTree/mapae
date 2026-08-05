@@ -41,6 +41,7 @@ principal (EOA, a person)  ──owns──▶  MapaeAccount  ──holds──�
 | `DojangVerifiedEnforcer` | **The contribution.** Conditions a delegation on the delegator's real-world identity |
 | `AllowedPayeeEnforcer` | Inspects the *recipient* inside the transfer calldata, not merely the target |
 | `ERC20PeriodTransferEnforcer`<br>`TimestampEnforcer` | MetaMask's audited enforcers, vendored unmodified — compatibility demonstrated rather than claimed |
+| `PerPaymentLimitEnforcer` | Caps a single payment. A period cap bounds the total; this shapes it into pieces — "₩50,000 a day, at most ₩10,000 per payment" |
 | `VerifiedCodeEnforcer` | Human-in-the-loop tier: redeems only while a live off-chain confirmation stands |
 
 ## 3. Why identity and funds live at different addresses
@@ -196,7 +197,7 @@ made shows both facts — proven valid then by the gate event, revoked now by th
 
 ## 12. Verification
 
-**153 tests**, all passing. What each layer proves matters more than the count.
+**155 tests**, all passing. What each layer proves matters more than the count.
 
 | Layer | Count | What it proves |
 |---|---|---|
@@ -204,7 +205,7 @@ made shows both facts — proven valid then by the gate event, revoked now by th
 | Encoding conformance | 16 | Typehashes, hash exclusions, ERC-7579 mode word — pinned as literal constants, never recomputed |
 | Delegation chain | 16 | A child cannot widen its parent's cap; broken authority links and forged grafts are refused; disabling the root kills a sub-agent |
 | Manager API | 16 | Kill-switch authority, malformed batches, no hook can re-enter redemption, hook ordering pinned |
-| Enforcers and account | 77 | Forgery paths, execution-shape refusals, factory consent binding |
+| Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding |
 | Integration | 13 | The full scenario end to end, batch atomicity, the 2×2 matrix |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: the cap holds, **no payment while identity is dead**, none while disabled, tokens conserved |
 | Cross-language byte parity | 31 | The same delegation encoded by Solidity, TypeScript and Go, byte-identical |
@@ -244,16 +245,18 @@ EIP-712 digest.
 | `AllowedPayeeEnforcer` | [`0x7eF0f193B721B1749d890F1e231C8074670f1bD1`](https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1) |
 | `ERC20PeriodTransferEnforcer` | [`0xE33ba891fa502A075D3E422258723eF4cB6AC892`](https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892) |
 | `TimestampEnforcer` | [`0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02`](https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02) |
+| `PerPaymentLimitEnforcer` | [`0x8900b56d714b902b7AfdbeC4722a9b098C8993d8`](https://sepolia-explorer.giwa.io/address/0x8900b56d714b902b7AfdbeC4722a9b098C8993d8) |
 | `VerifiedCodeEnforcer` | [`0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e`](https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e) |
 | `MockKRW` | [`0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B`](https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B) |
 
 ## 15. Next
 
-**All 38 audited conditions.** Five are deployed — the ones a payment needs. Because the
-structures are byte-compatible, the rest is verification work rather than authoring: per-payment
-ceiling, lifetime total, call count, allowed selector, and an approved-order hash that binds a
-payment to a purpose. Productised as scenario presets — subscription, corporate expense — so the
-combinations are a choice rather than an exercise.
+**All 38 audited conditions.** Six are deployed — the ones a payment needs, now including a
+per-payment ceiling, deployed and proven live with a settle/refuse pair. Because the structures
+are byte-compatible, the rest is verification work rather than authoring: lifetime total, call
+count, allowed selector, and an approved-order hash that binds a payment to a purpose.
+Productised as scenario presets — subscription, corporate expense — so the combinations are a
+choice rather than an exercise.
 
 **Wallet integration and Dojang granularity.** The ERC-7715 request path exists; only the wallet
 side remains. And as per-exchange and per-tier attestations appear, the expressible conditions

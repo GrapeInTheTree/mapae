@@ -32,6 +32,7 @@ const BOOK: EnforcerBook = {
     periodEnforcer: addresses.periodEnforcer,
     payeeEnforcer: addresses.payeeEnforcer,
     timestampEnforcer: addresses.timestampEnforcer,
+    perPaymentEnforcer: addresses.perPaymentEnforcer,
     verifiedCodeEnforcer: addresses.verifiedCodeEnforcer,
 };
 
@@ -162,6 +163,18 @@ export function renderCondition(
                 lines: [
                     t("policy", "payeeLine", {payee: c.payees.map(label).join(", ")}),
                     t("policy", "payeeLine2"),
+                ],
+            };
+        case "perPayment":
+            return {
+                kind: c.kind,
+                title: t("policy", "perPayment"),
+                lines: [
+                    // The terms carry only the number - the token is whichever the payment
+                    // moves, in practice the period condition's. Formatted as the deployment's
+                    // payment token, which is what every issued policy uses.
+                    t("policy", "perPaymentLine", {max: fmtToken(addresses.mockKRW, c.max)}),
+                    t("policy", "perPaymentLine2"),
                 ],
             };
         case "window": {

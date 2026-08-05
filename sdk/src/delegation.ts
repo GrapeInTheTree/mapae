@@ -151,6 +151,13 @@ export function payeeTerms(payees: Address[]): Hex {
     return concatHex(payees);
 }
 
+/** PerPaymentLimitEnforcer: uint256 maxPerPayment. Zero is refused on-chain (an unset field is
+ *  a mistake, not a policy), so it is refused here too - before it becomes a signature. */
+export function perPaymentTerms(maxPerPayment: bigint): Hex {
+    if (maxPerPayment <= 0n) throw new Error("perPaymentTerms: cap must be positive");
+    return pad(toHex(maxPerPayment), {size: 32});
+}
+
 /** TimestampEnforcer: uint128 afterThreshold ‖ uint128 beforeThreshold (0 = unset). */
 export function timestampTerms(afterThreshold: bigint, beforeThreshold: bigint): Hex {
     return concatHex([

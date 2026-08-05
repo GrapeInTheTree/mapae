@@ -66,6 +66,7 @@ validated on-chain; a wrong length is a revert, never a truncation.
 | `ERC20PeriodTransferEnforcer` | 116 | `token(20) ‖ periodAmount(32) ‖ periodDuration(32) ‖ startDate(32)` |
 | `AllowedPayeeEnforcer` | 20 × N, N ≥ 1 | packed payee addresses; empty terms revert (deny by default) |
 | `TimestampEnforcer` | 32 | `afterThreshold(uint128) ‖ beforeThreshold(uint128)`, 0 = unset |
+| `PerPaymentLimitEnforcer` | 32 | `maxPerPayment(uint256)`; zero reverts (an unset field is a mistake, not a policy). Only `transfer` is recognised; the cap binds the SINGLE payment, the period enforcer the running total |
 | `VerifiedCodeEnforcer` | ≥ 33 | `attesterId(32) ‖ domain(string, non-empty tail)`; **args** carry `codeHash(32)`, supplied at redemption — unsigned but conjure-proof: the gate passes only if a live attestation for that hash exists under the signed issuer and domain |
 
 ### `DojangVerifiedEnforcer` semantics
@@ -106,6 +107,8 @@ ordering is pinned by `test_KillSwitches_AreOrthogonal`.
 | `InvalidEOASignature()` / `InvalidERC1271Signature()` | manager | signature does not bind the delegator |
 | `InvalidDelegate()` / `InvalidAuthority()` | manager | caller or chain linkage wrong |
 | `"ERC20PeriodTransferEnforcer:transfer-amount-exceeded"` | period cap | over the per-period allowance |
+| `PerPaymentCapExceeded(amount, cap)` | per-payment ceiling | a single payment above the signed ceiling |
+| `InvalidZeroCap()` | per-payment ceiling | terms carry a zero cap - refused at use, loudly |
 | `"TimestampEnforcer:expired-delegation"` / `"…early-delegation"` | window | outside the signed time range |
 
 The x402 facilitator maps these to stable machine reasons: `identity_not_verified`,

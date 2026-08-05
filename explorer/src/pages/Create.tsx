@@ -287,6 +287,12 @@ function PolicyForm({
                                 wallet. */}
                             <div className="grid gap-2.5 sm:grid-cols-2">
                                 <Toggle
+                                    on={f.usePerTx}
+                                    onChange={(v) => setF("usePerTx", v)}
+                                    label={t("create", "togglePerTx")}
+                                    hint={t("create", "togglePerTxHint")}
+                                />
+                                <Toggle
                                     on={f.usePayee}
                                     onChange={(v) => setF("usePayee", v)}
                                     label={t("create", "togglePayee")}
@@ -425,6 +431,21 @@ function PolicyForm({
                                     prefix="₩"
                                     suffix={t("create", "perPeriodSuffix", {period: periodLabel})}
                                 />
+                            </Field>
+                        )}
+                        {f.usePerTx && (
+                            <Field
+                                label={t("create", "perTx")}
+                                hint={t("create", "perTxHint")}
+                                suffix={
+                                    f.perTx > f.amount && f.amount > 0n ? (
+                                        <span className="text-[12px] text-reject-paper">
+                                            {t("create", "perTxAboveCap")}
+                                        </span>
+                                    ) : undefined
+                                }
+                            >
+                                <AmountInput value={f.perTx} onChange={(v) => setF("perTx", v)} prefix="₩" />
                             </Field>
                         )}
                         {fields.includes("period") && (
@@ -611,12 +632,16 @@ export default function Create() {
         form.usePayee &&
         filledPayees.some((x) => x.address.toLowerCase() === addresses.mockKRW.toLowerCase());
     const amountOk = form.amount > 0n;
+    // An enabled ceiling needs a positive value, and one above the period cap is a contradiction
+    // the form catches rather than shipping a policy whose ceiling can never bind.
+    const perTxOk = !form.usePerTx || (form.perTx > 0n && form.perTx <= form.amount);
     const formOk =
         agentOk &&
         merchantOk &&
         !merchantIsToken &&
         !duplicatePayee &&
         amountOk &&
+        perTxOk &&
         form.agentName.trim().length > 0;
 
     /**
@@ -652,7 +677,9 @@ export default function Create() {
                       ? t("create", "blockedDuplicatePayee")
                   : !amountOk
                     ? t("create", "blockedAmount")
-                    : null;
+                    : !perTxOk
+                      ? t("create", "blockedPerTx")
+                      : null;
 
     /**
      * Built as soon as the FORM is complete, not once a wallet is connected.
@@ -1082,7 +1109,14 @@ export default function Create() {
             const vars: Record<string, {v: string; cls: string}> = {
                 agent: {v: f.agentName, cls: "font-semibold text-paper-ink"},
                 merchant: {v: merchantLabel, cls: "font-semibold text-paper-ink"},
-                amount: {v: fmtToken(f.token, f.amount), cls: "tnum font-semibold text-bronze-solid"},
+                amount: {
+                    v:
+                        fmtToken(f.token, f.amount) +
+                        (f.usePerTx && f.perTx > 0n
+                            ? ` · ${t("create", "perTxInline", {v: fmtToken(f.token, f.perTx)})}`
+                            : ""),
+                    cls: "tnum font-semibold text-bronze-solid",
+                },
                 period: {v: periodLabel, cls: "font-semibold text-paper-ink"},
                 until: {v: until, cls: "font-semibold text-paper-ink"},
                 issuer: {v: issuerName(f.issuer, lang), cls: "font-semibold text-bronze-solid"},

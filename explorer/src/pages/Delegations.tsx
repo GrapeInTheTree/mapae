@@ -4,7 +4,7 @@ import type {Hex} from "viem";
 import {fetchDelegationList, type DelegationSummary} from "../lib/data";
 import {Card, CopyButton, Mono, Pagination, Spinner, StatusPill, Tag, relTime} from "../components/ui";
 import {useLang} from "../i18n";
-import {short} from "../lib/config";
+import {addresses, short} from "../lib/config";
 import {fmtDuration, fmtToken, issuerName, type Condition} from "../lib/policy";
 import * as store from "../lib/store";
 
@@ -284,6 +284,10 @@ export default function Delegations() {
                 return issuerName(c.attesterId, lang);
             case "period":
                 return `${fmtToken(c.token, c.amount)}/${fmtDuration(c.duration, lang)}`;
+            case "perPayment":
+                return lang === "ko"
+                    ? `회당 ${fmtToken(addresses.mockKRW, c.max)}`
+                    : `${fmtToken(addresses.mockKRW, c.max)}/payment`;
             case "payee":
                 return `→ ${c.payees.map((p) => short(p, 4)).join(", ")}`;
             case "window":

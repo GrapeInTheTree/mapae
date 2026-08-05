@@ -2,6 +2,7 @@ import type {Address, Hex} from "viem";
 import {
     dojangTerms,
     payeeTerms,
+    perPaymentTerms,
     periodTerms,
     timestampTerms,
     type Caveat,
@@ -23,6 +24,7 @@ export type Condition =
     | {kind: "identity"; attesterId: Hex; principal: Address}
     | {kind: "period"; token: Address; amount: bigint; duration: bigint; start: bigint}
     | {kind: "payee"; payees: Address[]}
+    | {kind: "perPayment"; max: bigint}
     | {kind: "window"; from: bigint; until: bigint}
     | {kind: "humanloop"; attesterId: Hex; domain: string}
     | {kind: "unknown"; enforcer: Address; terms: Hex};
@@ -35,6 +37,7 @@ export interface EnforcerBook {
     periodEnforcer: Address;
     payeeEnforcer: Address;
     timestampEnforcer: Address;
+    perPaymentEnforcer?: Address;
     verifiedCodeEnforcer?: Address;
 }
 
@@ -44,6 +47,7 @@ export const TERMS_BYTES: Partial<Record<ConditionKind, number>> = {
     identity: 52,
     period: 116,
     window: 32,
+    perPayment: 32,
 };
 
 const utf8ToHex = (s: string): Hex =>
@@ -68,6 +72,10 @@ export function encodeCondition(c: Condition, book: EnforcerBook): Caveat {
             };
         case "payee":
             return {enforcer: book.payeeEnforcer, terms: payeeTerms(c.payees), args: "0x"};
+        case "perPayment": {
+            if (!book.perPaymentEnforcer) throw new Error("perPaymentEnforcer is not deployed");
+            return {enforcer: book.perPaymentEnforcer, terms: perPaymentTerms(c.max), args: "0x"};
+        }
         case "window":
             return {
                 enforcer: book.timestampEnforcer,
@@ -129,6 +137,9 @@ export function decodeCondition(enforcer: Address, terms: Hex, book: EnforcerBoo
             const payees: Address[] = [];
             for (let i = 0; i < n; i += 20) payees.push(at(body, i, i + 20) as Address);
             return {kind: "payee", payees};
+        }
+        if (book.perPaymentEnforcer && eq(enforcer, book.perPaymentEnforcer) && n === 32) {
+            return {kind: "perPayment", max: BigInt(at(body, 0, 32))};
         }
         if (eq(enforcer, book.timestampEnforcer) && n === 32) {
             return {kind: "window", from: BigInt(at(body, 0, 16)), until: BigInt(at(body, 16, 32))};

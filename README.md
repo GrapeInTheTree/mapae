@@ -25,7 +25,7 @@ AI에게 지갑을 주지 마세요. 범위를 정한 권한만 주세요.
 <sub>
   <img alt="GIWA Sepolia" src="https://img.shields.io/badge/GIWA_Sepolia-91342-8A5A35?style=flat-square&labelColor=11100E">
   <img alt="Solidity" src="https://img.shields.io/badge/Solidity-0.8.29-8A5A35?style=flat-square&labelColor=11100E">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-153_passing-1D7A5F?style=flat-square&labelColor=11100E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-155_passing-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="Slither" src="https://img.shields.io/badge/Slither-0_high_·_0_medium-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-8A5A35?style=flat-square&labelColor=11100E">
 </sub>
@@ -74,7 +74,7 @@ demonstrably works and two programs agreeing with themselves.
 
 ## What is deployed
 
-GIWA Sepolia (chain 91342). All eight are source-verified on
+GIWA Sepolia (chain 91342). All nine are source-verified on
 [Blockscout](https://sepolia-explorer.giwa.io) — re-checkable with `pnpm check-verified`, which
 reads `is_verified` from the API rather than trusting that a browser displays source.
 
@@ -91,6 +91,7 @@ bytecode that someone else had verified. It is verified in its own right now.
 | `AllowedPayeeEnforcer` | [`0x7eF0…1bD1`](https://sepolia-explorer.giwa.io/address/0x7eF0f193B721B1749d890F1e231C8074670f1bD1) | Restricts the transfer *recipient*, not merely the target |
 | `ERC20PeriodTransferEnforcer` | [`0xE33b…C892`](https://sepolia-explorer.giwa.io/address/0xE33ba891fa502A075D3E422258723eF4cB6AC892) | MetaMask's audited period cap, vendored unmodified |
 | `TimestampEnforcer` | [`0x2911…cc02`](https://sepolia-explorer.giwa.io/address/0x2911cB5D4aeBCa3e42FAaa5488b6e04df3C9cc02) | MetaMask's time window, vendored unmodified |
+| `PerPaymentLimitEnforcer` | [`0x8900…93d8`](https://sepolia-explorer.giwa.io/address/0x8900b56d714b902b7AfdbeC4722a9b098C8993d8) | Caps a single payment; shapes the period budget into pieces. Proven live: [at the cap settles](https://sepolia-explorer.giwa.io/tx/0x3e922d55e1dfbbe705aaf80fef79ea4ad5a2042e6476d0b204aaebccdc159b0a), [one over is refused](https://sepolia-explorer.giwa.io/tx/0xdac9db98fe72c7aa67f043f7728e68815cd65ee9b1515b85494e4bf84a5c5eac) |
 | `VerifiedCodeEnforcer` | [`0x1C64…650e`](https://sepolia-explorer.giwa.io/address/0x1C640E0A70b1E18B120bB20952e81Df8F6b8650e) | Human-in-the-loop tier: redeems only while a live off-chain confirmation stands |
 | `MockKRW` | [`0x8bd7…4F2B`](https://sepolia-explorer.giwa.io/address/0x8bd74916E3427B4eF8Bed3D2F49241056E5e4F2B) | Testnet stand-in for a KRW stablecoin. Zero decimals, no value |
 
@@ -214,7 +215,7 @@ gas at all:
 ## Verification
 
 The demo is asserted, not screenshotted; every claim above has either a transaction hash or a
-test behind it. **153 tests**, all passing.
+test behind it. **155 tests**, all passing.
 
 | Layer | Count | What it proves |
 |---|---|---|
@@ -222,7 +223,7 @@ test behind it. **153 tests**, all passing.
 | Encoding conformance | 16 | Typehashes, hash exclusions (`signature`, `args` — fuzzed), ERC-7579 mode word and execution layout — pinned as literal constants, never recomputed |
 | Delegation chain | 16 | Re-delegation: a child cannot widen its parent's cap, broken authority links and forged grafts are refused, disabling the root kills a sub-agent nobody upstream has heard of. The only path that exercises ECDSA, since a child's delegator is an EOA where the root's is an account on ERC-1271 |
 | Manager API | 16 | Who may throw the kill switch, malformed batches, and two structural guarantees: no hook can re-enter redemption, and hook ordering across both a batch and a chain is pinned rather than assumed |
-| Enforcers and account | 77 | Forgery paths, execution-shape refusals, factory consent binding, and the vendored MetaMask code exercised rather than merely present |
+| Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding, and the vendored MetaMask code exercised rather than merely present |
 | Integration | 13 | The full T1–T8 demo through the real manager; batch atomicity; the 2×2 kill-switch matrix |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
 | Cross-language byte parity | 4 + 27 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
@@ -270,7 +271,7 @@ pnpm trace <any T1 hash>
 |---|---|
 | **EIP-7702 path** | Verified active on GIWA by behavioural test. The principal's EOA becomes the delegator directly — the Upbit-attested address itself holds the delegation, no account contract. The enforcer already accepts this shape (`principal == delegator`). |
 | **Graduated autonomy** | `VerifiedCodeEnforcer` is deployed and verified: Dojang's Verified Code attests an *off-chain human confirmation* (OTP-style, under a service domain), so high-value delegations can require a person in the loop per confirmation window while small ones run unattended — the historical mapae tiers, as caveats. Awaiting the first Verified Code issuer integration for a live flow; today only Upbit issues them, through its own channel. |
-| **More conditions** | Per-payment ceiling, lifetime total, call count, allowed function selector, and an approved-order hash that binds a payment to a purpose without any Dojang change. Visible in the Composer as *coming next*, deliberately not shipped before the user flow was complete. |
+| **More conditions** | Lifetime total, call count, allowed function selector, and an approved-order hash that binds a payment to a purpose without any Dojang change. The per-payment ceiling shipped first - deployed, verified, and proven live with a settle/refuse pair. |
 | **Attestation query API** | GIWA has no off-chain Dojang query surface ([docs/GAPS.md](docs/GAPS.md)). A Ponder-based index of real-issuer attestations and Mapae redemptions is measured and scoped. |
 | **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. The Composer is already that screen. |
 | **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |

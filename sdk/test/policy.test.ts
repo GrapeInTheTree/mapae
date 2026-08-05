@@ -29,6 +29,7 @@ const BOOK: EnforcerBook = {
     payeeEnforcer: "0x3333333333333333333333333333333333333333",
     timestampEnforcer: "0x4444444444444444444444444444444444444444",
     verifiedCodeEnforcer: "0x5555555555555555555555555555555555555555",
+    perPaymentEnforcer: "0x6666666666666666666666666666666666666666",
 };
 
 const A = (n: string): Address => `0x${n.repeat(40).slice(0, 40)}`;
@@ -55,6 +56,9 @@ const CASES: Condition[] = [
     },
     {kind: "payee", payees: [A("e")]},
     {kind: "payee", payees: [A("1"), A("2"), A("3")]},
+    {kind: "perPayment", max: 1n},
+    {kind: "perPayment", max: 10_000n},
+    {kind: "perPayment", max: (1n << 256n) - 1n},
     {kind: "window", from: 0n, until: 1_760_000_000n},
     {kind: "window", from: 1n, until: 0n},
     // uint128 max on both halves: the two fields must not bleed into each other.

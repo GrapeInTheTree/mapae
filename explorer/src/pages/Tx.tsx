@@ -22,6 +22,7 @@ type Kind =
     | "identity"
     | "payee"
     | "period"
+    | "perTx"
     | "window"
     | "disabled"
     | "notDelegate"
@@ -34,6 +35,7 @@ function classify(reason: string): Kind {
     if (reason.startsWith("NotDojangVerified")) return "identity";
     if (reason.startsWith("PayeeNotAllowed")) return "payee";
     if (reason.includes("transfer-amount-exceeded")) return "period";
+    if (reason.startsWith("PerPaymentCapExceeded")) return "perTx";
     if (reason.includes("expired-delegation") || reason.includes("not-yet-valid")) return "window";
     if (reason.startsWith("CannotUseADisabledDelegation")) return "disabled";
     if (reason.startsWith("InvalidDelegate")) return "notDelegate";
@@ -74,13 +76,16 @@ export default function Tx() {
     /** The signed condition the revert points at, when it points at one. This is what lets the
      *  trace mark the exact card that refused, instead of leaving the reader to map an error
      *  string onto a grid of conditions themselves. */
-    const culprit: "identity" | "payee" | "period" | "window" | null =
+    // "perTx" is the classification; "perPayment" is the condition kind it points at.
+    const culprit: "identity" | "payee" | "period" | "perPayment" | "window" | null =
         rejectionKind === "identity" ||
         rejectionKind === "payee" ||
         rejectionKind === "period" ||
         rejectionKind === "window"
             ? rejectionKind
-            : null;
+            : rejectionKind === "perTx"
+              ? "perPayment"
+              : null;
 
     let step = 0;
     const next = () => ++step;
