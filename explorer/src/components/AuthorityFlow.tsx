@@ -13,11 +13,11 @@ import {useLang} from "../i18n";
  * and it stops there, visibly, with the reason. The identity gate is the one that matters: turn
  * it off and a valid signature, an unspent limit and an allowed payee are not enough.
  *
- * The gates are drawn as the object the product is named for: slender tablets, like the copper
- * mapae a rider carried, hung above the ledger line. The travelling point is the centre of the
- * Split Seal - the only part of the mark that has to be earned each time. The earlier version
- * drew labelled boxes with "on/off" captions, which explained itself like a toy; a tablet that
- * dims when revoked needs no caption.
+ * The gates are seal nodes ON the ledger line - small diamonds, the stamp of the Split Seal.
+ * A node fills with light as the payment passes it, goes hollow when its condition is revoked,
+ * and turns red when it is the one refusing. Two earlier versions drew boxes above the line
+ * (first captioned "on/off" like a toy, then engraved tablets); both made the line carry
+ * furniture. The line is the picture - the gates had to live on it.
  *
  * Motion, not rAF-into-setState: the pulse rides a spring, a refusal lands hard and rings, and
  * none of it touches the render cycle.
@@ -25,8 +25,7 @@ import {useLang} from "../i18n";
 
 type GateId = "identity" | "period" | "perTx" | "payee" | "window";
 
-const RAIL = 108; // y of the ledger line inside the track
-const TABLET_H = 78;
+const RAIL = 84; // y of the ledger line inside the track
 
 /** Fraction along the track, 0 at the account and 1 at the merchant. */
 const GATES: {id: GateId; at: number}[] = [
@@ -56,55 +55,6 @@ const ALL_OPEN: Record<GateId, boolean> = {
 };
 
 const HOLD_MS = 2400;
-
-/** Engraved marks, one per condition - read at a glance, no caption needed. */
-function Glyph({id}: {id: GateId}) {
-    const common = {
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: 1.6,
-        strokeLinecap: "round" as const,
-        strokeLinejoin: "round" as const,
-    };
-    switch (id) {
-        case "identity": // the seal: a ring earned around a centre
-            return (
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                    <circle cx="9" cy="9" r="5.6" {...common} />
-                    <circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none" />
-                </svg>
-            );
-        case "period": // the won mark: what a window may spend
-            return (
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                    <path d="M4 5.2l2.1 7 1.9-5.2 1.9 5.2 2.1-7" {...common} />
-                    <path d="M3.4 8.6h11.2" {...common} />
-                </svg>
-            );
-        case "perTx": // one coin, bracketed: the single payment, bounded
-            return (
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                    <path d="M5.2 4.2H3.6v9.6h1.6" {...common} />
-                    <path d="M12.8 4.2h1.6v9.6h-1.6" {...common} />
-                    <circle cx="9" cy="9" r="2.3" {...common} />
-                </svg>
-            );
-        case "payee": // an arrow that must land on the named door
-            return (
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                    <path d="M3 9h7.6M8 6.4 10.6 9 8 11.6" {...common} />
-                    <path d="M14.4 4.6v8.8" {...common} />
-                </svg>
-            );
-        case "window": // the clock the signature dies by
-            return (
-                <svg width="18" height="18" viewBox="0 0 18 18">
-                    <circle cx="9" cy="9" r="5.6" {...common} />
-                    <path d="M9 6v3.2l2.1 1.3" {...common} />
-                </svg>
-            );
-    }
-}
 
 export function AuthorityFlow() {
     const {t} = useLang();
@@ -192,10 +142,10 @@ export function AuthorityFlow() {
             </div>
 
             {/* -------------------------------- the track ------------------------------- */}
-            {/* Tablets hang ABOVE the ledger line on stems; names sit below it. Nothing crosses
-                anything: the earlier box-on-the-rail layout parked the pulse inside a card. */}
-            <div className="relative px-6 pt-8 pb-4 sm:px-8">
-                <div ref={trackRef} className="relative h-[164px]">
+            {/* Seal nodes ON the line. Names float above each node; the node itself is the
+                switch, with a generous invisible hit area. Nothing hangs, nothing crosses. */}
+            <div className="relative px-6 pt-6 pb-4 sm:px-8">
+                <div ref={trackRef} className="relative h-[140px]">
                     {GATES.map((g) => {
                         const isOpen = open[g.id];
                         const passed = isOpen && arrived && (!blocker || g.at < blocker.at);
@@ -208,88 +158,62 @@ export function AuthorityFlow() {
                             <button
                                 key={g.id}
                                 onClick={() => setOpen((o) => ({...o, [g.id]: !o[g.id]}))}
-                                style={{left: `${pos(g) * 100}%`}}
+                                style={{left: `${pos(g) * 100}%`, top: RAIL}}
                                 aria-pressed={!isOpen}
                                 aria-label={t("home", `flow${cap(g.id)}` as never)}
                                 title={t("home", `flow${cap(g.id)}` as never)}
-                                className="group absolute top-0 z-[5] -translate-x-1/2 focus:outline-none"
+                                className="group absolute z-[5] flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center focus:outline-none"
                             >
-                                {/* The tablet. Revoking it dims the stone; no caption needed. */}
+                                {/* The seal: a diamond stamped on the line. Filled while lit,
+                                    hollow when revoked, red when refusing. */}
                                 <motion.span
                                     animate={
                                         justBlocked && !reduced
-                                            ? {x: [0, -5, 5, -3, 3, 0], scale: 1.04}
-                                            : {x: 0, scale: passed ? 1.03 : 1}
+                                            ? {rotate: [45, 38, 52, 42, 48, 45], scale: 1.12}
+                                            : {rotate: 45, scale: passed ? 1.15 : blocking ? 1.12 : 1}
                                     }
                                     transition={
                                         justBlocked
                                             ? {duration: 0.42, ease: "easeOut"}
-                                            : {type: "spring", stiffness: 320, damping: 22}
+                                            : {type: "spring", stiffness: 320, damping: 20}
                                     }
                                     style={{
-                                        height: compact ? 60 : TABLET_H,
-                                        width: compact ? 34 : 40,
-                                        background: blocking
-                                            ? "linear-gradient(180deg, color-mix(in srgb, var(--color-reject) 16%, var(--color-surface-2)), var(--color-surface))"
-                                            : dimmedOff
-                                              ? "var(--color-ink-bg, #141311)"
-                                              : "linear-gradient(180deg, var(--color-surface-2), var(--color-surface))",
-                                        boxShadow: passed
-                                            ? "0 0 18px color-mix(in srgb, var(--color-bronze) 22%, transparent), 0 8px 18px rgba(0,0,0,.35)"
-                                            : "0 8px 18px rgba(0,0,0,.35)",
+                                        boxShadow: blocking
+                                            ? "0 0 16px color-mix(in srgb, var(--color-reject) 45%, transparent)"
+                                            : passed
+                                              ? "0 0 16px color-mix(in srgb, var(--color-bronze) 40%, transparent)"
+                                              : "none",
                                     }}
-                                    className={`flex flex-col items-center justify-center rounded-[11px] border transition-colors duration-300 ${
+                                    className={`block h-[13px] w-[13px] rounded-[3px] border transition-colors duration-300 ${
                                         blocking
-                                            ? "border-reject text-reject"
+                                            ? "border-reject bg-reject/80"
                                             : dimmedOff
-                                              ? "border-line text-mute/60"
+                                              ? "border-line-strong bg-surface"
                                               : passed
-                                                ? "border-bronze-dim text-bronze-bright"
-                                                : "border-line-strong text-ink-2 group-hover:border-bronze-dim group-hover:text-bronze-bright"
+                                                ? "border-bronze-bright bg-bronze-bright"
+                                                : "border-bronze-dim bg-surface-2 group-hover:border-bronze-bright"
                                     }`}
-                                >
-                                    <Glyph id={g.id} />
-                                    {/* The tablet's own seal point: lit while the condition holds. */}
-                                    <span
-                                        className={`mt-2 block h-1 w-1 rounded-full transition-colors duration-300 ${
-                                            blocking
-                                                ? "bg-reject"
-                                                : dimmedOff
-                                                  ? "bg-line-strong"
-                                                  : passed
-                                                    ? "bg-bronze-bright"
-                                                    : "bg-jade"
-                                        }`}
-                                    />
-                                </motion.span>
-                                {/* Stem down to the ledger line. */}
-                                <span
-                                    className={`mx-auto block w-px transition-colors duration-300 ${
-                                        blocking ? "bg-reject/70" : passed ? "bg-bronze-dim" : "bg-line-strong"
-                                    }`}
-                                    style={{height: RAIL - (compact ? 60 : TABLET_H)}}
                                 />
+                                {/* The name, floating above its node. Hidden on phones - the
+                                    verdict line carries the words there. */}
+                                {!compact && (
+                                    <span
+                                        className={`caps pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-semibold whitespace-nowrap transition-colors duration-300 ${
+                                            blocking
+                                                ? "text-reject"
+                                                : dimmedOff
+                                                  ? "text-mute/45 line-through"
+                                                  : passed
+                                                    ? "text-bronze-bright"
+                                                    : "text-mute group-hover:text-ink-2"
+                                        }`}
+                                    >
+                                        {t("home", `flow${cap(g.id)}` as never)}
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
-
-                    {/* Names, under the line - the tablets stay stone. */}
-                    {!compact &&
-                        GATES.map((g) => (
-                            <span
-                                key={`label-${g.id}`}
-                                style={{left: `${pos(g) * 100}%`, top: RAIL + 12}}
-                                className={`caps absolute -translate-x-1/2 text-[10px] font-semibold transition-colors duration-300 ${
-                                    blocker?.id === g.id
-                                        ? "text-reject"
-                                        : open[g.id]
-                                          ? "text-mute"
-                                          : "text-mute/50"
-                                }`}
-                            >
-                                {t("home", `flow${cap(g.id)}` as never)}
-                            </span>
-                        ))}
 
                     {/* The ledger line, and over it the distance actually travelled - drawn as
                         light: a glow layer under a bright core. */}

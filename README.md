@@ -65,8 +65,9 @@ The delegation layer did not need to be told. It reads identity liveness at the 
 so revoking who you are revokes everything you delegated. No other agent-payment stack has this
 property, because no other chain has an exchange-issued identity layer to anchor it to.
 
-All twenty demo transactions — payments, and every category of rejection with its decoded
-error — are public and clickable in **[docs/DEMO.md](docs/DEMO.md)**. Four of them were signed by
+Every category of settlement and refusal is live on the ledger — period cap, per-payment
+ceiling, unlisted payee, expired window, disabled delegation, revoked identity — each with its
+decoded error, public and clickable in **[docs/DEMO.md](docs/DEMO.md)**. Four of them were signed by
 a person in MetaMask rather than by a script, which is the difference between a system that
 demonstrably works and two programs agreeing with themselves.
 
@@ -228,7 +229,7 @@ test behind it. **155 tests**, all passing.
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
 | Cross-language byte parity | 4 + 33 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
-| Live transactions | 20 | The T1–T8 demo, the facilitator flow, and four signed in MetaMask through the Composer |
+| Live transactions | every path | The full demo matrix, the facilitator flow, a six-persona campaign collecting every refusal kind, and four signed by a person in MetaMask |
 | Source verification | 8 of 8 | Every deployed contract, checked against Blockscout's API by `pnpm check-verified` |
 
 Development surfaced real bugs before deployment, each caught by a verification layer doing its
