@@ -79,8 +79,9 @@ pnpm install && pnpm fixtures && pnpm demo
 
 ## x402 facilitator - the erc7710 path, live
 
-An HTTP facilitator ([gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator),
-`feat/giwa-erc7710`) settling Mapae delegations. The client signed two typed-data payloads and
+An HTTP facilitator ([gosuda/x402-facilitator, branch
+`feature/erc7710`](https://github.com/gosuda/x402-facilitator/tree/feature/erc7710)) settling
+Mapae delegations. The client signed two typed-data payloads and
 spoke HTTP - it broadcast nothing and needed no gas. The facilitator held no policy and no funds:
 verification is simulation of the delegation manager, and every cap, payee, window and identity
 check ran on-chain.

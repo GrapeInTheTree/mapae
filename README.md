@@ -228,9 +228,10 @@ settle **more than once**. This is not a niche rail: x402 has settled 157M+ paym
 (July 2026), and the foundation governing it — under the Linux Foundation, alongside Coinbase,
 Google, Visa and Mastercard — counts **KakaoPay as its only Korean founding member**.
 
-Mapae plugs into that slot. The
-[gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator) (branch
-`feat/giwa-erc7710`) settles Mapae delegations while holding **no policy and no funds**: every
+Mapae plugs into that slot. The `erc7710` method is
+[implemented upstream in gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator/tree/feature/erc7710)
+— contributed as a general implementation against any pinned ERC-7710 manager, not as a Mapae
+adapter — and it settles Mapae delegations while holding **no policy and no funds**: every
 cap, payee, window, and identity check runs on-chain, and the facilitator's key pays gas and
 nothing else. Proven live — the client signed two typed-data payloads and spoke HTTP, needing no
 gas at all:
