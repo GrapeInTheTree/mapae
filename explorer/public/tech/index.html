@@ -293,10 +293,20 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        논지를 분명하게 만듭니다. 한도도 신원도 확인하지 않는 결제 수단에는 그런 거래가 먼저
        모이고, 실제 상거래는 <strong>책임질 주체가 생긴 뒤에야</strong> 들어오기 때문입니다.
        마패가 만들려는 것이 그 층입니다.</p>
-    <p>수탁형 접근에는 이제 이름이 붙었습니다. 2026년 8월 Cloudflare가 발표한 Wallets가 같은
-       문제를 수탁 계정과 서버측 한도로 풉니다. 가볍게 써볼 용도라면 맞는 답입니다. 다만 한도를
-       강제하는 주체가 발급자 자신이고, 신원은 자기 선언에 머뭅니다. 책임이 필요한 자리에 남는
-       이 공백이 이 문서가 다루려는 주제입니다.</p>
+    <p>2026년 8월 4일 Cloudflare가 발표한 <strong>Wallets</strong>는 이 문제를 인프라 사업자
+       쪽에서 봅니다. 그들이 적은 문제는 <em>"에이전트에게는 API에 가입할 안정적인 식별자도,
+       API 값을 낼 방법도 없다"</em>입니다. 그래서 Account Wallet 아래에 Virtual Wallet을 두고,
+       자식 지갑의 한도를 부모가 정한 값으로 묶습니다. 결제는 x402로 나갑니다.</p>
+    <p>구조가 우리 재위임과 닮았다는 점이 흥미롭습니다. 다만 <strong>그 한도를 지키는 것이
+       그들의 인프라</strong>이고, 우리 쪽은 체인입니다. 부모를 넘으려는 자식이 어떻게 되는지를
+       우리는 세 단계 아래에서 실제 트랜잭션으로 보여 줄 수 있습니다(<a href="#s9">09절</a>).</p>
+    <p>신원에 대해서는 그들이 직접 이렇게 적었습니다. <em>"에이전트가 자신의 신원을 밝히는 것은
+       완전히 선택 사항"</em>이며, 밝히더라도 <code>research.example.cloudflare.pay</code> 같은
+       <strong>이름</strong>입니다. 이름은 누가 발급했는지를 말해 주지 않습니다. 책임이 필요한
+       자리에 남는 이 공백이 이 문서가 다루려는 주제입니다.</p>
+    <p class="cap">덧붙이면, 이 글이 쓰인 시점에 Wallets는 아직 쓸 수 있는 상태가 아닙니다.
+       발표문 자체가 "곧 설정하고 사용할 수 있게 된다"고 적고 있고, 현재 열려 있는 것은 핸들
+       선점뿐입니다. 여기서 비교하는 것은 제품이 아니라 <strong>설계가 답하기로 한 질문</strong>입니다.</p>
     <p>비수탁 방식 가운데 가장 가까운 것은 코인베이스의 <strong>Spend Permissions</strong>입니다.
        잘 만들어져 널리 쓰이고 있으며, 무엇보다 <em>지출 한도</em>라는 개념이 무엇을 정하지 않은
        채 남겨두는지 가장 빠르게 보여줍니다. 수취인을 받는 인자가 없습니다. 정확히 말하면
@@ -1190,11 +1200,23 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        rather than weakening it. Rails that carry no cap and no identity fill with exactly that
        traffic first; real commerce arrives <strong>after someone can be held responsible</strong>.
        That layer is what Mapae builds.</p>
-    <p>The custodial approach now has a name: Cloudflare Wallets, announced in August 2026,
-       answers the same problem with custodial accounts and server-side limits. For an exploration
-       budget that is the right answer. But the limits are enforced by their issuer, and identity
-       stays self-declared &mdash; the gap that remains where accountability is required is this
-       document's subject.</p>
+    <p>Cloudflare announced <strong>Wallets</strong> on 4 August 2026, approaching this from the
+       infrastructure side. The problem as they state it is that <em>"agents do not have a stable
+       identifier to sign up for an API, and they do not have a native way to pay for APIs"</em>.
+       Their answer nests Virtual Wallets under an Account Wallet, each child <em>"capped by the
+       limit set by the owner of the Account Wallet"</em>, paying out over x402.</p>
+    <p>The shape is close to our re-delegation, and the difference is who holds it up:
+       <strong>their infrastructure enforces those caps</strong>, and here the chain does. What
+       happens to a child that reaches past its parent is something we can show three hops down,
+       as a transaction anyone can open (<a href="#e9">section 09</a>).</p>
+    <p>On identity they are explicit: <em>"It will be completely optional for agents to choose to
+       declare their identity"</em>, and what is declared is a <strong>name</strong> like
+       <code>research.example.cloudflare.pay</code>. A name does not say who issued it. That gap,
+       where accountability is required, is this document's subject.</p>
+    <p class="cap">Worth noting that Wallets is not usable yet as of writing &mdash; the
+       announcement says you will be able to set one up "soon", and what is open today is handle
+       claims. The comparison here is between designs and the questions they chose to answer, not
+       between shipped products.</p>
     <p>On the non-custodial side the closest thing is Coinbase's <strong>Spend Permissions</strong>.
        It is well built and widely used, and reading it is the fastest way to see what a spending
        allowance leaves undecided. There is no recipient parameter &mdash; more precisely, there is
