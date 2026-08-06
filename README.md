@@ -421,9 +421,10 @@ races on GIWA's load-balanced public endpoint are documented in [docs/GAPS.md](d
 ```bash
 git clone --recursive https://github.com/GrapeInTheTree/mapae && cd mapae
 
-# everything: 157 unit, integration and invariant tests, plus 15 against two live chains.
-# No configuration - the fork suites default to public endpoints. Set GIWA_SEPOLIA_RPC_URL
-# or ETH_SEPOLIA_RPC_URL only to point them somewhere else.
+# everything: 157 unit, integration and invariant tests, plus 15 forked against GIWA Sepolia
+# and Ethereum Sepolia. No configuration - the fork suites default to public endpoints, and
+# report SKIP rather than failing if one is down. Set GIWA_SEPOLIA_RPC_URL or
+# ETH_SEPOLIA_RPC_URL to point them elsewhere.
 forge test
 
 # cross-language byte parity and the policy codec

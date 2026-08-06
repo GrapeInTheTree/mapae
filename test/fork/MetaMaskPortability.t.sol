@@ -60,6 +60,14 @@ contract MetaMaskPortabilityTest is Test {
     /// Source: MetaMask/delegation-framework documents/Deployments.md
     address internal constant METAMASK_DELEGATION_MANAGER = 0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3;
 
+    /// True when the fork actually came up.
+    ///
+    /// `forge test` is the first command anyone runs after cloning, and these two suites are the
+    /// only ones that can fail for a reason that is not ours: a public endpoint being down, rate
+    /// limiting, or a timeout while the fork pulls state. Failing the whole run on that teaches a
+    /// reader the repository is broken when it is the internet that is having a moment. Caught
+    /// here and reported as SKIP, so a green run means what it says and a skipped one is legible.
+    bool internal forked;
     string internal constant ETH_SEPOLIA_PUBLIC_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
 
     bytes32 internal constant ATTESTER = keccak256("dojang.dojangattesterids.upbitkorea");
@@ -85,7 +93,11 @@ contract MetaMaskPortabilityTest is Test {
         // Defaulted, for the same reason DojangFork defaults its own: a fresh clone has no .env,
         // and `forge test` failing on that reads as a broken repository rather than a missing
         // setting. Set the variable to use a different endpoint.
-        vm.createSelectFork(vm.envOr("ETH_SEPOLIA_RPC_URL", string(ETH_SEPOLIA_PUBLIC_RPC)));
+        try vm.createSelectFork(vm.envOr("ETH_SEPOLIA_RPC_URL", string(ETH_SEPOLIA_PUBLIC_RPC))) {
+            forked = true;
+        } catch {
+            return;
+        }
 
         // A seed whose address is not already occupied on the live chain.
         //
@@ -117,7 +129,8 @@ contract MetaMaskPortabilityTest is Test {
     }
 
     /// @notice The address holds their manager, and it answers as a delegation manager should.
-    function test_TheirManagerIsLiveAndSpeaksTheSameProtocol() public view {
+    function test_TheirManagerIsLiveAndSpeaksTheSameProtocol() public {
+        vm.skip(!forked);
         assertGt(METAMASK_DELEGATION_MANAGER.code.length, 1000, "their manager is not deployed here");
         assertTrue(theirDomain != bytes32(0), "their EIP-712 domain did not read back");
     }
@@ -128,6 +141,7 @@ contract MetaMaskPortabilityTest is Test {
     ///      validates the signature, walks the chain and calls those conditions belongs to
     ///      MetaMask. If the structures had drifted by one byte, this reverts.
     function test_TheirManagerSettlesAMapaeDelegation() public {
+        vm.skip(!forked);
         Delegation memory d_ = _signed(_mapaeCaveats());
 
         vm.prank(agent);
@@ -143,6 +157,7 @@ contract MetaMaskPortabilityTest is Test {
     ///      else's redemption path: nothing about the delegation changed except who the principal
     ///      is to the identity registry.
     function test_TheirManagerRefusesWhenIdentityIsRevoked() public {
+        vm.skip(!forked);
         Delegation memory d_ = _signed(_mapaeCaveats());
         scroll.revoke(alice.addr, ATTESTER);
 
@@ -155,6 +170,7 @@ contract MetaMaskPortabilityTest is Test {
 
     /// @notice The payee set refuses an address outside it, under their manager.
     function test_TheirManagerRefusesAnUnlistedPayee() public {
+        vm.skip(!forked);
         Delegation memory d_ = _signed(_mapaeCaveats());
 
         vm.prank(agent);
@@ -166,6 +182,7 @@ contract MetaMaskPortabilityTest is Test {
 
     /// @notice The per-payment ceiling refuses one over, under their manager.
     function test_TheirManagerRefusesOverTheCeiling() public {
+        vm.skip(!forked);
         Delegation memory d_ = _signed(_mapaeCaveats());
 
         vm.prank(agent);
