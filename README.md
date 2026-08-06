@@ -191,6 +191,34 @@ pnpm preflight <your wallet>      # gas, attestation, account, funds - each with
 pnpm redeem <permission context>  # spend a Mapae the browser issued
 ```
 
+## The agent surface — MCP
+
+The three surfaces above are for the person. The agent's surface is MCP: `npx mapae-mcp`,
+published to npm, gives any MCP-speaking model seven tools that map to what a delegate can do
+on-chain — and nothing more. There is deliberately no tool to issue or revoke. Issuance is the
+principal's EIP-712 signature, and a server holding that key would be handing the agent the
+wallet; revocation belongs to the delegator alone, enforced by the manager itself. What the
+agent can do is ask: `request_permission` composes the whole policy — period cap, per-payment
+ceiling, one or many named payees — into a link, and the Composer opens with that policy armed,
+spelled out as a sentence, waiting for a signature only the person can give.
+
+Payment is structurally confined. The token and the allowed payees come from the signed policy,
+never from arguments. When the policy allows several payees, the `payee` argument chooses among
+them, and an address outside the signed list is rejected before a transaction exists — a prompt
+injection that fully controls the model can, at worst, pick which of the approved merchants gets
+paid. Refusals come back as results carrying the enforcer's decoded reason, because a refusal is
+the system working.
+
+`mcp/harness.ts` exercises the built server over stdio JSON-RPC, exactly as a model's client
+would: it paid both allowed payees of a live authority —
+[₩700 to the first](https://sepolia-explorer.giwa.io/tx/0x18ee370c2e6321801a528629f7061542150c312ea2080c3584d3064577c2e332),
+[₩300 to the second by name](https://sepolia-explorer.giwa.io/tx/0x26a8e5ac484cb1122ec18f9b337be30f895d007f6370ff0a8c795e43b2913843)
+— had an outsider rejected without a transaction, was refused on-chain with
+[`PerPaymentCapExceeded(1500, 1000)`](https://sepolia-explorer.giwa.io/tx/0x8091a929dc6f3f72d51d1b824924dd38ab71804692135b43895dca785adc3e5a),
+and signed a two-hop child authority narrowed to ₩500/day and ₩200 per payment without any
+transaction. The package on npm was then verified cold — fresh cache, throwaway profile,
+straight from the registry — to behave as shipped.
+
 ## The x402 path
 
 x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of them — `eip3009`,
@@ -229,7 +257,7 @@ test behind it. **155 tests**, all passing.
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
 | Cross-language byte parity | 4 + 33 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
-| Live transactions | every path | The full demo matrix, the facilitator flow, a six-persona campaign collecting every refusal kind, and four signed by a person in MetaMask |
+| Live transactions | every path | The full demo matrix, the facilitator flow, a six-persona campaign collecting every refusal kind, four signed by a person in MetaMask, and the MCP server paying, choosing among payees, and being refused over stdio |
 | Source verification | 8 of 8 | Every deployed contract, checked against Blockscout's API by `pnpm check-verified` |
 
 Development surfaced real bugs before deployment, each caught by a verification layer doing its
@@ -285,6 +313,7 @@ pnpm trace <any T1 hash>
 - [docs/SPEC.md](docs/SPEC.md) — byte-level terms layouts, typehashes, conformance
 - [docs/GAPS.md](docs/GAPS.md) — measured ecosystem gaps, with the measurements
 - [docs/ERC7715.md](docs/ERC7715.md) — the wallet-integration mapping
+- [mcp/README.md](mcp/README.md) — the MCP server: the seven tools, and what is deliberately absent
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deploying the explorer, and why it has no backend
 
 ## License

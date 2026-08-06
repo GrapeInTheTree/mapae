@@ -440,7 +440,9 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <h2><span class="num">11</span>에이전트 연동</h2>
     <p><code>npx mapae-mcp</code>. MCP는 AI 에이전트에 외부 도구를 꽂는 표준 규격이고, 마패는 이
        규격의 서버로 npm에 배포되어 있다. 클로드 코드·코덱스 같은 에이전트에 설치 한 줄이면
-       붙고, 그다음부터는 전부 자연어다.</p>
+       붙고, 그다음부터는 전부 자연어다. 권한 요청도 여기서 시작한다 — 기간 한도·회당 한도·
+       복수 수취인까지 담은 링크를 만들어 사람에게 건네면, 발급 화면이 그 정책을 한 문장으로
+       펼쳐 놓고 서명만 기다린다.</p>
     <div class="scroll"><table>
         <tr><th>도구</th><th>하는 일</th></tr>
         <tr><td><code>list_permissions</code></td><td>보유한 마패 목록과 각각의 조건</td></tr>
@@ -909,7 +911,9 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <h2><span class="num">11</span>Agent integration</h2>
     <p><code>npx mapae-mcp</code>. MCP is the standard for attaching external tools to an AI agent,
        and Mapae ships as such a server on npm. One line to install, no configuration; everything
-       after that is natural language.</p>
+       after that is natural language. The request begins here too &mdash; the server composes a
+       link carrying the whole policy, per-payment ceiling and named payees included, and the
+       Create screen opens with it spelled out as one sentence, waiting for the signature.</p>
     <div class="scroll"><table>
         <tr><th>Tool</th><th>What it does</th></tr>
         <tr><td><code>list_permissions</code></td><td>Held delegations and the conditions on each</td></tr>

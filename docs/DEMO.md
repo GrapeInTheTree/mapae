@@ -98,6 +98,27 @@ Chain: principal -> agent (4 caveats) -> facilitator settlement signer `0x0Cde5B
 Merchant received exactly ₩40,000 across two settlements of ONE signed payload - multi-use is the
 property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM spec.
 
+## The MCP surface - an agent paid, chose, and was refused over stdio
+
+`mcp/harness.ts` plays both roles: phase 1 is the human, signing a fresh authority - ₩5,000/day,
+₩1,000 per payment, TWO allowed payees; phase 2 speaks only stdio JSON-RPC to the built server,
+the way a model's MCP client does. Amounts are chosen so exactly one condition can refuse each
+step.
+
+| Step | Result | Tx |
+|---|---|---|
+| `pay 700` | PAID to the first allowed payee - the default | [0x18ee370c…](https://sepolia-explorer.giwa.io/tx/0x18ee370c2e6321801a528629f7061542150c312ea2080c3584d3064577c2e332) |
+| `pay 300, payee=second` | PAID - the argument chose among the SIGNED list | [0x26a8e5ac…](https://sepolia-explorer.giwa.io/tx/0x26a8e5ac484cb1122ec18f9b337be30f895d007f6370ff0a8c795e43b2913843) |
+| `pay 100` to an outsider | NOT_IN_POLICY - rejected before any transaction existed, zero gas | - |
+| `pay 1,500` | REFUSED on-chain: `PerPaymentCapExceeded(1500, 1000)` - the day budget had ₩4,000 of room | [0x8091a929…](https://sepolia-explorer.giwa.io/tx/0x8091a929dc6f3f72d51d1b824924dd38ab71804692135b43895dca785adc3e5a) |
+| `redelegate` cap 500, per-payment 200 | a two-hop child carrying both narrowing caveats, signed with no transaction | - |
+
+The package on npm (`mapae-mcp@0.6.0`) was then verified cold from the registry - fresh npm
+cache, throwaway profile - confirming the request link it composes carries the whole policy
+shape (`perTx` ceiling, named payees), which the Composer arms on open.
+
+Reproduce: `pnpm tsx mcp/harness.ts` (uses the demo keys from `.env.example`).
+
 ## The product path - a person signed these in a browser
 
 Every transaction above was produced by a script that built its own delegation and then spent it:
