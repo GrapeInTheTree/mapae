@@ -165,3 +165,24 @@ pnpm preflight <your wallet>     # gas, attestation, account, funds - each with 
 cd explorer && pnpm dev          # issue one, copy the permission context
 pnpm redeem <context> [amount]   # spend it as the agent; payee and policy come from the signature
 ```
+
+## x402 facilitator - the erc7710 path, live
+
+An HTTP facilitator ([gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator),
+`feat/giwa-erc7710`) settling Mapae delegations. The client signed two typed-data payloads and
+spoke HTTP - it broadcast nothing and needed no gas. The facilitator held no policy and no funds:
+verification is simulation of the delegation manager, and every cap, payee, window and identity
+check ran on-chain.
+
+Chain: principal -> agent (4 caveats) -> facilitator settlement signer `0x0Cde5B7742B2C67c5BF6f5aEa339db868684336a`.
+
+| Step | Result | Tx |
+|---|---|---|
+| F1 /verify 20,000 | isValid=true, payer=0x4b6B26Cc68011FB4e9c9B6C0a4E15df040BFc23e (the account, not the agent) | - |
+| F2 /verify 60,000 | isValid=false, reason=delegation_cap_exceeded - the facilitator evaluated NO policy; the chain did | - |
+| F3 /settle 20,000 | success, gas paid by facilitator, funds account->merchant | [0xf91e431c…](https://sepolia-explorer.giwa.io/tx/0xf91e431cfc021f898e20a18e94f24495ac0bb0c2dba6168a4887aac15dda0f40) |
+| F4 /settle 20,000 again | success - one payload, second settlement. An EIP-3009 authorization cannot do this | [0x4c792c10…](https://sepolia-explorer.giwa.io/tx/0x4c792c1025f3cf668fb678cd2771d9438e6bd923ce7d6aa1e65fbc5812d128d8) |
+| F5 /settle third 20,000 | rejected before broadcast: reason=delegation_cap_exceeded - fee payer wasted zero gas | - |
+
+Merchant received exactly ₩40,000 across two settlements of ONE signed payload - multi-use is the
+property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM spec.
