@@ -54,10 +54,18 @@ executing under `eth_call` state override) all confirm Prague — and a CLZ prob
 yet no GIWA document mentions the fork level. Builders deserve a statement here; 7702 changes
 what account architectures are possible.
 
-**No EIP-3009 token exists.** The playground token and every third-party "KRW"/"USDC" token we
-probed reverts on `DOMAIN_SEPARATOR()` and `authorizationState()`. x402's default `eip3009`
-method therefore cannot run on GIWA today — which makes the `erc7710` method not just an option
-but the only currently viable x402 path on this chain.
+**No EIP-3009 token was deployed when we looked, in July 2026.** The playground token and every
+third-party "KRW"/"USDC" token we probed reverted on `DOMAIN_SEPARATOR()` and
+`authorizationState()`, so x402's default `eip3009` method had nothing on this chain to settle
+against and we built the `erc7710` path instead.
+
+Nothing prevents anyone from deploying a compliant token, and by the time you read this someone
+may have. That does not undo the reason for the choice, because the constraint is not scarcity —
+it is that **you have to issue the asset first.** `eip3009` settles only against a token written
+for it; `erc7710` rides on whatever is already circulating, because the authorisation lives in a
+delegation rather than in the token. A chain with one compliant stablecoin can use `eip3009` for
+that one stablecoin. `erc7710` works the day a new asset appears, without asking its issuer for
+anything.
 
 **A read taken right after a receipt can answer from before it.** The public RPC load-balances
 across backends at different heights, so a state change is not immediately visible to every

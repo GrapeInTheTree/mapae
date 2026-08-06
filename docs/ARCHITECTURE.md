@@ -162,8 +162,10 @@ window and identity check runs on-chain, and its key pays gas and nothing else. 
 shortcut but the point — the policy engine being entirely on-chain is what lets the settler be
 ignorant and unprivileged.
 
-GIWA has no EIP-3009 token ([GAPS.md](GAPS.md)), so the other two methods are not available here
-at all. See [DEMO.md](DEMO.md#x402-facilitator---the-erc7710-path-live) for the live run, where one
+No EIP-3009 token was deployed on GIWA when we surveyed it ([GAPS.md](GAPS.md)), so the other two
+methods had nothing to settle against. The durable half of that is structural rather than a matter
+of timing: `eip3009` needs a token written for it, while `erc7710` settles against any ERC-20
+already in circulation. See [DEMO.md](DEMO.md#x402-facilitator---the-erc7710-path-live) for the live run, where one
 signed payload settles twice and the third attempt is refused before broadcast.
 
 ## 10. Agent integration — MCP

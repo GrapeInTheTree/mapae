@@ -701,8 +701,14 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        정산</strong>할 수 있는 유일한 방식입니다.</p>
     <p>마패는 이 세 번째 방식을 구현합니다. 정산자는 <strong>정책도 자금도 갖지 않습니다</strong> — 모든
        한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 냅니다. 이것은 우회가 아니라 설계 목표입니다. 정책 판정이 전부 온체인에 있으므로 정산자는 정책을 알 필요가 없고, 알 수도 없습니다.</p>
-    <p>GIWA에는 EIP-3009 토큰이 없어 다른 두 방식은 애초에 불가능합니다. 라이브 증명에서는 같은
-       서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부됩니다.</p>
+    <p>2026년 7월에 조사했을 때 기와에는 EIP-3009 토큰이 배포돼 있지 않았고, 그래서 다른 두 방식은
+       정산할 대상 자체가 없었습니다. 다만 이 선택을 떠받치는 것은 그 부재가 아니라 구조입니다.
+       <code>eip3009</code>는 <strong>그 방식을 위해 쓰인 토큰</strong>에만 정산할 수 있고,
+       <code>erc7710</code>은 <strong>이미 돌고 있는 아무 ERC-20</strong>에나 붙습니다. 승인이
+       토큰이 아니라 위임에 들어 있기 때문입니다. 누군가 오늘 규격에 맞는 토큰을 배포해도 그
+       사실은 바뀌지 않습니다.</p>
+    <p>라이브 증명에서는 같은 서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에
+       거부됩니다.</p>
     <p>이 정산자는 <strong>공개로 돌고 있습니다</strong> — <em>x402.mapae.org</em>. 정산은 영수증이
        나오고 <strong>토큰의 Transfer 로그가 정확한 금액을 정확한 수취인에게 옮긴 것을 확인한
        뒤에만</strong> 성공으로 답합니다. 확인 창 안에 영수증이 없으면 실패가 아니라
@@ -1626,8 +1632,14 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        funds</strong>: every cap, payee, window and identity check runs on-chain, and its key pays
        gas and nothing else. This is a design goal rather than a workaround &mdash; because
        adjudication is entirely on-chain, the settler does not need to know the policy, and cannot.</p>
-    <p>GIWA has no EIP-3009 token, so the other two methods are not available here at all. In the
-       live run, one signed payload settles twice and a third attempt is refused before broadcast.</p>
+    <p>When we surveyed GIWA in July 2026, no EIP-3009 token was deployed, so the other two methods
+       had nothing to settle against. What holds up the choice, though, is structure rather than
+       that absence. <code>eip3009</code> settles only against <strong>a token written for
+       it</strong>; <code>erc7710</code> rides on <strong>any ERC-20 already circulating</strong>,
+       because the authorisation lives in a delegation instead of in the token. Someone deploying a
+       compliant token today would not change that.</p>
+    <p>In the live run, one signed payload settles twice and a third attempt is refused before
+       broadcast.</p>
     <p>This settler <strong>runs publicly</strong> at <em>x402.mapae.org</em>. A settlement is
        reported as successful only after the receipt arrives <strong>and the token's own Transfer
        log shows the exact amount reaching the exact payee</strong>. With no receipt inside the
