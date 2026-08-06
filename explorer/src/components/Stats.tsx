@@ -177,11 +177,18 @@ export function Stats({stats}: {stats: StatsData | null}) {
                     transition={{delay: 0.35, duration: 0.4}}
                     className="mt-3 flex flex-wrap items-center justify-end gap-x-2 text-[11.5px] text-mute"
                 >
+                    {/* Say which path answered. The index is ours and rebuildable from the
+                        chain, so naming it costs nothing and claiming the scan when it did not
+                        happen would be a small lie told on every page load. */}
                     <span className="inline-flex items-center gap-1.5">
                         <span className="h-1 w-1 rounded-full bg-jade" />
-                        {lang === "ko"
-                            ? `빌드 시점 체크포인트 + 이후 ${stats.deltaBlocks.toLocaleString()}블록을 방금 직접 스캔`
-                            : `Build-time checkpoint plus ${stats.deltaBlocks.toLocaleString()} blocks scanned just now`}
+                        {stats.source === "index"
+                            ? lang === "ko"
+                                ? "우리 인덱서에서 — 체인만으로 언제든 다시 만들어지는 사본"
+                                : "From our own index — a copy the chain can rebuild at any time"
+                            : lang === "ko"
+                              ? `빌드 시점 체크포인트 + 이후 ${stats.deltaBlocks.toLocaleString()}블록을 방금 직접 스캔`
+                              : `Build-time checkpoint plus ${stats.deltaBlocks.toLocaleString()} blocks scanned just now`}
                     </span>
                     <span className="tnum font-mono opacity-70">
                         #{stats.headBlock.toLocaleString()}

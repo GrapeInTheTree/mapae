@@ -24,6 +24,7 @@ import {delegationHash, type Delegation} from "@mapae/sdk";
 import {addresses, giwaSepolia, BLOCKSCOUT} from "./config";
 import {decodeConditions, type Condition} from "./policy";
 import snapshot from "../data/snapshot.json";
+import {indexedActivity, indexedStats} from "./indexer";
 
 export const client = createPublicClient({chain: giwaSepolia, transport: http()});
 
@@ -102,8 +103,18 @@ export interface FeedItem {
     from: Address;
 }
 
-/** Redemption attempts against the manager - successes AND failures - via Blockscout. */
+/** Redemption attempts against the manager - successes AND failures. The index first, then
+ *  Blockscout, which is where these came from before there was an index. */
 export async function fetchFeed(): Promise<FeedItem[]> {
+    const indexed = await indexedActivity(100);
+    if (indexed) {
+        return indexed.items.map((a) => ({
+            hash: a.txHash,
+            ok: a.ok,
+            timestamp: new Date(Number(a.timestamp) * 1000).toISOString(),
+            from: a.from,
+        }));
+    }
     const res = await fetch(
         `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
     );
@@ -126,8 +137,10 @@ export interface Stats {
     rejections: number;
     principals: number;
     headBlock: bigint;
-    /** Blocks scanned live on top of the build-time checkpoint. */
+    /** Blocks scanned live on top of the build-time checkpoint. Zero when an index answered. */
     deltaBlocks: bigint;
+    /** Which path produced these numbers, so the screen can say so rather than imply it. */
+    source: "index" | "chain";
 }
 
 let statsCache: Promise<Stats> | null = null;
@@ -144,6 +157,26 @@ let statsCache: Promise<Stats> | null = null;
 export function fetchStats(): Promise<Stats> {
     statsCache ??= (async () => {
         const head = await client.getBlockNumber();
+
+        // The index answers in one request what the scan below spends a Blockscout round-trip
+        // and a getLogs sweep on. If it does not answer, nothing is lost but the speed.
+        //
+        // `ready` is load-bearing, not decoration: Ponder advances one checkpoint across all its
+        // sources, so while any source is backfilling these counts are a fraction of the truth.
+        // A fast wrong number is worse than a slow right one, so an unready index is ignored here.
+        const indexed = await indexedStats();
+        if (indexed?.ready) {
+            return {
+                delegations: indexed.delegations,
+                redemptions: indexed.redemptions,
+                rejections: indexed.rejections,
+                principals: indexed.principals,
+                headBlock: head,
+                deltaBlocks: 0n,
+                source: "index" as const,
+            };
+        }
+
         const CHUNK = 90_000n;
 
         const delegations = new Set<string>(snapshot.delegationHashes);
@@ -155,11 +188,16 @@ export function fetchStats(): Promise<Stats> {
         const from0 = BigInt(snapshot.checkpointBlock) + 1n;
         for (let from = from0; from <= head; from += CHUNK) {
             const to = from + CHUNK - 1n > head ? head : from + CHUNK - 1n;
-            const logs = await client.getLogs({
-                address: [addresses.manager, addresses.dojangEnforcer],
-                fromBlock: from,
-                toBlock: to,
-            });
+            // GIWA's public RPC sheds heavy queries under load, and a log sweep is the heaviest
+            // thing this page asks for - so the fallback path needs the same retry the trace
+            // page already learned to use. Without it a single shed request empties the counters.
+            const logs = await withRetry(() =>
+                client.getLogs({
+                    address: [addresses.manager, addresses.dojangEnforcer],
+                    fromBlock: from,
+                    toBlock: to,
+                }),
+            );
             for (const l of parseEventLogs({abi: managerEventsAbi, logs, eventName: "RedeemedDelegation"})) {
                 paymentTxs.add(l.transactionHash);
                 delegations.add(l.args.delegationHash);
@@ -181,8 +219,14 @@ export function fetchStats(): Promise<Stats> {
             principals: principals.size,
             headBlock: head,
             deltaBlocks: head > from0 ? head - from0 : 0n,
+            source: "chain" as const,
         };
     })();
+    // A memoised promise remembers a rejection as faithfully as a result, which would leave the
+    // page showing dashes until someone reloaded it. Forget the failure so the next mount tries.
+    statsCache.catch(() => {
+        statsCache = null;
+    });
     return statsCache;
 }
 
@@ -203,6 +247,23 @@ export interface ActivityItem {
  *  payee and the authority it invoked - all recovered from calldata, so a refused attempt is as
  *  legible as a settled one. */
 export async function fetchActivity(): Promise<ActivityItem[]> {
+    // The index stores each attempt with its intent already decoded, refusals included - the
+    // same recovery this function performs below, done once at write time instead of per visit.
+    const indexed = await indexedActivity(100);
+    if (indexed) {
+        return indexed.items.map((a) => ({
+            hash: a.txHash,
+            ok: a.ok,
+            timestamp: new Date(Number(a.timestamp) * 1000).toISOString(),
+            from: a.from,
+            batch: a.batch,
+            delegationHash: a.rootHash ?? undefined,
+            payment:
+                a.token && a.payee && a.amount !== null
+                    ? {token: a.token, to: a.payee, amount: BigInt(a.amount)}
+                    : undefined,
+        }));
+    }
     const res = await fetch(
         `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
     );

@@ -28,3 +28,4 @@ docs/team/
 
 # Local agent config
 .claude/
+.env.local
