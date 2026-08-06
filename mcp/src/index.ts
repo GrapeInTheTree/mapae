@@ -418,6 +418,106 @@ server.tool(
 );
 
 server.tool(
+    "simulate_payment",
+    "[마패] 이 결제가 될지 미리 확인한다(브로드캐스트 없음). Ask whether a payment WOULD settle, without sending anything. Returns the condition that refuses it and the largest amount that would go through right now, so an agent can adjust instead of spending gas on a transaction the chain was always going to reject. Use this before `pay` whenever the amount is uncertain.",
+    {
+        amount: z.number().int().positive().describe("Amount in mKRW base units (1 = ₩1)"),
+        payee: z.string().optional().describe("Which allowed payee to test against. Defaults to the first."),
+        contextIndex: z.number().int().min(0).optional(),
+    },
+    async ({amount, payee: payeeArg, contextIndex}) => {
+        const h = pick(contextIndex);
+        const payee = h.conditions.find((c) => c.kind === "payee");
+        const period = h.conditions.find((c) => c.kind === "period");
+        const perPayment = h.conditions.find((c) => c.kind === "perPayment");
+        if (payee?.kind !== "payee" || period?.kind !== "period") {
+            return text({status: "UNSUPPORTED", detail: "this authority has no payee/period policy to spend against"});
+        }
+
+        // Which of the allowed payees is being tested. An outsider is answered here rather than
+        // simulated: the chain would refuse it too, but naming the signed list is more useful
+        // than relaying a revert.
+        let recipient = payee.payees[0];
+        if (payeeArg !== undefined) {
+            const match = payee.payees.find((p) => p.toLowerCase() === payeeArg.toLowerCase());
+            if (!match) {
+                return text({
+                    wouldSettle: false,
+                    refusedBy: "payee",
+                    explanation: `${payeeArg} is not on this authority's signed allowlist, so no amount would settle to it.`,
+                    allowedPayees: payee.payees,
+                });
+            }
+            recipient = match;
+        }
+
+        const live = await liveState(h);
+        const ceiling = perPayment?.kind === "perPayment" ? perPayment.max : null;
+        const remaining = live.available;
+        const want = BigInt(amount);
+
+        // The largest payment BOTH caps allow at this moment. Saying it turns a refusal into an
+        // instruction: the agent knows what to ask for instead of guessing downwards.
+        const largest =
+            remaining === null ? ceiling : ceiling === null ? remaining : ceiling < remaining ? ceiling : remaining;
+
+        // Name the binding constraint before consulting the chain. The chain gives the
+        // authoritative answer, but "reverted" does not tell an agent what to do next.
+        let refusedBy: string | null = null;
+        let explanation = "";
+        if (live.disabled) {
+            refusedBy = "disabled";
+            explanation = "The person who granted this authority has switched it off. Nothing settles until they switch it back.";
+        } else if (live.identityLive === false) {
+            refusedBy = "identity";
+            explanation = "The granting person's identity attestation is not live right now, so every payment under this authority is refused.";
+        } else if (ceiling !== null && want > ceiling) {
+            refusedBy = "perPayment";
+            explanation = remaining !== null && remaining > ceiling
+                ? `This period still has ${fmtWon(remaining)} available, but no single payment may exceed ${fmtWon(ceiling)}. Split it, or ask for less.`
+                : `No single payment may exceed ${fmtWon(ceiling)}.`;
+        } else if (remaining !== null && want > remaining) {
+            refusedBy = "period";
+            explanation = `Only ${fmtWon(remaining)} remains of this period's allowance. It recovers at the next rollover.`;
+        }
+
+        // The chain decides. A local verdict that disagrees with it is worth surfacing rather
+        // than hiding: it means the policy carries a condition this tool cannot read.
+        let chainRefusal: string | undefined;
+        if (h.leaf.delegate.toLowerCase() === agent.address.toLowerCase()) {
+            const execution = encodeExecutionSingle(period.token, 0n, encodeErc20Transfer(recipient, want));
+            try {
+                await pub.simulateContract({
+                    address: addresses.manager,
+                    abi: managerAbi,
+                    functionName: "redeemDelegations",
+                    args: [[h.context], [MODE_SIMPLE_SINGLE as Hex], [execution]] as const,
+                    account: agent.address,
+                });
+            } catch (e) {
+                chainRefusal = reasonOf(e);
+            }
+        }
+
+        const wouldSettle = chainRefusal === undefined && refusedBy === null;
+        return text({
+            wouldSettle,
+            amount: fmtWon(want),
+            payee: recipient,
+            refusedBy: refusedBy ?? (chainRefusal ? "chain" : undefined),
+            explanation:
+                explanation ||
+                (chainRefusal
+                    ? `The chain refuses this for a reason this tool did not predict: ${chainRefusal}. The signed policy may carry a condition beyond the ones read here.`
+                    : "Every condition read here allows this payment."),
+            chainReason: chainRefusal,
+            largestThatWouldSettleNow: largest === null ? null : fmtWon(largest),
+            note: "Nothing was broadcast. A refusal costs no gas, which is the point of asking first.",
+        });
+    },
+);
+
+server.tool(
     "pay",
     "[마패] 마패로 결제한다. Spend within a held authority. The allowed payees and the token come from the SIGNED POLICY, not from arguments - when the policy names several payees, `payee` picks WHICH of them to pay, and an address outside the signed list is rejected before any transaction. A refusal is a normal result carrying the on-chain reason, because refusals are the product working.",
     {

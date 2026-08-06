@@ -168,8 +168,12 @@ signed payload settles twice and the third attempt is refused before broadcast.
 
 ## 10. Agent integration — MCP
 
-`npx mapae-mcp`, published to npm. Seven tools: `list_permissions`, `check_budget`, `pay`,
-`agent_status`, `request_permission`, `load_context`, `redelegate`.
+`npx mapae-mcp`, published to npm. Eight tools: `list_permissions`, `check_budget`,
+`simulate_payment`, `pay`, `agent_status`, `request_permission`, `load_context`, `redelegate`.
+
+`simulate_payment` answers whether an amount would settle without broadcasting anything. It
+names the condition that refuses it and the largest amount that would go through right now, so
+an agent that guessed too high learns what to ask for instead of paying gas to be told no.
 
 **There is deliberately no tool to issue or revoke.** That authority belongs to a person's
 signature, and on-chain only the delegator holds it. An agent may spend and may pass a narrower

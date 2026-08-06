@@ -207,3 +207,34 @@ Chain: principal -> agent (4 caveats) -> facilitator settlement signer `0x0Cde5B
 
 Merchant received exactly ₩40,000 across two settlements of ONE signed payload - multi-use is the
 property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM spec.
+
+## Graduated autonomy - how much may the agent decide alone?
+
+Two authorities the same person signed, differing only in what they let the agent do without
+asking. Both carry the same identity, the same ₩200,000 day budget, the same single
+merchant and the same seven-day window.
+
+| | Per payment | Human in the loop |
+|---|---|---|
+| Tier 1 | ₩10,000 | no |
+| Tier 2 | ₩100,000 | yes |
+
+Nothing above tier 2 exists, so a larger payment is refused by having no authority to
+redeem rather than by a rule - which is the honest shape of *this is not yours to decide*.
+
+| What the agent tried | Outcome on chain | Transaction |
+|---|---|---|
+| ₩10,000 within the unattended tier | **settled** | [0xbff3a51a…](https://sepolia-explorer.giwa.io/tx/0xbff3a51aa95d036c2aa374cbfbb0c2ba22e43cd260dd070b361e86a9d64e56ab) |
+| ₩30,000 above the unattended tier | **refused** `PerPaymentCapExceeded(30000, 10000)` | [0x88d7aea7…](https://sepolia-explorer.giwa.io/tx/0x88d7aea77f466e0190a0a8c6423b19a11f951518af9afa67abb06efc6253f777) |
+| ₩30,000 on the human-confirmation tier, presenting a code nobody confirmed | **refused** `CodeNotVerified(0xcde44ed867b9bce97f3e687eb4537822a871742b6fb41147551659f06749ff07, mapae.tiers.demo, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x3c93a192…](https://sepolia-explorer.giwa.io/tx/0x3c93a1922be357fd2c10e24d7578f63c0c84d51e50d2a04c5d7a8d4d5deb3043) |
+| ₩5,000 to an unlisted payee | **refused** `PayeeNotAllowed(0x8627eEE60293Eb53646d30031186c5B83D5889ae)` | [0x556713b1…](https://sepolia-explorer.giwa.io/tx/0x556713b119ce803bfba14cfa42e7f2e4f71643ba19abfb73dfa67a185cdad6a9) |
+| ₩5,000 after the identity was revoked | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0xe3f64303…](https://sepolia-explorer.giwa.io/tx/0xe3f64303fab6a4a8194423c3ba4ee888190ce2d8db9351c4ed4bff1e1a1b1b0f) |
+| ₩5,000 after the identity was restored | **settled** | [0xe60f819a…](https://sepolia-explorer.giwa.io/tx/0xe60f819a96159b81bf4bd249d125ce672b57084f7c3084f035e3b961e3073eb5) |
+
+The third row is the one worth reading twice. That payment is inside every limit, from a live
+identity, on an enabled delegation, to an allowed merchant. It is refused because no live
+human confirmation stands behind it. Verified Codes are issued by exchanges through their
+own channels, so the confirming half cannot be staged here - the refusal is the half that
+can be proven, and it is the half that matters.
+
+Reproduce with `pnpm tsx scripts/tiers-demo.ts <account>`.

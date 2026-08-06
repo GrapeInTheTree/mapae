@@ -88,10 +88,17 @@ export const enforcerErrorsAbi = parseAbi([
     // PerPaymentLimitEnforcer
     "error InvalidZeroCap()",
     "error PerPaymentCapExceeded(uint256 amount, uint256 cap)",
+    // VerifiedCodeEnforcer - the human-confirmation tier. Absent here until a live refusal on
+    // that tier decoded as a bare "reverted", which is the failure mode of an error catalogue
+    // that lags a deployed contract.
+    "error CodeNotVerified(bytes32 codeHash, string domain, bytes32 attesterId)",
+    "error InvalidArgsLength(uint256 length)",
+    "error ZeroAddressArg()",
     // MapaeAccount
     "error NotDelegationManager(address caller)",
     "error NotOwner(address caller)",
     "error ExecutionFailed()",
+    "error DelegatedCallToManager()",
 ]);
 
 export const factoryAbi = parseAbi([

@@ -207,6 +207,21 @@ async function main() {
     });
     if (!reqBad.includes("could never bind")) throw new Error("nonsensical per-payment request not rejected");
 
+    // simulate_payment must agree with what pay then actually does - a dry run that disagreed
+    // with the real thing would be worse than not having one.
+    const dryOk = await call("simulate_payment", {amount: 700});
+    if (!dryOk.includes('"wouldSettle": true')) throw new Error(`simulate said no to a payment that settles: ${dryOk}`);
+
+    const dryOver = await call("simulate_payment", {amount: 1_500});
+    if (!dryOver.includes('"wouldSettle": false') || !dryOver.includes('"refusedBy": "perPayment"'))
+        throw new Error(`simulate did not name the per-payment ceiling: ${dryOver}`);
+    if (!dryOver.includes("largestThatWouldSettleNow"))
+        throw new Error("a refusal should tell the agent what would go through instead");
+
+    const dryOutsider = await call("simulate_payment", {amount: 100, payee: agent.address});
+    if (!dryOutsider.includes('"wouldSettle": false') || !dryOutsider.includes('"refusedBy": "payee"'))
+        throw new Error(`simulate did not name the payee set: ${dryOutsider}`);
+
     const paid = await call("pay", {amount: 700});
     if (!paid.includes('"PAID"')) throw new Error("pay did not settle");
     if (!paid.toLowerCase().includes(merchant.toLowerCase())) throw new Error("default payee should be the first allowed");
