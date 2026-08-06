@@ -39,6 +39,18 @@ em { font-style: normal; color: var(--bronze); }
 code, .mono { font-family: "SF Mono", Menlo, monospace; font-size: .87em; }
 code { color: var(--ink2); background: var(--surface2); padding: 1px 5px; border-radius: 4px; }
 
+/* Listings. Wide lines scroll inside their own box rather than pushing the page sideways,
+   and a caption above says what the reader is looking at before they parse it. */
+pre { margin: 14px 0; padding: 13px 15px; background: var(--surface2); border: 1px solid var(--line);
+      border-left: 2px solid var(--line2); border-radius: 6px; overflow-x: auto;
+      font-family: "SF Mono", Menlo, monospace; font-size: 12px; line-height: 1.62;
+      color: var(--ink2); }
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+pre .c { color: var(--mute); }
+pre .k { color: var(--bronze); }
+.cap { margin: 16px 0 -6px; font-family: "SF Mono", Menlo, monospace; font-size: 10px;
+       letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+
 /* ── layout: a fixed spine on the left, one column of prose ── */
 .shell { max-width: 1180px; margin: 0 auto; padding: 0 32px; display: grid;
          grid-template-columns: 1fr var(--col) 1fr; }
@@ -316,6 +328,47 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>PerPaymentLimitEnforcer</code></td><td>결제 한 건의 금액을 제한 — 기간 예산을 조각으로 나눈다</td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td>사람 확인 티어. 살아 있는 오프체인 확인이 있을 때만 통과</td></tr>
     </table></div>
+
+    <h3>컨트랙트 셋이 나눠 가진 책임</h3>
+    <p>세 컨트랙트는 서로 다른 질문에 답한다. 섞으면 각각의 보증이 약해진다.</p>
+    <div class="scroll"><table>
+        <tr><th></th><th>매니저</th><th>계정</th><th>팩토리</th></tr>
+        <tr><td>답하는 질문</td><td>이 권한이 이 실행을 허락하는가</td><td>실행을 해도 되는가</td><td>이 소유자를 주장해도 되는가</td></tr>
+        <tr><td>보유 상태</td><td><code>disabledDelegations</code> 하나</td><td>자금</td><td>등록부</td></tr>
+        <tr><td>불변</td><td>무상태 EIP-712 도메인</td><td><code>owner</code>, <code>DELEGATION_MANAGER</code></td><td><code>DELEGATION_MANAGER</code></td></tr>
+    </table></div>
+    <p><strong>매니저</strong>는 위임 사슬을 검사한다 — 배열 길이, 호출자가 말단 delegate인지,
+       사슬의 모든 서명(EOA는 ECDSA, 계정은 ERC-1271), 비활성 플래그, <code>authority</code>
+       연결. 그 전부가 통과해야 조건 평가로 넘어간다. 상태는 <code>disabledDelegations</code>
+       매핑 하나뿐이고, 위임 자체는 어디에도 저장하지 않는다 — 발급이 트랜잭션 없는 서명이라는
+       모델이 그래야 성립한다.</p>
+    <p><strong>계정</strong>은 자금을 쥔다. 실행 진입점이 둘이고 각각 다른 문지기가 있다:
+       <code>executeFromExecutor</code>는 매니저만, <code>execute</code>는 owner만. 그리고
+       <code>owner</code>가 immutable이라는 것이 신원 조건이 성립하는 유일한 근거다 — 바꿀 수
+       있다면 검증된 사람을 가리키다가 나중에 갈아치울 수 있다.</p>
+    <p><strong>팩토리</strong>는 CREATE2로 계정을 찍되, <strong>소유자 본인의 EIP-712 동의
+       서명</strong>을 요구한다. 타입해시는 이렇다.</p>
+    <pre><code>CREATION_TYPEHASH = keccak256(
+    "MapaeAccountCreation(address owner,uint256 salt)"
+)</code></pre>
+    <p>이게 없으면 누구나 남의 검증된 주소를 <code>owner</code>로 하는 계정을 배포할 수 있다.
+       훔치는 것은 없지만 <em>책임 사슬을 위조</em>하는 것이고, 그 사슬이 이 시스템이 보증하는
+       전부다. 그래서 신원 조건은 <code>owner()</code>를 믿기 전에
+       <code>isMapaeAccount()</code>로 등록 여부를 먼저 본다. 순서가 뒤바뀌면 방어가 사라진다.</p>
+
+    <h3>조건이 불리는 순서</h3>
+    <p>조건은 네 번 불린다. 앞의 둘은 <b>말단에서 뿌리로</b>, 뒤의 둘은 <b>뿌리에서 말단으로</b>.</p>
+    <div class="steps">
+        <div class="step"><div><code>beforeAllHook</code> — 사슬 전체가 한 번씩. 배치 단위의 사전 검사</div></div>
+        <div class="step"><div><code>beforeHook</code> — 실행 직전. 한도·수취인·신원이 여기서 판단된다</div></div>
+        <div class="step"><div>실행 — <b>뿌리 위임자의 계정</b>에서 (ERC-7579 단일 실행)</div></div>
+        <div class="step"><div><code>afterHook</code> → <code>afterAllHook</code> — 역순</div></div>
+    </div>
+    <p>역순인 이유는 중첩이다. 바깥 조건이 먼저 열고 나중에 닫아야, 안쪽 조건이 만든 상태 변화를
+       바깥이 관찰할 수 있다. 이 순서는 가정이 아니라 테스트로 고정되어 있다 — 배치와 사슬 양쪽에
+       대해서.</p>
+    <p><code>terms</code>는 <strong>위임자가 서명</strong>하고 <code>args</code>는 사용 시점에
+       사용자가 낸다. 위임 해시가 <code>args</code>를 제외하고 계산되기 때문에 가능한 분리다.</p>
 </section>
 
 <section id="s4">
@@ -374,6 +427,54 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>기한</td><td class="n">32</td><td><code>afterThreshold(uint128) ‖ beforeThreshold(uint128)</code></td></tr>
         <tr><td>회당 한도</td><td class="n">32</td><td><code>maxPerPayment(uint256)</code>. 0은 거부 — 비어 있는 필드는 정책이 아니라 실수다</td></tr>
     </table></div>
+
+    <h3>서명되는 것의 정확한 모양</h3>
+    <p>타입해시 둘은 MetaMask 프레임워크와 <strong>바이트 단위로 같다.</strong> 호환성 주장이
+       문장이 아니라 상수인 지점이다.</p>
+    <pre><code><span class="c">// signature 없음 — 서명은 payload가 확정된 뒤에 붙는다</span>
+DELEGATION_TYPEHASH = keccak256(
+  "Delegation(address delegate,address delegator,bytes32 authority,"
+  "Caveat[] caveats,uint256 salt)Caveat(address enforcer,bytes terms)"
+)
+
+<span class="c">// args 없음 — 그래야 사용자가 사용 시점에 낼 수 있다</span>
+CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
+    <p>두 생략이 각각 일을 한다. <code>signature</code>가 해시에서 빠져 있어야 서명을 나중에
+       붙일 수 있고, <code>args</code>가 빠져 있어야 사용자가 낸 값이 <strong>서명을 바꾸지
+       못한다.</strong> 이 배제는 퍼즈 테스트로 고정되어 있다 — 두 필드를 아무 값으로 흔들어도
+       해시가 움직이지 않아야 한다.</p>
+    <p class="cap">위임 해시</p>
+    <pre><code>keccak256(abi.encode(
+    DELEGATION_TYPEHASH, delegate, delegator, authority,
+    keccak256(concat(caveatHash[0..n])),   <span class="c">// caveat 배열은 각각 해시 후 이어붙임</span>
+    salt
+))</code></pre>
+    <p>두 상수도 값이 정해져 있다. <code>ROOT_AUTHORITY</code>는
+       <code>bytes32(type(uint256).max)</code> — 위임 사슬의 끝을 뜻하고, 0이 아닌 이유는 빈
+       바이트가 실수로 뿌리처럼 보이면 안 되기 때문이다. <code>ANY_DELEGATE</code>는
+       <code>0xa11</code>로, 이 값이 delegate 자리에 오면 누구나 상환할 수 있다.</p>
+
+    <h3>실행 인코딩 — ERC-7579</h3>
+    <p>모드 워드는 <code>bytes32</code> 하나에 호출 종류와 실행 종류를 담는다. 우리가 받는 것은
+       <strong>단 하나의 조합</strong>이다.</p>
+    <div class="scroll"><table>
+        <tr><th>값</th><th>의미</th><th>받나</th></tr>
+        <tr><td><code>CALLTYPE_SINGLE 0x00</code></td><td>단일 호출</td><td>✅</td></tr>
+        <tr><td><code>CALLTYPE_BATCH 0x01</code></td><td>배치</td><td>거부 — 금액 조건들이 단일 호출의 calldata를 인덱싱한다</td></tr>
+        <tr><td><code>CALLTYPE_DELEGATECALL 0xFF</code></td><td>delegatecall</td><td>거부 — 계정 스토리지를 다시 쓸 수 있다</td></tr>
+        <tr><td><code>EXECTYPE_DEFAULT 0x00</code></td><td>실패 시 revert</td><td>✅</td></tr>
+        <tr><td><code>EXECTYPE_TRY 0x01</code></td><td>실패를 삼킴</td><td>거부 — 아래</td></tr>
+    </table></div>
+    <p><code>EXECTYPE_TRY</code>를 막는 이유가 미묘하다. 조건이 통과해 한도를 소진해 놓고 정작
+       이체가 조용히 실패하면, <strong>일어나지 않은 결제가 장부에 남고 한도는 그대로
+       깎인다.</strong> 실패는 시끄러워야 한다.</p>
+    <p class="cap">단일 실행 — 빈틈없이 패킹</p>
+    <pre><code>target(20) ‖ value(32) ‖ callData
+  └ ERC-20 이체면 callData = 0xa9059cbb ‖ to(32) ‖ amount(32) = 68바이트</code></pre>
+    <p>수취인이 <code>callData[4:36]</code>에 있다는 사실이 <code>AllowedPayeeEnforcer</code>가
+       존재하는 이유다 — 타겟 allowlist는 <em>토큰</em>을 볼 뿐 수취인을 못 본다. 그리고 그
+       32바이트 워드의 상위 12바이트가 0이 아니면 거부한다(<code>DirtyRecipientWord</code>):
+       주소로 안 쓰이는 자리에 값을 실어 검사를 우회하려는 시도를 막는다.</p>
 </section>
 
 <section id="s7">
@@ -460,28 +561,101 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 </section>
 
 <section id="s11">
-    <h2><span class="num">11</span>에이전트 연동</h2>
-    <p><code>npx mapae-mcp</code>. MCP는 AI 에이전트에 외부 도구를 꽂는 표준 규격이고, 마패는 이
-       규격의 서버로 npm에 배포되어 있다. 클로드 코드·코덱스 같은 에이전트에 설치 한 줄이면
-       붙고, 그다음부터는 전부 자연어다. 권한 요청도 여기서 시작한다 — 기간 한도·회당 한도·
-       복수 수취인까지 담은 링크를 만들어 사람에게 건네면, 발급 화면이 그 정책을 한 문장으로
-       펼쳐 놓고 서명만 기다린다.</p>
-    <div class="scroll"><table>
-        <tr><th>도구</th><th>하는 일</th></tr>
-        <tr><td><code>list_permissions</code></td><td>보유한 마패 목록과 각각의 조건</td></tr>
-        <tr><td><code>check_budget</code></td><td>이번 기간의 사용액·잔여 한도, 그리고 회당 한도</td></tr>
-        <tr><td><code>pay</code></td><td>결제 — 수취인·토큰은 서명된 정책에서 나오고, 복수 수취인이면 그 안에서 고른다</td></tr>
-        <tr><td><code>agent_status</code></td><td>에이전트 주소·가스 잔량·남은 결제 여력</td></tr>
-        <tr><td><code>request_permission</code></td><td>사람에게 보낼 권한 요청 링크 생성 (ERC-7715)</td></tr>
-        <tr><td><code>load_context</code></td><td>발급받은 마패를 대화 안에서 바로 장착</td></tr>
-        <tr><td><code>redelegate</code></td><td>더 좁은 범위로만 재위임</td></tr>
-    </table></div>
-    <div class="note">
-        <strong>발급과 취소 도구는 일부러 없다.</strong> 그 권한은 사람의 서명에만 속하고,
-        온체인에서도 위임자만 할 수 있다. 그리고 결제의 <strong>수취인과 토큰은 인자가 아니라
-        서명된 정책에서 나온다</strong> — 프롬프트 인젝션으로 에이전트를 속여도 엉뚱한 주소로
-        보낼 수 없다. 에이전트 키는 첫 실행 때 로컬에서 생성되어 밖으로 나가지 않는다.
+    <h2><span class="num">11</span>에이전트 연동 — MCP</h2>
+    <p>MCP는 AI 에이전트에 외부 도구를 꽂는 표준 규격이고, 마패는 그 규격의 서버로 npm에 올라가
+       있다. 설치는 한 줄이다.</p>
+    <pre><code>claude mcp add mapae -- npx mapae-mcp</code></pre>
+    <p>설정 파일도, API 키도, 계정 가입도 없다. 그다음부터는 전부 자연어로 말하면 된다.</p>
+
+    <h3>에이전트는 자기 신원을 가지고 태어난다</h3>
+    <p>첫 실행에서 서버는 <strong>에이전트 자신의 키를 로컬에서 만들어</strong>
+       <code>~/.mapae/agent.key</code>에 <code>chmod 600</code>으로 둔다. 어떤 도구도 그 값을
+       돌려주지 않는다. 이건 편의가 아니라 안전 쪽 선택이다 — 사람이 다른 데서 키를 만들어
+       터미널에 붙여 넣는 것보다, 그 키가 살 기계에서 태어나는 편이 낫다. 그리고 이 키는
+       <em>사람의 지갑이 아니다.</em> 권한 0으로 태어나서, 사람이 서명해준 것만 갖는다.</p>
+    <p><code>MAPAE_PROFILE</code>로 정체성을 나눌 수 있다 — <code>work</code>와
+       <code>research</code>가 각각 자기 키와 자기 권한을 갖는다. 이걸 도구로 만들지 않은 것은
+       의도적이다. 정체성 전환은 사람의 설정 행위이고, 대화 도중 스스로 키를 바꿀 수 있는 모델은
+       설득당해 한쪽을 버릴 수 있다.</p>
+
+    <h3>권한을 받는 한 바퀴</h3>
+    <p>에이전트는 <strong>요청</strong>하고, 사람이 <strong>서명</strong>한다. 이 순서는 협상 대상이
+       아니다.</p>
+    <div class="steps">
+        <div class="step"><div>에이전트가 <code>request_permission</code>으로 정책을 조립한다 —
+            기간 한도, 회당 한도, 수취인 목록(이름까지)</div></div>
+        <div class="step"><div>사람이 링크를 연다. 발급 화면이 그 정책을 <b>자기 언어의 한 문장</b>으로
+            펼쳐 놓는다</div></div>
+        <div class="step"><div>사람이 자기 지갑에서 EIP-712 서명. <b>가스 0, 트랜잭션 0</b> —
+            발급은 흔적을 남기지 않는다</div></div>
+        <div class="step"><div>사람이 발급된 권한 컨텍스트를 대화에 붙여 넣고,
+            <code>load_context</code>가 받는다</div></div>
+        <div class="step"><div>그때부터 에이전트가 <code>pay</code>로 쓴다</div></div>
     </div>
+    <p class="cap">request_permission → 사람에게 건넬 링크</p>
+    <pre><code>{
+  "askTheHuman": "https://mapae.pages.dev/create?agentName=Research+Agent
+                  &agent=0x8D62…6232&amount=30000&period=86400
+                  &merchants=0x2476…4714,0x2909…37A9
+                  &merchantNames=Lunch+counter,Data+API
+                  <span class="k">&perTx=5000</span>&validDays=14"
+}</code></pre>
+    <p>수취인 이름은 <strong>사람이 목록을 검토할 수 있게</strong> 있는 것이고, 서명되는 terms에는
+       들어가지 않는다. 서명되는 것은 주소다. 그리고 회당 한도가 기간 한도보다 크면 거부한다 —
+       기간 한도가 먼저 걸려서 절대 발동하지 않을 조건이기 때문이다. 정책이 아니라 조립 실수다.</p>
+
+    <h3>도구 일곱</h3>
+    <div class="scroll"><table>
+        <tr><th>도구</th><th>서명</th><th>하는 일</th></tr>
+        <tr><td><code>request_permission</code></td><td>없음</td><td>정책을 링크로 조립 — 기간·회당 한도, 이름 붙은 복수 수취인 (ERC-7715 요청 경로)</td></tr>
+        <tr><td><code>load_context</code></td><td>없음</td><td>사람이 건넨 권한을 대화 안에서 장착. <code>~/.mapae</code>에 남아 재시작에도 살아남는다</td></tr>
+        <tr><td><code>list_permissions</code></td><td>없음</td><td>보유한 마패와 조건, 그리고 <b>지금</b> 체인 상태 — 꺼졌나, 신원이 살아 있나, 얼마 남았나</td></tr>
+        <tr><td><code>agent_status</code></td><td>없음</td><td>에이전트 주소·가스 잔량·마패별 여력 한 줄씩</td></tr>
+        <tr><td><code>check_budget</code></td><td>없음</td><td>기간 잔여·회당 한도, 그리고 <b>지금 가능한 최대 단일 결제액</b></td></tr>
+        <tr><td><code>pay</code></td><td>에이전트 키</td><td>결제. 토큰과 허용 수취인은 <b>서명된 정책에서</b> 나온다</td></tr>
+        <tr><td><code>redelegate</code></td><td>에이전트 키</td><td>더 좁힌 자식 권한을 하위 에이전트에 — 트랜잭션 없이</td></tr>
+    </table></div>
+
+    <h3>결제, 그리고 거부</h3>
+    <p><code>pay</code>는 금액만 받는다. 수취인을 인자로 받지 않는다 — 정책이 여러 곳을 허용할
+       때만 <code>payee</code>로 <em>그 목록 안에서</em> 고를 수 있고, 목록 밖 주소는 트랜잭션이
+       생기기도 전에 거부된다. 프롬프트 인젝션이 모델을 완전히 장악해도 할 수 있는 최악은
+       <strong>승인된 가맹점 중 어디에 낼지 고르는 것</strong>이다.</p>
+    <p class="cap">성공 — 라이브 응답</p>
+    <pre><code>{
+  "status": "PAID",
+  "amount": "₩700 mKRW",
+  "payee": "0x2476f2f5…4714",
+  "spentThisPeriod": "₩700 mKRW",
+  "remainingThisPeriod": "₩4,300 mKRW",
+  "tx": "0x18ee370c…e332",
+  "trace": "https://mapae.pages.dev/tx/0x18ee370c…e332"
+}</code></pre>
+    <p class="cap">거부 — 체인이 판단한 결과. 오류가 아니다</p>
+    <pre><code>{
+  "status": "REFUSED",
+  "amount": "₩1,500 mKRW",
+  <span class="k">"reason": "PerPaymentCapExceeded(1500, 1000)"</span>,
+  "tx": "0x8091a929…3e5a",
+  "trace": "https://mapae.pages.dev/tx/0x8091a929…3e5a"
+}</code></pre>
+    <p>이 응답에는 그날 예산이 <em>₩4,000이나 남아 있었다.</em> 거부한 것은 회당 한도이고, 사유는
+       enforcer의 커스텀 에러를 디코딩한 것이다. 모델은 이걸 예외로 처리하지 말고
+       <strong>사람에게 설명해야 한다.</strong> 거부는 시스템이 동작한 결과다.</p>
+    <p>결제 잔액은 영수증의 <b>이벤트</b>에서 읽는다. 기와의 로드밸런싱된 공개 RPC는 몇 블록 전
+       상태를 답할 수 있지만, enforcer가 스스로 emit한 값은 낡을 수 없기 때문이다.</p>
+
+    <h3>일부러 없는 것</h3>
+    <div class="note">
+        <strong>발급도 취소도 도구가 아니다.</strong> 발급은 사람의 EIP-712 서명이고, 그 키를 서버가
+        쥐면 에이전트에게 지갑을 준 것이 된다 — 마패가 막으려는 바로 그것이다. 취소는 온체인에서
+        위임자만 할 수 있다. 그래서 모델이 "꺼드릴게요"라고 약속할 수 없고, 요청받으면
+        <em>mapae.pages.dev/permissions</em>에서 직접 끄도록 안내하게 되어 있다. 한도를 정하는
+        손과 그 한도를 쓰는 손은 끝까지 다른 손이다.
+    </div>
+    <p>가스는 에이전트가 낸다. 기와의 ETH faucet은 캡차가 붙은 웹페이지라 프로그램으로 못 받고,
+       그래서 <code>agent_status</code>가 잔량과 <b>대략 몇 번 더 결제할 수 있는지</b>를 알려준다.
+       한 번 채워주면 수백 번이 돈다. (x402 정산 경로를 쓰면 이 가스마저 필요 없다 — §10.)</p>
 </section>
 
 <section id="s12">
@@ -801,6 +975,52 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td><code>PerPaymentLimitEnforcer</code></td><td>Caps a single payment &mdash; shapes the period budget into pieces</td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td>Human-in-the-loop tier: redeems only while a live off-chain confirmation stands</td></tr>
     </table></div>
+
+    <h3>Three contracts, three questions</h3>
+    <p>Each answers a different question. Merging any two of them weakens the guarantee the other
+       was making.</p>
+    <div class="scroll"><table>
+        <tr><th></th><th>Manager</th><th>Account</th><th>Factory</th></tr>
+        <tr><td>Answers</td><td>Does this authority permit this execution?</td><td>May this execution run?</td><td>May this owner be claimed?</td></tr>
+        <tr><td>State</td><td>One <code>disabledDelegations</code> map</td><td>The funds</td><td>The registry</td></tr>
+        <tr><td>Immutable</td><td>Stateless EIP-712 domain</td><td><code>owner</code>, <code>DELEGATION_MANAGER</code></td><td><code>DELEGATION_MANAGER</code></td></tr>
+    </table></div>
+    <p>The <strong>manager</strong> validates the chain: array lengths, that the caller is the leaf
+       delegate, every signature along it (ECDSA for an EOA, ERC-1271 for an account), the disabled
+       flag, and the <code>authority</code> links. Only once all of that holds does it evaluate
+       caveats. Its only state is that one mapping &mdash; delegations themselves are stored
+       nowhere, which is what makes a grant an off-chain signature with no transaction.</p>
+    <p>The <strong>account</strong> holds the funds. Two entry points, two different gatekeepers:
+       <code>executeFromExecutor</code> admits only the manager, <code>execute</code> only the
+       owner. That <code>owner</code> is immutable is the sole reason the identity condition means
+       anything &mdash; if it could be changed, an account could point at a verified person and be
+       swapped afterwards.</p>
+    <p>The <strong>factory</strong> deploys accounts by CREATE2, but demands the owner's own
+       EIP-712 consent signature:</p>
+    <pre><code>CREATION_TYPEHASH = keccak256(
+    "MapaeAccountCreation(address owner,uint256 salt)"
+)</code></pre>
+    <p>Without it, anyone could deploy an account naming a stranger's verified address as owner.
+       Nothing is stolen &mdash; but the <em>accountability chain is forged</em>, and that chain is
+       everything this system guarantees. So the identity enforcer checks
+       <code>isMapaeAccount()</code> before it trusts <code>owner()</code>. Reverse the order and
+       the defence disappears.</p>
+
+    <h3>The order conditions run in</h3>
+    <p>Caveats are called four times: the first two <b>leaf to root</b>, the last two <b>root to
+       leaf</b>.</p>
+    <div class="steps">
+        <div class="step"><div><code>beforeAllHook</code> &mdash; once across the whole chain, for batch-level checks</div></div>
+        <div class="step"><div><code>beforeHook</code> &mdash; immediately before execution; caps, payees and identity are judged here</div></div>
+        <div class="step"><div>Execution, from <b>the root delegator's account</b> (ERC-7579 single execution)</div></div>
+        <div class="step"><div><code>afterHook</code> &rarr; <code>afterAllHook</code> &mdash; in reverse</div></div>
+    </div>
+    <p>The reversal is what makes nesting work: an outer condition opens first and closes last, so
+       it can observe whatever an inner one did in between. The ordering is pinned by tests rather
+       than assumed &mdash; across a batch and along a chain both.</p>
+    <p><code>terms</code> are <strong>signed by the delegator</strong>; <code>args</code> are
+       supplied by the redeemer at use time. That separation is possible only because the
+       delegation hash is computed with <code>args</code> excluded.</p>
 </section>
 
 <section id="e4">
@@ -863,6 +1083,57 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>Window</td><td class="n">32</td><td><code>afterThreshold(uint128) &Vert; beforeThreshold(uint128)</code></td></tr>
         <tr><td>Per-payment</td><td class="n">32</td><td><code>maxPerPayment(uint256)</code>. Zero is refused &mdash; an unset field is a mistake, not a policy</td></tr>
     </table></div>
+
+    <h3>Exactly what gets signed</h3>
+    <p>Both typehashes are <strong>byte-identical to MetaMask's framework</strong>. This is where
+       the compatibility claim stops being a sentence and becomes a constant.</p>
+    <pre><code><span class="c">// no signature - it is attached after the payload is fixed</span>
+DELEGATION_TYPEHASH = keccak256(
+  "Delegation(address delegate,address delegator,bytes32 authority,"
+  "Caveat[] caveats,uint256 salt)Caveat(address enforcer,bytes terms)"
+)
+
+<span class="c">// no args - so the redeemer can supply them at use time</span>
+CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
+    <p>Each omission earns its place. Leaving <code>signature</code> out of the hash is what lets a
+       signature be attached afterwards; leaving <code>args</code> out is what stops a redeemer's
+       own values from <strong>changing what was signed</strong>. Both exclusions are pinned by
+       fuzzing: shake either field to any value and the hash must not move.</p>
+    <p class="cap">The delegation hash</p>
+    <pre><code>keccak256(abi.encode(
+    DELEGATION_TYPEHASH, delegate, delegator, authority,
+    keccak256(concat(caveatHash[0..n])),   <span class="c">// each caveat hashed, then concatenated</span>
+    salt
+))</code></pre>
+    <p>Two constants are fixed too. <code>ROOT_AUTHORITY</code> is
+       <code>bytes32(type(uint256).max)</code> &mdash; the end of a delegation chain, and not zero
+       precisely so that empty bytes can never be mistaken for a root.
+       <code>ANY_DELEGATE</code> is <code>0xa11</code>: in the delegate slot it means anyone may
+       redeem.</p>
+
+    <h3>Execution encoding &mdash; ERC-7579</h3>
+    <p>The mode word packs a call type and an execution type into one <code>bytes32</code>. Exactly
+       <strong>one combination</strong> is admitted.</p>
+    <div class="scroll"><table>
+        <tr><th>Value</th><th>Meaning</th><th>Admitted</th></tr>
+        <tr><td><code>CALLTYPE_SINGLE 0x00</code></td><td>One call</td><td>&#10003;</td></tr>
+        <tr><td><code>CALLTYPE_BATCH 0x01</code></td><td>A batch</td><td>Refused &mdash; amount enforcers index a single call's calldata</td></tr>
+        <tr><td><code>CALLTYPE_DELEGATECALL 0xFF</code></td><td>delegatecall</td><td>Refused &mdash; it could rewrite the account's storage</td></tr>
+        <tr><td><code>EXECTYPE_DEFAULT 0x00</code></td><td>Revert on failure</td><td>&#10003;</td></tr>
+        <tr><td><code>EXECTYPE_TRY 0x01</code></td><td>Swallows failure</td><td>Refused &mdash; see below</td></tr>
+    </table></div>
+    <p>The reason for refusing <code>EXECTYPE_TRY</code> is the subtle one. A caveat that passed and
+       recorded spend against a transfer which then failed quietly would leave
+       <strong>a payment on the books that never happened, with the allowance consumed
+       anyway</strong>. Failure has to be loud.</p>
+    <p class="cap">Single execution, tightly packed</p>
+    <pre><code>target(20) &Vert; value(32) &Vert; callData
+  └ for an ERC-20 transfer: 0xa9059cbb &Vert; to(32) &Vert; amount(32) = 68 bytes</code></pre>
+    <p>That the recipient lives at <code>callData[4:36]</code> is the entire reason
+       <code>AllowedPayeeEnforcer</code> exists &mdash; a target allowlist sees the <em>token</em>,
+       never the payee. And the top 12 bytes of that word must be zero
+       (<code>DirtyRecipientWord</code>): smuggling a value through the padding of an address slot
+       is how one would try to slip past a check that reads it as an address.</p>
 </section>
 
 <section id="e7">
@@ -955,29 +1226,106 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 </section>
 
 <section id="e11">
-    <h2><span class="num">11</span>Agent integration</h2>
-    <p><code>npx mapae-mcp</code>. MCP is the standard for attaching external tools to an AI agent,
-       and Mapae ships as such a server on npm. One line to install, no configuration; everything
-       after that is natural language. The request begins here too &mdash; the server composes a
-       link carrying the whole policy, per-payment ceiling and named payees included, and the
-       Create screen opens with it spelled out as one sentence, waiting for the signature.</p>
-    <div class="scroll"><table>
-        <tr><th>Tool</th><th>What it does</th></tr>
-        <tr><td><code>list_permissions</code></td><td>Held delegations and the conditions on each</td></tr>
-        <tr><td><code>check_budget</code></td><td>Spent and remaining allowance for the period, and the per-payment ceiling</td></tr>
-        <tr><td><code>pay</code></td><td>Payment &mdash; allowed payees and token come from the signed policy; several payees means choosing among them</td></tr>
-        <tr><td><code>agent_status</code></td><td>Agent address, gas balance, payments still affordable</td></tr>
-        <tr><td><code>request_permission</code></td><td>Builds a request link for a person to sign (ERC-7715)</td></tr>
-        <tr><td><code>load_context</code></td><td>Loads a granted delegation into the running session</td></tr>
-        <tr><td><code>redelegate</code></td><td>Re-delegates, narrowing only</td></tr>
-    </table></div>
-    <div class="note">
-        <strong>There is deliberately no tool to issue or revoke.</strong> That authority belongs to
-        a person's signature, and on-chain only the delegator holds it. A payment's
-        <strong>recipient and token come from the signed policy, not from arguments</strong>, so
-        prompt injection cannot redirect funds. The agent key is generated locally on first run and
-        never leaves the machine.
+    <h2><span class="num">11</span>Agent integration &mdash; MCP</h2>
+    <p>MCP is the standard for attaching external tools to an AI agent, and Mapae ships as such a
+       server on npm. Installing it is one line.</p>
+    <pre><code>claude mcp add mapae -- npx mapae-mcp</code></pre>
+    <p>No configuration file, no API key, no account. Everything after that is natural language.</p>
+
+    <h3>The agent is born with an identity of its own</h3>
+    <p>On first run the server <strong>generates the agent's own key locally</strong> and writes it
+       to <code>~/.mapae/agent.key</code>, chmod 600. No tool ever returns it. This is the safer
+       choice rather than the convenient one: a key is better born on the machine it will live on
+       than made elsewhere and pasted through a terminal. And it is <em>not the human's
+       wallet</em> &mdash; it starts with zero authority and holds only what a person later signs
+       to it.</p>
+    <p><code>MAPAE_PROFILE</code> separates identities, so <code>work</code> and
+       <code>research</code> each keep their own key and their own permissions. Deliberately not a
+       tool: switching identity is the human's configuration act, and a model that could rotate
+       its own key mid-conversation could be talked into abandoning one.</p>
+
+    <h3>The grant loop</h3>
+    <p>The agent <strong>asks</strong>; the person <strong>signs</strong>. That order is not
+       negotiable.</p>
+    <div class="steps">
+        <div class="step"><div><code>request_permission</code> composes the policy &mdash; period
+            cap, per-payment ceiling, the payee list with names</div></div>
+        <div class="step"><div>The person opens the link and the Create screen spells that policy
+            out as <b>one sentence in their own language</b></div></div>
+        <div class="step"><div>They sign EIP-712 in their own wallet. <b>No gas, no
+            transaction</b> &mdash; a grant leaves no trace until it is spent</div></div>
+        <div class="step"><div>They hand the issued permission context back, and
+            <code>load_context</code> takes it</div></div>
+        <div class="step"><div>From then on the agent spends with <code>pay</code></div></div>
     </div>
+    <p class="cap">request_permission &rarr; the link to hand over</p>
+    <pre><code>{
+  "askTheHuman": "https://mapae.pages.dev/create?agentName=Research+Agent
+                  &agent=0x8D62…6232&amount=30000&period=86400
+                  &merchants=0x2476…4714,0x2909…37A9
+                  &merchantNames=Lunch+counter,Data+API
+                  <span class="k">&perTx=5000</span>&validDays=14"
+}</code></pre>
+    <p>The payee names exist so the person can <strong>check the list</strong>; they never reach
+       the signed terms, which carry addresses. A per-payment ceiling above the period cap is
+       rejected outright: the period cap would bind first, so the ceiling could never fire. That
+       is a composition mistake, not a policy.</p>
+
+    <h3>The seven tools</h3>
+    <div class="scroll"><table>
+        <tr><th>Tool</th><th>Signs with</th><th>What it does</th></tr>
+        <tr><td><code>request_permission</code></td><td>nothing</td><td>Composes a policy into a link &mdash; caps, per-payment ceiling, named payees (the ERC-7715 request path)</td></tr>
+        <tr><td><code>load_context</code></td><td>nothing</td><td>Takes the granted authority mid-conversation; persisted under <code>~/.mapae</code>, so it survives a restart</td></tr>
+        <tr><td><code>list_permissions</code></td><td>nothing</td><td>Held authorities and their conditions, with live chain state &mdash; disabled? identity still live? budget left?</td></tr>
+        <tr><td><code>agent_status</code></td><td>nothing</td><td>Address, gas balance, and one line of headroom per held authority</td></tr>
+        <tr><td><code>check_budget</code></td><td>nothing</td><td>Remaining period allowance, the per-payment ceiling, and <b>the largest single payment both allow right now</b></td></tr>
+        <tr><td><code>pay</code></td><td>agent key</td><td>Spends. The token and the allowed payees come <b>from the signed policy</b></td></tr>
+        <tr><td><code>redelegate</code></td><td>agent key</td><td>Signs a narrower child authority to a sub-agent, with no transaction</td></tr>
+    </table></div>
+
+    <h3>Paying, and being refused</h3>
+    <p><code>pay</code> takes an amount. It does not take a recipient &mdash; only when the policy
+       allows several does <code>payee</code> choose <em>among that list</em>, and an address
+       outside it is refused before a transaction exists. A prompt injection that fully controls
+       the model can, at worst, <strong>pick which approved merchant gets paid</strong>.</p>
+    <p class="cap">Settled &mdash; a live response</p>
+    <pre><code>{
+  "status": "PAID",
+  "amount": "₩700 mKRW",
+  "payee": "0x2476f2f5…4714",
+  "spentThisPeriod": "₩700 mKRW",
+  "remainingThisPeriod": "₩4,300 mKRW",
+  "tx": "0x18ee370c…e332",
+  "trace": "https://mapae.pages.dev/tx/0x18ee370c…e332"
+}</code></pre>
+    <p class="cap">Refused &mdash; the chain's judgment, not an error</p>
+    <pre><code>{
+  "status": "REFUSED",
+  "amount": "₩1,500 mKRW",
+  <span class="k">"reason": "PerPaymentCapExceeded(1500, 1000)"</span>,
+  "tx": "0x8091a929…3e5a",
+  "trace": "https://mapae.pages.dev/tx/0x8091a929…3e5a"
+}</code></pre>
+    <p>That authority had <em>₩4,000 of the day's budget still unspent.</em> What refused it was
+       the per-payment ceiling, and the reason is the enforcer's own custom error, decoded. A model
+       should not treat this as an exception to swallow but as something to
+       <strong>explain to the person</strong>: the refusal is the system working.</p>
+    <p>The spend figures are read from the receipt's <b>events</b>. GIWA's load-balanced public RPC
+       can serve a read from a few blocks ago; an enforcer's own emission cannot be stale.</p>
+
+    <h3>What is deliberately absent</h3>
+    <div class="note">
+        <strong>There is no tool to issue and none to revoke.</strong> Issuance is the principal's
+        EIP-712 signature, and a server holding that key would have handed the agent the wallet
+        &mdash; the exact thing Mapae exists to prevent. Revocation belongs to the delegator alone,
+        on-chain. So a model cannot promise to switch something off; asked to, it points the person
+        at <em>mapae.pages.dev/permissions</em> to do it themselves. The hand that sets the limit
+        is never the hand that spends it.
+    </div>
+    <p>The agent pays its own gas. GIWA's ETH faucets are web pages with captchas, so there is
+       nothing to fetch programmatically &mdash; which is why <code>agent_status</code> reports the
+       balance and <b>roughly how many payments it covers</b>. One top-up runs for hundreds. (On
+       the x402 settlement path even that disappears &mdash; see §10.)</p>
 </section>
 
 <section id="e12">

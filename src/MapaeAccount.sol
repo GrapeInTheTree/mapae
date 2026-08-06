@@ -39,6 +39,10 @@ contract MapaeAccount is IDeleGatorCore, IMapaeAccount, IERC1271 {
 
     error NotDelegationManager(address caller);
     error NotOwner(address caller);
+    /// @notice A delegated execution tried to call the delegation manager - the contract that
+    ///         decides whether delegations are live. Authority granted BY this account may not
+    ///         be turned back on it.
+    error DelegatedCallToManager();
     error UnsupportedCallType(CallType callType);
     error UnsupportedExecType(ExecType execType);
     error ExecutionFailed();
@@ -62,6 +66,25 @@ contract MapaeAccount is IDeleGatorCore, IMapaeAccount, IERC1271 {
         returns (bytes[] memory returnData)
     {
         if (msg.sender != DELEGATION_MANAGER) revert NotDelegationManager(msg.sender);
+
+        // Delegated authority may never be aimed at the manager.
+        //
+        // The execution is not part of what the delegator signed - it arrives as calldata at
+        // redemption time - so the only thing between a delegate and an arbitrary call made AS
+        // this account is the caveat set. This account is the delegator, which makes every
+        // manager function gated on `msg.sender == delegator` reachable that way, and
+        // `enableDelegation` is one of them: a delegate holding any permission whose caveats do
+        // not pin the execution shape could switch a delegation the principal disabled back on.
+        // Verified before this guard existed - the kill switch came back up.
+        //
+        // Caveats that pin the target happen to prevent it (every permission the Composer issues
+        // carries a period cap, which requires target == token), but a guarantee this system
+        // makes must not rest on which conditions someone chose to attach. The owner's own
+        // `execute` is deliberately not restricted: calling the manager IS how a principal
+        // throws the kill switch.
+        (address target_,,) = ExecutionLib.decodeSingle(_executionCalldata);
+        if (target_ == DELEGATION_MANAGER) revert DelegatedCallToManager();
+
         return _execute(_mode, _executionCalldata);
     }
 
