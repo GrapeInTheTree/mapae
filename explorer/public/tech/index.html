@@ -261,8 +261,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        신원이 있는 체인이 없었기 때문이다. 기와에는 도장이 있다.</p>
     <div class="scroll"><table>
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
-        <tr><td>테스트</td><td class="n">155</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
-        <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명 — 그중 셋(신원·수취인·회당)은 배포된 어디에도 없던 조건</td></tr>
+        <tr><td>테스트</td><td class="n">172</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
+        <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명 — 그중 셋(신원 · 수취인 집합 · 회당)은 배포된 프레임워크가 표현하지 못하던 조건</td></tr>
         <tr><td>온체인 거부</td><td class="n">26</td><td>실패한 결제가 사유와 함께 체인에 남아 있다 — 거부는 감출 것이 아니라 이 시스템의 산출물이다</td></tr>
     </table></div>
 </section>
@@ -542,6 +542,17 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
            하나로 모아 주므로, 결제자가 받는 에러는 <strong>언제나 같은 하나</strong>다 — 무엇을
            해야 하는지가 에러만 보고도 분명하다.</p>
     </div>
+    <div class="card key">
+        <h4>⑤ 이식성은 주장이 아니라 테스트다</h4>
+        <p><strong>MetaMask가 직접 배포한 매니저</strong>(이더리움 세폴리아 v1.3.0) 위에서 우리
+           조건들이 돈다 — 그들 컨트랙트가 서명을 검증하고, 사슬을 순회하고, 우리 훅을 부른다.
+           취소된 신원은 거기서도 똑같이 거부된다. EIP-712 도메인조차 가정하지 않고
+           <em>그들 컨트랙트에서 읽는다.</em></p>
+        <p>그리고 <strong>이식되지 않는 것이 요점이다.</strong> 도장은 기와에만 있어서 세폴리아
+           에서는 신원 레지스트리를 목으로 세워야 한다 — <em>기계는 이식되고, 의미는 이식되지
+           않는다.</em> "이 사람이 검증됐는가"를 묻는 조건은 <strong>답할 수 있는 체인</strong>에서만
+           값을 갖는다. 왜 기와여야 하는지가, 문장이 아니라 실행되는 테스트다.</p>
+    </div>
     <p>이 컨트랙트는 무상태이고 실행 calldata를 파싱하지 않는다. 그래서 어떤 호출 형태와도
        조합되고, 훅을 직접 불러 오염시킬 저장 상태 자체가 없다.</p>
     <h3>두 번째 빈칸 — 수취인 조건</h3>
@@ -727,7 +738,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
 <section id="s13">
     <h2><span class="num">13</span>검증</h2>
-    <p><strong>테스트 155개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요하다.</p>
+    <p><strong>테스트 172개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요하다.</p>
     <div class="scroll"><table>
         <tr><th>층</th><th>개수</th><th>증명하는 것</th></tr>
         <tr><td>포크 테스트</td><td class="n">10</td><td><strong>실제 도장 배포본</strong> 상대로 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힌다</td></tr>
@@ -1026,8 +1037,8 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        condition on. GIWA has Dojang.</p>
     <div class="scroll"><table>
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
-        <tr><td>Tests</td><td class="n">155</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
-        <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, payee, per-payment) deployed nowhere else</td></tr>
+        <tr><td>Tests</td><td class="n">172</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
+        <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, a payee <em>set</em>, per-payment) not expressible in a deployed framework</td></tr>
         <tr><td>Refusals on-chain</td><td class="n">26</td><td>Failed payments sit on the chain with their reasons &mdash; a refusal is this system's output, not something to hide</td></tr>
     </table></div>
 </section>
@@ -1326,6 +1337,17 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
            expired and revoked into false, so the payer always receives
            <strong>one actionable error</strong>.</p>
     </div>
+    <div class="card key">
+        <h4>&#9315; Portability is a test, not a claim</h4>
+        <p>These conditions run under <strong>MetaMask's own deployed manager</strong> (Ethereum
+           Sepolia, v1.3.0): their contract validates the signature, walks the chain and calls
+           these hooks, and a revoked principal is refused there exactly as here. Even the EIP-712
+           domain is <em>read from their contract</em> rather than assumed.</p>
+        <p>And <strong>what does not travel is the point.</strong> Dojang exists only on GIWA, so
+           the identity registry has to be mocked on Sepolia &mdash; <em>the machine ports, the
+           meaning does not.</em> A condition asking <em>is this person verified</em> is only worth
+           deploying on a chain that can answer. Why GIWA, stated as a test rather than a sentence.</p>
+    </div>
     <p>The enforcer is stateless and never parses execution calldata, so it composes with any call
        shape and has no per-delegation accounting to poison by calling the hook directly.</p>
     <h3>A second gap &mdash; the payee caveat</h3>
@@ -1524,7 +1546,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
 <section id="e13">
     <h2><span class="num">13</span>Verification</h2>
-    <p><strong>155 tests</strong>, all passing. What each layer proves matters more than the count.</p>
+    <p><strong>172 tests</strong>, all passing. What each layer proves matters more than the count.</p>
     <div class="scroll"><table>
         <tr><th>Layer</th><th>Count</th><th>What it proves</th></tr>
         <tr><td>Fork tests, pinned</td><td class="n">10</td><td>Every Dojang assumption against the <strong>real deployment</strong>: a genuine KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately</td></tr>

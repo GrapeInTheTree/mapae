@@ -25,7 +25,7 @@ AI에게 지갑을 주지 마세요. 범위를 정한 권한만 주세요.
 <sub>
   <img alt="GIWA Sepolia" src="https://img.shields.io/badge/GIWA_Sepolia-91342-8A5A35?style=flat-square&labelColor=11100E">
   <img alt="Solidity" src="https://img.shields.io/badge/Solidity-0.8.29-8A5A35?style=flat-square&labelColor=11100E">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-155_passing-1D7A5F?style=flat-square&labelColor=11100E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-172_passing-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="Slither" src="https://img.shields.io/badge/Slither-0_high_·_0_medium-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-8A5A35?style=flat-square&labelColor=11100E">
 </sub>
@@ -117,10 +117,17 @@ terms*, evaluated at redemption time. Its load-bearing decisions:
 - **Liveness is read at use, never cached at issuance.** Dojang's own resolver documents that its
   index is not the source of truth for liveness. This inherits both revocation and expiry as
   instant, transaction-free kill switches.
-- **It is portable in both directions.** The manager adopts MetaMask's structures byte-for-byte —
-  typehashes, hook ordering, `ROOT_AUTHORITY`, terms conventions — so their enforcers run here
-  unmodified (two are vendored and deployed), and this enforcer runs on their manager on any chain
-  that gains an attestation issuer worth gating on.
+- **It is portable in both directions, and that is tested rather than asserted.** The manager
+  adopts MetaMask's structures byte-for-byte — typehashes, hook ordering, `ROOT_AUTHORITY`, terms
+  conventions — so their enforcers run here unmodified (two are vendored and deployed). The other
+  direction now runs against **MetaMask's own deployed manager** on Ethereum Sepolia
+  ([test/fork/MetaMaskPortability.t.sol](test/fork/MetaMaskPortability.t.sol)): their contract
+  validates the signature, walks the chain and calls these conditions, and a revoked principal is
+  refused there just as here.
+
+  What that test cannot carry across is the point. Dojang exists only on GIWA, so the identity
+  registry has to be mocked on Sepolia: **the machine ports, the meaning does not.** An enforcer
+  that asks *is this person verified* is only worth deploying on a chain that can answer.
 
 A second, smaller gap fell out of the work. Target allowlists gate the *token contract*, while an
 ERC-20 payment's recipient lives at calldata bytes `[4:36]`. A generic calldata enforcer can pin
@@ -270,7 +277,7 @@ gas at all:
 ## Verification
 
 The demo is asserted, not screenshotted; every claim above has either a transaction hash or a
-test behind it. **155 tests**, all passing.
+test behind it. **172 tests**, all passing.
 
 | Layer | Count | What it proves |
 |---|---|---|
@@ -281,6 +288,7 @@ test behind it. **155 tests**, all passing.
 | Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding, and the vendored MetaMask code exercised rather than merely present |
 | Integration | 13 | The full T1–T8 demo through the real manager; batch atomicity; the 2×2 kill-switch matrix |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: period cap holds, **no payment while identity is dead**, none while disabled, attacker never paid, tokens conserved |
+| Portability, on MetaMask's own manager | 5 | Mapae's conditions driven by **MetaMask's deployed DelegationManager** on Ethereum Sepolia — their signature validation, their chain walking, their hook ordering. The identity gate refuses a revoked principal there exactly as it does here, and the EIP-712 domain is read from their contract rather than assumed |
 | Cross-language byte parity | 4 + 33 | `abi.encode(Delegation[])`, the EIP-712 digest and the packed execution are byte-identical across Solidity (reference), TypeScript (SDK) and Go (facilitator). The policy codec is proven a pair of inverses, so the sentence a person reads cannot drift from the terms they sign |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
 | Live transactions | every path | The full demo matrix, the facilitator flow, a six-persona campaign collecting every refusal kind, four signed by a person in MetaMask, and the MCP server paying, choosing among payees, and being refused over stdio |
