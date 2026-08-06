@@ -60,6 +60,8 @@ contract MetaMaskPortabilityTest is Test {
     /// Source: MetaMask/delegation-framework documents/Deployments.md
     address internal constant METAMASK_DELEGATION_MANAGER = 0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3;
 
+    string internal constant ETH_SEPOLIA_PUBLIC_RPC = "https://ethereum-sepolia-rpc.publicnode.com";
+
     bytes32 internal constant ATTESTER = keccak256("dojang.dojangattesterids.upbitkorea");
 
     IForeignDelegationManager internal theirManager = IForeignDelegationManager(METAMASK_DELEGATION_MANAGER);
@@ -80,7 +82,10 @@ contract MetaMaskPortabilityTest is Test {
     bytes32 internal theirDomain;
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("ETH_SEPOLIA_RPC_URL"));
+        // Defaulted, for the same reason DojangFork defaults its own: a fresh clone has no .env,
+        // and `forge test` failing on that reads as a broken repository rather than a missing
+        // setting. Set the variable to use a different endpoint.
+        vm.createSelectFork(vm.envOr("ETH_SEPOLIA_RPC_URL", string(ETH_SEPOLIA_PUBLIC_RPC)));
 
         // A seed whose address is not already occupied on the live chain.
         //

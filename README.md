@@ -421,11 +421,10 @@ races on GIWA's load-balanced public endpoint are documented in [docs/GAPS.md](d
 ```bash
 git clone --recursive https://github.com/GrapeInTheTree/mapae && cd mapae
 
-# unit, integration, invariant tests
-forge test --no-match-path 'test/fork/*'
-
-# fork suite against the live Dojang deployment
-GIWA_SEPOLIA_RPC_URL=https://sepolia-rpc.giwa.io forge test --match-path 'test/fork/*'
+# everything: 157 unit, integration and invariant tests, plus 15 against two live chains.
+# No configuration - the fork suites default to public endpoints. Set GIWA_SEPOLIA_RPC_URL
+# or ETH_SEPOLIA_RPC_URL only to point them somewhere else.
+forge test
 
 # cross-language byte parity and the policy codec
 pnpm install && pnpm fixtures

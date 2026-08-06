@@ -18,6 +18,8 @@ import {DojangConstants} from "../../src/libraries/DojangConstants.sol";
 ///        GIWA_SEPOLIA_RPC_URL=https://sepolia-rpc.giwa.io forge test --match-path 'test/fork/*'
 contract DojangForkTest is Test {
     /// @dev Head at 2026-07-29. Every value asserted below was read live at this height.
+    string internal constant GIWA_SEPOLIA_PUBLIC_RPC = "https://sepolia-rpc.giwa.io";
+
     uint256 internal constant FORK_BLOCK = 31_909_542;
 
     /// @dev A real EOA holding a live, never-expiring Upbit Korea Verified Address attestation.
@@ -34,7 +36,11 @@ contract DojangForkTest is Test {
     IGiwaFaucetExtension internal faucet = IGiwaFaucetExtension(DojangConstants.GIWA_FAUCET_EXTENSION);
 
     function setUp() public {
-        vm.createSelectFork(vm.envString("GIWA_SEPOLIA_RPC_URL"), FORK_BLOCK);
+        // Defaulted rather than required. `forge test` is the first command anyone runs after
+        // cloning, and a suite that dies on a missing variable teaches them the repository is
+        // broken. The endpoint is public and already published in this file's header, so there is
+        // nothing here to keep in a .env - set the variable only to point somewhere else.
+        vm.createSelectFork(vm.envOr("GIWA_SEPOLIA_RPC_URL", string(GIWA_SEPOLIA_PUBLIC_RPC)), FORK_BLOCK);
     }
 
     /* -------------------------------------------------------------------------- */
