@@ -773,6 +773,23 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        않고 <em>읽지 못한 조건이 정책에 더 있다</em>고 적는다. 정책은 온체인이 정본이고, 이 도구는
        그것을 대신하지 않는다.</p>
 
+    <h3>거부는 트랜잭션을 쓸 값어치가 있나</h3>
+    <p>기본값은 <strong>브로드캐스트한다.</strong> 온체인에서 실패하고, 가스를 쓰고, 누구나 열어
+       enforcer의 커스텀 에러를 직접 읽을 수 있는 트랜잭션을 남긴다. 의도한 것이다 — 통제가
+       작동했음을 보여야 하는 쪽(감사인·거래상대·보험사)에게 <em>이 프로세스의 로그에만 있는
+       거부</em>는 거의 값이 없다. 의심받는 대상이 바로 그 프로세스이기 때문이다.</p>
+    <p><code>MAPAE_REFUSAL_MODE=dry</code>를 주면 <code>pay</code>가 먼저 확인하고 같은 거부를
+       <code>tx: null</code>로 돌려준다. 아무것도 쓰지 않는다. 사유는 동일하고, 사라지는 것은
+       증거다.</p>
+    <p>둘 다 누군가에게는 맞는 답이라서, 코드에 박은 결정이 아니라 <strong>설정</strong>이다. 기본이
+       증거 쪽으로 기운 이유는 기와에서 이 교환이 원리상 실재하되 실제로는 한쪽으로 크게 기울기
+       때문이다 — 거부된 상환의 비용은 <strong>0.0000003 ETH</strong> 수준이고, 자기를 만든
+       프로세스보다 오래 남는 기록은 그보다 값이 나간다.</p>
+    <p>정산자 쪽은 반대로 서 있다. x402 <code>/verify</code>는 브로드캐스트 <em>전에</em> 거절한다 —
+       정산자는 남의 가스를 태울 권한이 없고, 거기서의 거부는 결제 요청에 대한 응답이지 증거물이
+       아니기 때문이다. 같은 시스템이 두 지점에서 다르게 행동하는 것은 우연이 아니라, 서 있는
+       자리가 다르기 때문이다.</p>
+
     <h3>일부러 없는 것</h3>
     <div class="note">
         <strong>발급도 취소도 도구가 아니다.</strong> 발급은 사람의 EIP-712 서명이고, 그 키를 서버가
@@ -1667,6 +1684,26 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        the payment and the chain still refuses, it reports that plainly &mdash; <em>the signed
        policy carries a condition this tool did not read</em>. The chain is the authority on
        policy, and this tool does not stand in for it.</p>
+
+    <h3>Is a refusal worth a transaction?</h3>
+    <p>By default it is <strong>broadcast</strong>. It fails on-chain, costs gas, and leaves a
+       transaction anyone can open and read the enforcer's own error in. That is deliberate: to
+       anyone who must show that a control fired &mdash; an auditor, a counterparty, an insurer
+       &mdash; a refusal that exists only in this process's logs is worth very little, because the
+       process that produced it is the process being questioned.</p>
+    <p>Set <code>MAPAE_REFUSAL_MODE=dry</code> and <code>pay</code> checks first, returning the same
+       refusal with <code>tx: null</code> and spending nothing. The reason is identical; what is
+       lost is the evidence.</p>
+    <p>Both are right for someone, so it is a <strong>setting</strong> rather than a decision baked
+       into the code. The default leans to evidence because on GIWA the trade-off is real in
+       principle and lopsided in practice: a refused redemption costs on the order of
+       <strong>0.0000003 ETH</strong>, and a record that outlives the process that made it is worth
+       more than that.</p>
+    <p>The facilitator stands the other way round. x402 <code>/verify</code> refuses
+       <em>before</em> broadcasting, because a facilitator has no licence to burn someone else's
+       gas and a refusal there is an answer to a payment request rather than an exhibit. The same
+       system behaving differently at two points is not an inconsistency &mdash; it is two
+       positions with different obligations.</p>
 
     <h3>What is deliberately absent</h3>
     <div class="note">

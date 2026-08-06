@@ -278,6 +278,22 @@ function reasonOf(err: unknown): string {
     return "reverted";
 }
 
+/**
+ * Whether a refused payment is broadcast.
+ *
+ * Both answers are defensible and they serve different people, so this is declared rather than
+ * assumed. An enterprise wants a refusal in a block: proof that the control fired, readable by
+ * an auditor who does not trust this process. An individual would rather not pay for the news.
+ *
+ * The default mines them, because on this chain the trade-off is real in principle and lopsided
+ * in practice - a refused redemption costs on the order of 0.0000003 ETH, and evidence that
+ * survives the process that produced it is worth more than that.
+ *
+ * `simulate_payment` is the other half of the answer and needs no setting: ask first, and there
+ * is nothing to refuse.
+ */
+const MINE_REFUSALS = (process.env.MAPAE_REFUSAL_MODE ?? "mine").toLowerCase() !== "dry";
+
 const text = (v: unknown) => ({
     content: [{type: "text" as const, text: typeof v === "string" ? v : JSON.stringify(v, bigintSafe, 2)}],
 });
@@ -588,6 +604,30 @@ server.tool(
         );
         const args = [[h.context], [MODE_SIMPLE_SINGLE as Hex], [execution]] as const;
 
+        // A refusal that never reaches a block costs no gas and leaves no evidence. Which of
+        // those matters more is not ours to decide, so it is a declared setting rather than an
+        // accident of implementation - see REFUSALS_ARE_MINED.
+        if (!MINE_REFUSALS) {
+            try {
+                await pub.simulateContract({
+                    address: addresses.manager,
+                    abi: managerAbi,
+                    functionName: "redeemDelegations",
+                    args,
+                    account: agent.address,
+                });
+            } catch (e) {
+                return text({
+                    status: "REFUSED",
+                    amount: fmtWon(BigInt(amount)),
+                    payee: recipient,
+                    reason: reasonOf(e),
+                    tx: null,
+                    note: "Refused before broadcast: MAPAE_REFUSAL_MODE=dry. No transaction exists, so this refusal leaves no record anyone else can audit.",
+                });
+            }
+        }
+
         // Fee headroom: GIWA's shared mempool evicts market-priced transactions under load.
         const base = (await pub.getBlock()).baseFeePerGas ?? 1_000_000n;
 
@@ -616,19 +656,31 @@ server.tool(
             }
             let reason: string | undefined;
             if (!ok) {
-                // Re-run against the state the block executed on, to recover WHY.
-                try {
-                    await pub.simulateContract({
-                        address: addresses.manager,
-                        abi: managerAbi,
-                        functionName: "redeemDelegations",
-                        args,
-                        account: agent.address,
-                        blockNumber: receipt.blockNumber - 1n,
-                    });
-                } catch (e) {
-                    reason = reasonOf(e);
+                // Replaying against the state the block executed on is the honest answer, but
+                // GIWA's public RPC frequently returns a historical eth_call carrying no revert
+                // data at all - and then a real refusal reaches the model as a bare "reverted",
+                // which tells it nothing to say to a person. Falling back to current state
+                // recovers the enforcer's own error; a condition that refused a moment ago is
+                // still refusing, and if it genuinely is not, the honest answer is the first one.
+                for (const at of [receipt.blockNumber - 1n, undefined]) {
+                    try {
+                        await pub.simulateContract({
+                            address: addresses.manager,
+                            abi: managerAbi,
+                            functionName: "redeemDelegations",
+                            args,
+                            account: agent.address,
+                            ...(at === undefined ? {} : {blockNumber: at}),
+                        });
+                    } catch (e) {
+                        const decoded = reasonOf(e);
+                        if (decoded !== "reverted") {
+                            reason = decoded;
+                            break;
+                        }
+                    }
                 }
+                reason ??= "reverted";
             }
             return text({
                 status: ok ? "PAID" : "REFUSED",

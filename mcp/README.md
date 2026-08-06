@@ -14,7 +14,27 @@ to it, so generating it on the machine it will live on is strictly safer than pa
 Fund the agent's address (shown by `list_permissions`) with a little GIWA Sepolia ETH for gas.
 
 Optional env: `MAPAE_AGENT_PRIVATE_KEY` overrides the stored key;
-`MAPAE_PERMISSION_CONTEXT` preloads contexts (comma-separated) instead of `load_context`.
+`MAPAE_PERMISSION_CONTEXT` preloads contexts (comma-separated) instead of `load_context`;
+`MAPAE_REFUSAL_MODE` chooses what happens to a refusal — see below.
+
+## Is a refusal worth a transaction?
+
+By default a refused payment is **broadcast**. It fails on-chain, costs gas, and leaves a
+transaction anyone can open and read the enforcer's own error in. That is deliberate: for anyone
+who has to show that a control fired — an auditor, a counterparty, an insurer — a refusal that
+exists only in this process's logs is worth very little, because the process that produced it is
+the process being questioned.
+
+Set `MAPAE_REFUSAL_MODE=dry` and `pay` checks first and returns the same refusal with `tx: null`,
+having spent nothing. The reason is identical; what is lost is the evidence.
+
+Both are right for someone, which is why it is a setting rather than a decision baked into the
+code. The default leans to evidence because on GIWA the trade-off is real in principle and
+lopsided in practice: a refused redemption costs on the order of **0.0000003 ETH**, and a record
+that outlives the process that made it is worth more than that.
+
+`simulate_payment` is the third answer and needs no setting — ask before paying, and there is
+nothing to refuse.
 
 ## Tools
 

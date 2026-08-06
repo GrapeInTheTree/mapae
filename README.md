@@ -325,6 +325,20 @@ and signed a two-hop child authority narrowed to ₩500/day and ₩200 per payme
 transaction. The package on npm was then verified cold — fresh cache, throwaway profile,
 straight from the registry — to behave as shipped.
 
+### Is a refusal worth a transaction?
+
+By default a refused payment is broadcast: it fails on-chain, costs gas, and leaves a transaction
+anyone can open and read the enforcer's own error in. To someone who must show that a control
+fired, a refusal that exists only in this process's logs is worth very little — the process that
+produced it is the process being questioned. `MAPAE_REFUSAL_MODE=dry` returns the same refusal
+with `tx: null` and spends nothing; the reason is identical and the evidence is what is lost.
+
+Both are right for someone, so it is a setting rather than a decision baked in. The default leans
+to evidence because on GIWA the trade-off is real in principle and lopsided in practice: a refused
+redemption costs on the order of **0.0000003 ETH**. The facilitator stands the other way round —
+x402 `/verify` refuses before broadcasting, because a facilitator has no licence to burn someone
+else's gas. Two positions, different obligations.
+
 ## The index — an accelerator, never a dependency
 
 [**index.mapae.org**](https://index.mapae.org/api/stats) serves the aggregates and the attempt

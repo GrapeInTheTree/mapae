@@ -70,6 +70,66 @@ async function fleetAccount(): Promise<Address> {
     throw new Error("fleet account not found in recent manager txs");
 }
 
+/** Spawn the built server over stdio and complete the MCP handshake. Returns a client bound to
+ *  it, so a run can raise a second server under a different environment and compare. */
+async function connect(env: Record<string, string>) {
+    const child = spawn("node", ["/Users/ahn_euijin/mapae/mcp/dist/index.js"], {
+        env: {
+            ...process.env,
+            MAPAE_AGENT_PRIVATE_KEY: process.env.AGENT_PRIVATE_KEY,
+            MAPAE_PERMISSION_CONTEXT: "",
+            ...env,
+        },
+        stdio: ["pipe", "pipe", "inherit"],
+    });
+
+    const pending = new Map<number, (v: unknown) => void>();
+    let buffer = "";
+    child.stdout.on("data", (chunk: Buffer) => {
+        buffer += chunk.toString();
+        let nl;
+        while ((nl = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, nl);
+            buffer = buffer.slice(nl + 1);
+            if (!line.trim()) continue;
+            const msg = JSON.parse(line);
+            if (msg.id !== undefined && pending.has(msg.id)) {
+                pending.get(msg.id)!(msg);
+                pending.delete(msg.id);
+            }
+        }
+    });
+
+    let seq = 0;
+    const request = (method: string, params: unknown): Promise<any> =>
+        new Promise((resolve, reject) => {
+            const id = ++seq;
+            pending.set(id, resolve);
+            child.stdin.write(JSON.stringify({jsonrpc: "2.0", id, method, params}) + "\n");
+            setTimeout(() => {
+                if (pending.has(id)) {
+                    pending.delete(id);
+                    reject(new Error(`timeout: ${method}`));
+                }
+            }, 120_000);
+        });
+    const notify = (method: string) => child.stdin.write(JSON.stringify({jsonrpc: "2.0", method}) + "\n");
+    const call = async (name: string, args: Record<string, unknown> = {}) => {
+        const r = await request("tools/call", {name, arguments: args});
+        const body = r.result?.content?.[0]?.text ?? JSON.stringify(r);
+        console.log(`\n=== ${name} ===\n${body}`);
+        return body as string;
+    };
+
+    await request("initialize", {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: {name: "harness", version: "0.0.0"},
+    });
+    notify("notifications/initialized");
+    return {child, call, request, notify};
+}
+
 async function main() {
     /* -------------------------- phase 1: the human ------------------------- */
     const ACCOUNT = await fleetAccount();
@@ -115,61 +175,8 @@ async function main() {
     // wiped first, so contexts persisted by real sessions (or previous runs) cannot leak in -
     // persistence is a feature everywhere except in a test that asserts an empty start.
     rmSync(join(homedir(), ".mapae", "harness"), {recursive: true, force: true});
-    const child = spawn("node", ["/Users/ahn_euijin/mapae/mcp/dist/index.js"], {
-        env: {
-            ...process.env,
-            MAPAE_PROFILE: "harness",
-            MAPAE_AGENT_PRIVATE_KEY: process.env.AGENT_PRIVATE_KEY,
-            MAPAE_PERMISSION_CONTEXT: "",
-        },
-        stdio: ["pipe", "pipe", "inherit"],
-    });
-
-    const pending = new Map<number, (v: unknown) => void>();
-    let buffer = "";
-    child.stdout.on("data", (chunk: Buffer) => {
-        buffer += chunk.toString();
-        let nl;
-        while ((nl = buffer.indexOf("\n")) >= 0) {
-            const line = buffer.slice(0, nl);
-            buffer = buffer.slice(nl + 1);
-            if (!line.trim()) continue;
-            const msg = JSON.parse(line);
-            if (msg.id !== undefined && pending.has(msg.id)) {
-                pending.get(msg.id)!(msg);
-                pending.delete(msg.id);
-            }
-        }
-    });
-
-    let seq = 0;
-    const request = (method: string, params: unknown): Promise<any> =>
-        new Promise((resolve, reject) => {
-            const id = ++seq;
-            pending.set(id, resolve);
-            child.stdin.write(JSON.stringify({jsonrpc: "2.0", id, method, params}) + "\n");
-            setTimeout(() => {
-                if (pending.has(id)) {
-                    pending.delete(id);
-                    reject(new Error(`timeout: ${method}`));
-                }
-            }, 120_000);
-        });
-    const notify = (method: string) =>
-        child.stdin.write(JSON.stringify({jsonrpc: "2.0", method}) + "\n");
-    const call = async (name: string, args: Record<string, unknown> = {}) => {
-        const r = await request("tools/call", {name, arguments: args});
-        const body = r.result?.content?.[0]?.text ?? JSON.stringify(r);
-        console.log(`\n=== ${name} ===\n${body}`);
-        return body as string;
-    };
-
-    await request("initialize", {
-        protocolVersion: "2024-11-05",
-        capabilities: {},
-        clientInfo: {name: "harness", version: "0.0.0"},
-    });
-    notify("notifications/initialized");
+    const server = await connect({MAPAE_PROFILE: "harness"});
+    const {child, call, request, notify} = server;
 
     const tools = await request("tools/list", {});
     console.log(`tools: ${tools.result.tools.map((t: {name: string}) => t.name).join(", ")}`);
@@ -231,6 +238,15 @@ async function main() {
     if (!paidB.includes('"PAID"') || !paidB.toLowerCase().includes(merchantB.toLowerCase()))
         throw new Error("pay to second allowed payee failed");
 
+    // Both refusal modes, because the setting is a promise about what reaches a block. Dry must
+    // answer with the same reason and no transaction; the default must still mine one.
+    const dry = await connect({MAPAE_PROFILE: "harness", MAPAE_PERMISSION_CONTEXT: context, MAPAE_REFUSAL_MODE: "dry"});
+    const dryRefusal = await dry.call("pay", {amount: 1_500});
+    dry.child.kill();
+    if (!dryRefusal.includes('"REFUSED"') || !dryRefusal.includes("PerPaymentCapExceeded"))
+        throw new Error(`dry mode lost the reason: ${dryRefusal}`);
+    if (!dryRefusal.includes('"tx": null')) throw new Error(`dry mode broadcast anyway: ${dryRefusal}`);
+
     const outsider = await call("pay", {amount: 100, payee: agent.address});
     if (!outsider.includes('"NOT_IN_POLICY"')) throw new Error("off-policy payee was not rejected");
 
@@ -265,13 +281,13 @@ async function main() {
     };
 
     // GIWA's public RPC load-balances across backends at different heights, so a read taken right
-    // after a receipt can still answer from before it. Poll rather than assert once - the same
-    // lag that made a settled total come out short of its own rows.
-    const settlesAgain = async (): Promise<string> => {
+    // after a receipt can still answer from before it - in BOTH directions. Poll for the state we
+    // just wrote rather than asserting once.
+    const settlesWhen = async (want: boolean): Promise<string> => {
         let last = "";
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 12; i++) {
             last = await call("simulate_payment", {amount: 100});
-            if (last.includes('"wouldSettle": true')) return last;
+            if (last.includes(`"wouldSettle": ${want}`)) return last;
             await new Promise((r) => setTimeout(r, 3_000));
         }
         return last;
@@ -279,7 +295,7 @@ async function main() {
 
     await killSwitch("disableDelegation");
 
-    const dryDisabled = await call("simulate_payment", {amount: 100});
+    const dryDisabled = await settlesWhen(false);
     if (!dryDisabled.includes('"wouldSettle": false') || !dryDisabled.includes('"refusedBy": "disabled"'))
         throw new Error(`simulate did not see the delegation was switched off: ${dryDisabled}`);
     if (!dryDisabled.includes('"largestThatWouldSettleNow": "\u20a90') && !dryDisabled.includes('largestThatWouldSettleNow": "₩0'))
@@ -290,7 +306,7 @@ async function main() {
         throw new Error(`check_budget still advertised headroom while disabled: ${budgetDisabled}`);
 
     await killSwitch("enableDelegation");
-    const dryBack = await settlesAgain();
+    const dryBack = await settlesWhen(true);
     if (!dryBack.includes('"wouldSettle": true')) throw new Error(`re-enabling did not restore the tier: ${dryBack}`);
     console.log(`\nkill switch reached the dry run: disabled -> ₩0 headroom, re-enabled -> settles again`);
 

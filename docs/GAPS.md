@@ -59,6 +59,21 @@ probed reverts on `DOMAIN_SEPARATOR()` and `authorizationState()`. x402's defaul
 method therefore cannot run on GIWA today — which makes the `erc7710` method not just an option
 but the only currently viable x402 path on this chain.
 
+**A read taken right after a receipt can answer from before it.** The public RPC load-balances
+across backends at different heights, so a state change is not immediately visible to every
+caller. We hit this three times in one day and in both directions: a settled total that came out
+₩5,000 short of the transfers it summarised, a re-enabled delegation that still read as disabled,
+and — the one that matters — a **disabled delegation that still read as enabled**.
+
+That last direction is the uncomfortable one, because it reports more authority than exists. It is
+not something a caveat can fix: the enforcer is correct, the block is correct, and the client is
+being told about an older block. Simulating against the chain does not help either, since the
+simulation runs on the same stale backend. What we do about it is bounded and worth stating
+plainly: figures that can be derived from a receipt are read from the receipt's own events rather
+than from a follow-up call, and anything that must poll, polls for the state it just wrote instead
+of asserting once. Beyond that the honest answer is that a production deployment wants a dedicated
+RPC endpoint, and this is the clearest single reason why.
+
 ## Delegation
 
 **No delegation framework is deployed.** MetaMask's delegation framework is absent, and nothing
