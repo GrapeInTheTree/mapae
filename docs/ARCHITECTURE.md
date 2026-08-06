@@ -123,9 +123,12 @@ and has no per-delegation accounting to poison by calling the hook directly.
 
 ### A second gap — `AllowedPayeeEnforcer`
 
-Target allowlists gate the **token contract**, but an ERC-20 payment's recipient lives at calldata
-bytes `[4:36]`, which nothing deployed inspects. This enforcer is what makes *may pay only these
-merchants* expressible. It denies by default: an empty payee list is an error, never an allow-all.
+Target allowlists gate the **token contract**, while an ERC-20 payment's recipient lives at
+calldata bytes `[4:36]`. A generic calldata enforcer can pin that word to **one exact value**,
+which expresses a single payee per delegation: *may pay only these three merchants* then costs
+three delegations, or a new signature per payment. This enforcer reads the same word against a
+**set**, so the policy is one signature and stays one as the list changes. It denies by default:
+an empty payee list is an error, never an allow-all.
 
 ## 7. Kill switches — a 2×2
 

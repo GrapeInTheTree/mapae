@@ -503,7 +503,9 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <pre><code>target(20) ‖ value(32) ‖ callData
   └ ERC-20 이체면 callData = 0xa9059cbb ‖ to(32) ‖ amount(32) = 68바이트</code></pre>
     <p>수취인이 <code>callData[4:36]</code>에 있다는 사실이 <code>AllowedPayeeEnforcer</code>가
-       존재하는 이유다 — 타겟 allowlist는 <em>토큰</em>을 볼 뿐 수취인을 못 본다. 그리고 그
+       존재하는 이유다. 타겟 allowlist는 <em>토큰</em>을 볼 뿐 수취인을 못 보고, 범용 calldata
+       조건은 그 워드에 닿긴 하지만 <strong>정확히 한 값</strong>에만 핀할 수 있다 — 위임 하나에
+       수취인 하나다. 우리 조건은 같은 워드를 <strong>집합</strong>에 대고 읽는다. 그리고 그
        32바이트 워드의 상위 12바이트가 0이 아니면 거부한다(<code>DirtyRecipientWord</code>):
        주소로 안 쓰이는 자리에 값을 실어 검사를 우회하려는 시도를 막는다.</p>
 </section>
@@ -544,9 +546,11 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        조합되고, 훅을 직접 불러 오염시킬 저장 상태 자체가 없다.</p>
     <h3>두 번째 빈칸 — 수취인 조건</h3>
     <p>작업 중에 격차가 하나 더 드러났다. 타겟 allowlist는 <strong>토큰 컨트랙트</strong>를
-       검사하는데, ERC-20 결제의 실제 수취인은 calldata 바이트 <code>[4:36]</code>에 있고 배포된
-       것 중 이걸 보는 게 없다. <code>AllowedPayeeEnforcer</code>가 그 빈칸을 채운다 — <em>"이
-       가맹점들에만 지불할 수 있다"</em>가 비로소 조건이 된다.</p>
+       검사하고, ERC-20 결제의 실제 수취인은 calldata 바이트 <code>[4:36]</code>에 있다. 범용
+       calldata 조건이 그 워드에 닿긴 한다 — 다만 <strong>정확히 한 값</strong>에만. 그래서
+       <em>"이 세 가맹점에만"</em>을 표현하려면 위임을 셋 만들거나 결제마다 새로 서명해야 한다.
+       <code>AllowedPayeeEnforcer</code>는 같은 워드를 <strong>집합</strong>에 대고 읽어서, 그
+       정책을 <strong>사람의 서명 한 번</strong>으로 만든다. 목록이 바뀌어도 한 번이다.</p>
 </section>
 
 <section id="s8">
@@ -1282,8 +1286,10 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <pre><code>target(20) &Vert; value(32) &Vert; callData
   └ for an ERC-20 transfer: 0xa9059cbb &Vert; to(32) &Vert; amount(32) = 68 bytes</code></pre>
     <p>That the recipient lives at <code>callData[4:36]</code> is the entire reason
-       <code>AllowedPayeeEnforcer</code> exists &mdash; a target allowlist sees the <em>token</em>,
-       never the payee. And the top 12 bytes of that word must be zero
+       <code>AllowedPayeeEnforcer</code> exists. A target allowlist sees the <em>token</em>, never
+       the payee; a generic calldata enforcer does reach that word, but pins it to
+       <strong>one exact value</strong> &mdash; one payee per delegation. This one reads the same
+       word against a <strong>set</strong>. And the top 12 bytes of that word must be zero
        (<code>DirtyRecipientWord</code>): smuggling a value through the padding of an address slot
        is how one would try to slip past a check that reads it as an address.</p>
 </section>
@@ -1324,7 +1330,8 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        shape and has no per-delegation accounting to poison by calling the hook directly.</p>
     <h3>A second gap &mdash; the payee caveat</h3>
     <p>Target allowlists gate the <strong>token contract</strong>, but an ERC-20 payment's
-       recipient lives at calldata bytes <code>[4:36]</code>, which nothing deployed inspects.
+       recipient lives at calldata bytes <code>[4:36]</code>, where a generic calldata enforcer
+       reaches it but pins one exact value &mdash; a single payee per delegation.
        <code>AllowedPayeeEnforcer</code> is what makes <em>may pay only these merchants</em>
        expressible.</p>
 </section>

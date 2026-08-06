@@ -67,9 +67,11 @@ caveat enforcers MetaMask ships, and every enforcer we could find on any chain, 
 a delegation on identity**. The chain with a licensed exchange as its attestation issuer is
 precisely where that enforcer belongs.
 
-**Target allowlists cannot express payees.** Existing target enforcers gate the execution target,
-which for an ERC-20 payment is the token contract; the recipient lives at calldata `[4:36]` and
-nothing deployed inspects it. Closed here by `AllowedPayeeEnforcer`.
+**Target allowlists cannot express payees; calldata pinning expresses only one.** Target enforcers
+gate the execution target, which for an ERC-20 payment is the token contract. The recipient sits at
+calldata `[4:36]`, and a generic calldata enforcer does reach it — pinned to one exact value, which
+is one payee per delegation. Expressing *a set* of merchants in a single signed policy is what
+`AllowedPayeeEnforcer` adds.
 
 ## Tooling notes for other builders
 

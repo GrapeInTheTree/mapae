@@ -122,10 +122,12 @@ terms*, evaluated at redemption time. Its load-bearing decisions:
   unmodified (two are vendored and deployed), and this enforcer runs on their manager on any chain
   that gains an attestation issuer worth gating on.
 
-A second, smaller gap fell out of the work: target allowlists gate the *token contract*, but an
-ERC-20 payment's recipient lives at calldata bytes `[4:36]`, which nothing deployed inspects.
-`AllowedPayeeEnforcer` is what makes *may pay only these merchants* expressible. It denies by
-default: an empty payee list is an error, never an allow-all.
+A second, smaller gap fell out of the work. Target allowlists gate the *token contract*, while an
+ERC-20 payment's recipient lives at calldata bytes `[4:36]`. A generic calldata enforcer can pin
+that word — but to **one exact value**, so *may pay only these three merchants* costs three
+delegations, or a fresh signature for every payment. `AllowedPayeeEnforcer` reads the same word
+against a **set**, which makes that policy one signature. It denies by default: an empty payee
+list is an error, never an allow-all.
 
 ## Architecture
 
