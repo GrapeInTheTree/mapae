@@ -50,6 +50,7 @@ import {
     encodeExecutionSingle,
     encodePermissionContext,
     periodTerms,
+    perPaymentTerms,
     type Delegation,
 } from "../../sdk/src/delegation.js";
 import {decodeConditions, type Condition, type EnforcerBook} from "../../sdk/src/policy.js";
@@ -104,6 +105,7 @@ const BOOK: EnforcerBook = {
     payeeEnforcer: addresses.payeeEnforcer,
     timestampEnforcer: addresses.timestampEnforcer,
     verifiedCodeEnforcer: addresses.verifiedCodeEnforcer,
+    perPaymentEnforcer: addresses.perPaymentEnforcer,
 };
 
 const DELEGATION_PARAMS = [
@@ -209,6 +211,8 @@ function describe(c: Condition): string {
             return `up to ${fmtWon(c.amount)} per ${Number(c.duration) === 86_400 ? "day" : `${Number(c.duration)}s`}, unused allowance forfeited each rollover`;
         case "payee":
             return `payments may only go to ${c.payees.join(", ")}`;
+        case "perPayment":
+            return `no single payment may exceed ${fmtWon(c.max)} (each transfer checked on its own, independent of the period cap)`;
         case "window":
             return c.until > 0n ? `expires ${new Date(Number(c.until) * 1000).toISOString()}` : "no expiry";
         case "humanloop":
@@ -282,7 +286,7 @@ const bigintSafe = (_: string, v: unknown) => (typeof v === "bigint" ? v.toStrin
 /* ---------------------------------- tools ---------------------------------- */
 
 const server = new McpServer(
-    {name: "mapae", version: "0.5.0"},
+    {name: "mapae", version: "0.6.0"},
     {
         /** Read by the client's model at session start - this is where the server earns its
          *  Korean name, and where the kill-switch boundary is stated so no model ever promises
@@ -341,7 +345,7 @@ server.tool(
 
 server.tool(
     "agent_status",
-    "[마패] 이 에이전트의 신원·가스 잔액·대략 몇 번 더 결제할 수 있는지. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and where its identity and contexts persist. Gas cannot be fetched programmatically - GIWA's ETH faucets are web pages with captchas - so when the tank is low, hand the human this address to fund.",
+    "[마패] 이 에이전트의 신원·가스 잔액·보유한 마패별 남은 여력 한눈에. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and one line of headroom per held authority (remaining budget, per-payment ceiling, usable or not). Gas cannot be fetched programmatically - GIWA's ETH faucets are web pages with captchas - so when the tank is low, hand the human this address to fund.",
     {},
     async () => {
         const [balance, block] = await Promise.all([
@@ -350,11 +354,29 @@ server.tool(
         ]);
         // ~1.5M gas ceiling per redemption at 3x base fee - the same posture pay uses.
         const perPay = 1_500_000n * ((block.baseFeePerGas ?? 1_000_000n) * 3n);
+        // One line per held Mapae: enough to pick a context without a second tool call.
+        const authorities = await Promise.all(
+            held.map(async (h, index) => {
+                const live = await liveState(h);
+                const perPayment = h.conditions.find((c) => c.kind === "perPayment");
+                return {
+                    index,
+                    delegationHash: h.hash,
+                    remainingThisPeriod: live.available === null ? null : fmtWon(live.available),
+                    maxPerPayment: perPayment?.kind === "perPayment" ? fmtWon(perPayment.max) : null,
+                    usable:
+                        !live.disabled &&
+                        live.identityLive !== false &&
+                        h.leaf.delegate.toLowerCase() === agent.address.toLowerCase(),
+                };
+            }),
+        );
         return text({
             agentAddress: agent.address,
             gasBalanceEth: Number(balance) / 1e18,
             approxPaymentsRemaining: perPay > 0n ? Number(balance / perPay) : null,
             contextsHeld: held.length,
+            authorities,
             identityFile: join(PROFILE_DIR, "agent.key"),
             profile: process.env.MAPAE_PROFILE ?? "(default)",
             contextsFile: CONTEXTS_FILE,
@@ -367,18 +389,28 @@ server.tool(
 
 server.tool(
     "check_budget",
-    "[마패] 이 마패의 남은 한도 확인. What remains of the period cap for one held authority, read live from the period enforcer.",
+    "[마패] 이 마패의 남은 한도 확인(기간 한도 + 회당 한도). What remains of the period cap for one held authority, read live from the period enforcer - plus the per-payment ceiling, which no single transfer may exceed regardless of how much of the period remains.",
     {contextIndex: z.number().int().min(0).optional().describe("Which held context (default 0)")},
     async ({contextIndex}) => {
         const h = pick(contextIndex);
         const period = h.conditions.find((c) => c.kind === "period");
-        if (period?.kind !== "period") return text("This authority carries no spending cap.");
+        const perPayment = h.conditions.find((c) => c.kind === "perPayment");
+        if (period?.kind !== "period" && perPayment?.kind !== "perPayment") {
+            return text("This authority carries no spending cap.");
+        }
         const live = await liveState(h);
+        // The largest single payment that can settle right now is bounded by BOTH caps -
+        // stating it saves the model an arithmetic mistake at the moment it matters.
+        const ceiling = perPayment?.kind === "perPayment" ? perPayment.max : null;
+        const payableNow =
+            live.available === null ? ceiling : ceiling === null ? live.available : ceiling < live.available ? ceiling : live.available;
         return text({
-            cap: fmtWon(period.amount),
-            per: Number(period.duration) === 86_400 ? "day" : `${Number(period.duration)}s`,
+            cap: period?.kind === "period" ? fmtWon(period.amount) : null,
+            per: period?.kind === "period" ? (Number(period.duration) === 86_400 ? "day" : `${Number(period.duration)}s`) : null,
             remaining: live.available === null ? null : fmtWon(live.available),
-            spent: live.available === null ? null : fmtWon(period.amount - live.available),
+            spent: period?.kind === "period" && live.available !== null ? fmtWon(period.amount - live.available) : null,
+            maxPerPayment: ceiling === null ? null : fmtWon(ceiling),
+            largestSinglePaymentNow: payableNow === null ? null : fmtWon(payableNow),
             disabled: live.disabled,
             identityLive: live.identityLive,
         });
@@ -387,12 +419,16 @@ server.tool(
 
 server.tool(
     "pay",
-    "[마패] 마패로 결제한다. Spend within a held authority. The payee and the token come from the SIGNED POLICY, not from arguments - this tool is structurally unable to pay anyone the human did not allow. A refusal is a normal result carrying the on-chain reason, because refusals are the product working.",
+    "[마패] 마패로 결제한다. Spend within a held authority. The allowed payees and the token come from the SIGNED POLICY, not from arguments - when the policy names several payees, `payee` picks WHICH of them to pay, and an address outside the signed list is rejected before any transaction. A refusal is a normal result carrying the on-chain reason, because refusals are the product working.",
     {
         amount: z.number().int().positive().describe("Amount in mKRW base units (1 = ₩1)"),
+        payee: z
+            .string()
+            .optional()
+            .describe("Which of the policy's allowed payees to pay (address). Defaults to the first. Must be on the signed allowlist - anything else is refused without a transaction."),
         contextIndex: z.number().int().min(0).optional(),
     },
-    async ({amount, contextIndex}) => {
+    async ({amount, payee: payeeArg, contextIndex}) => {
         const h = pick(contextIndex);
         if (h.leaf.delegate.toLowerCase() !== agent.address.toLowerCase()) {
             return text({
@@ -405,11 +441,26 @@ server.tool(
         if (payee?.kind !== "payee" || period?.kind !== "period") {
             return text({status: "UNSUPPORTED", detail: "this authority has no payee/period policy to spend against"});
         }
+        // The choice is only ever WHICH allowed payee - the argument selects from the signed
+        // list, it can never add to it. The enforcer would refuse an outsider anyway; refusing
+        // here first saves the gas and names the list.
+        let recipient = payee.payees[0];
+        if (payeeArg !== undefined) {
+            const match = payee.payees.find((p) => p.toLowerCase() === payeeArg.toLowerCase());
+            if (!match) {
+                return text({
+                    status: "NOT_IN_POLICY",
+                    detail: `${payeeArg} is not on this authority's signed allowlist`,
+                    allowedPayees: payee.payees,
+                });
+            }
+            recipient = match;
+        }
 
         const execution = encodeExecutionSingle(
             period.token,
             0n,
-            encodeErc20Transfer(payee.payees[0], BigInt(amount)),
+            encodeErc20Transfer(recipient, BigInt(amount)),
         );
         const args = [[h.context], [MODE_SIMPLE_SINGLE as Hex], [execution]] as const;
 
@@ -458,7 +509,7 @@ server.tool(
             return text({
                 status: ok ? "PAID" : "REFUSED",
                 amount: fmtWon(BigInt(amount)),
-                payee: payee.payees[0],
+                payee: recipient,
                 reason,
                 spentThisPeriod: spentThisPeriod !== undefined ? fmtWon(spentThisPeriod) : undefined,
                 remainingThisPeriod:
@@ -479,6 +530,14 @@ server.tool(
         agentName: z.string().min(1).describe("How the human should see this agent named"),
         amountPerPeriod: z.number().int().positive().describe("Requested cap in mKRW base units"),
         period: z.enum(["day", "week", "30d"]).default("day"),
+        maxPerPayment: z
+            .number()
+            .int()
+            .positive()
+            .optional()
+            .describe(
+                "Optional ceiling on any SINGLE payment, in mKRW base units. Ask for it when many small payments are fine but one large one would not be - the classic lunch-money shape. Enforced per transfer, independent of the period cap.",
+            ),
         merchants: z
             .array(z.string())
             .min(1)
@@ -494,12 +553,17 @@ server.tool(
             ),
         validDays: z.number().int().positive().max(365).default(30),
     },
-    async ({agentName, amountPerPeriod, period, merchants, merchantNames, validDays}) => {
+    async ({agentName, amountPerPeriod, period, maxPerPayment, merchants, merchantNames, validDays}) => {
         const bad = merchants.find((m) => !isAddress(m, {strict: false}));
         if (bad) return text({error: `not an address: ${bad}`});
         const canonical = merchants.map((m) => getAddress(m));
         if (new Set(canonical.map((m) => m.toLowerCase())).size !== canonical.length) {
             return text({error: "the same address is listed twice"});
+        }
+        if (maxPerPayment !== undefined && maxPerPayment > amountPerPeriod) {
+            // The period cap binds first, so a larger per-payment ceiling would never fire -
+            // a request that asks for it is a composition mistake, not a policy.
+            return text({error: "maxPerPayment exceeds amountPerPeriod - it could never bind. Lower it, or drop it."});
         }
         const q = new URLSearchParams({
             agentName,
@@ -509,6 +573,7 @@ server.tool(
             merchants: canonical.join(","),
             validDays: String(validDays),
         });
+        if (maxPerPayment !== undefined) q.set("perTx", String(maxPerPayment));
         if (merchantNames?.some((n) => n.trim())) {
             q.set("merchantNames", merchantNames.map((n) => n.trim()).join(","));
         }
@@ -549,22 +614,24 @@ server.tool(
 
 server.tool(
     "redelegate",
-    "[마패] 보유한 마패를 더 좁혀 하위 에이전트에 재위임한다. Sign a NARROWER child of a held authority to another agent, without any transaction. The child can only narrow: its own cap rides on top of every parent condition, the root human's kill switch still severs the whole chain, and the identity gate still reads the root principal at every payment.",
+    "[마패] 보유한 마패를 더 좁혀 하위 에이전트에 재위임한다. Sign a NARROWER child of a held authority to another agent, without any transaction. The child can only narrow: its own caps ride on top of every parent condition, the root human's kill switch still severs the whole chain, and the identity gate still reads the root principal at every payment.",
     {
         to: z.string().describe("The sub-agent's address"),
         capAmount: z.number().int().positive().optional()
             .describe("Optional tighter per-period cap for the child, in mKRW base units"),
+        maxPerPayment: z.number().int().positive().optional()
+            .describe("Optional per-payment ceiling for the child, in mKRW base units - no single transfer by the sub-agent may exceed it"),
         contextIndex: z.number().int().min(0).optional(),
     },
-    async ({to, capAmount, contextIndex}) => {
+    async ({to, capAmount, maxPerPayment, contextIndex}) => {
         const h = pick(contextIndex);
         if (!isAddress(to, {strict: false})) return text({error: "to is not an address"});
         if (h.leaf.delegate.toLowerCase() !== agent.address.toLowerCase()) {
             return text({error: `cannot redelegate a context held by ${h.leaf.delegate}`});
         }
         const period = h.conditions.find((c) => c.kind === "period");
-        const caveats =
-            capAmount && period?.kind === "period"
+        const caveats = [
+            ...(capAmount && period?.kind === "period"
                 ? [
                       {
                           enforcer: addresses.periodEnforcer,
@@ -577,7 +644,17 @@ server.tool(
                           args: "0x" as Hex,
                       },
                   ]
-                : [];
+                : []),
+            ...(maxPerPayment
+                ? [
+                      {
+                          enforcer: addresses.perPaymentEnforcer,
+                          terms: perPaymentTerms(BigInt(maxPerPayment)),
+                          args: "0x" as Hex,
+                      },
+                  ]
+                : []),
+        ];
 
         const salt = BigInt(`0x${[...crypto.getRandomValues(new Uint8Array(8))].map((b) => b.toString(16).padStart(2, "0")).join("")}`);
         const unsigned: Delegation = {
@@ -605,6 +682,7 @@ server.tool(
             childOf: h.hash,
             delegate: child.delegate,
             narrowedCap: capAmount ? fmtWon(BigInt(capAmount)) : "(inherits parent conditions only)",
+            narrowedPerPayment: maxPerPayment ? fmtWon(BigInt(maxPerPayment)) : undefined,
             permissionContext: encodePermissionContext([child, ...h.chain]),
             note: "Hand this context to the sub-agent's MAPAE_PERMISSION_CONTEXT. Disabling the root, or revoking the principal's Dojang, still stops it instantly.",
         });

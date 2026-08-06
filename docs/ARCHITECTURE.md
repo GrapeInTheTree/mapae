@@ -172,8 +172,11 @@ signed payload settles twice and the third attempt is refused before broadcast.
 signature, and on-chain only the delegator holds it. An agent may spend and may pass a narrower
 grant along — nothing else.
 
-A payment's **recipient and token come from the signed policy, not from arguments**, so prompt
-injection cannot redirect funds. The agent key is generated locally on first run and never leaves
+A payment's **recipients and token come from the signed policy, not from arguments**, so prompt
+injection cannot redirect funds — when the policy allows several payees, the `payee` argument
+selects among them and an outsider is rejected before any transaction. `request_permission`
+composes the full policy shape (period cap, per-payment ceiling, named payees) into a link the
+human reviews and signs. The agent key is generated locally on first run and never leaves
 the machine; `MAPAE_PROFILE` separates identities, and it is set where a human configures the
 server, never by a tool.
 

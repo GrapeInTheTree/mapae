@@ -1,13 +1,18 @@
 /**
  * Drives mapae-mcp exactly the way an MCP client would, over stdio JSON-RPC.
  *
- * Phase 1 plays the HUMAN: the principal key signs a fresh ₩2,000/day authority for the agent,
- * paying from the fleet's MapaeAccount (recovered from live chain calldata, not from any file).
+ * Phase 1 plays the HUMAN: the principal key signs a fresh authority for the agent - ₩5,000/day,
+ * ₩1,000 per payment, TWO allowed payees - paying from the fleet's MapaeAccount (recovered from
+ * live chain calldata, not from any file).
  * Phase 2 plays the AGENT'S CLIENT: spawn the built server with only the agent key and the
- * context, then call every tool - including a real payment - and print what a model would see.
+ * context, then call every tool - including real payments to both payees, a per-payment refusal
+ * on-chain, and an off-policy payee rejected before any transaction.
  */
 import "/Users/ahn_euijin/mapae/scripts/env.js";
 import {spawn} from "node:child_process";
+import {rmSync} from "node:fs";
+import {homedir} from "node:os";
+import {join} from "node:path";
 import {createPublicClient, decodeAbiParameters, decodeFunctionData, http, keccak256, toHex, type Address, type Hex} from "viem";
 import {privateKeyToAccount} from "viem/accounts";
 import {addresses, giwaSepolia, TESTNET_FAUCET_ID} from "/Users/ahn_euijin/mapae/sdk/src/constants.js";
@@ -19,6 +24,7 @@ import {
     encodePermissionContext,
     payeeTerms,
     periodTerms,
+    perPaymentTerms,
     timestampTerms,
     rootDelegation,
     type Delegation,
@@ -68,15 +74,19 @@ async function main() {
     const ACCOUNT = await fleetAccount();
     const now = BigInt(Math.floor(Date.now() / 1000));
     const merchant = privateKeyToAccount(keccak256(toHex("mapae-mcp-merchant"))).address;
+    const merchantB = privateKeyToAccount(keccak256(toHex("mapae-mcp-merchant-b"))).address;
 
+    // The 0.6 policy shape: a period cap AND a per-payment ceiling AND two allowed payees.
+    // ₩5,000/day keeps the period cap out of the way so the ₩1,000 ceiling is what refuses.
     const unsigned = rootDelegation({
         delegate: agent.address,
         delegator: ACCOUNT,
         caveats: [
             {enforcer: addresses.dojangEnforcer, terms: dojangTerms(TESTNET_FAUCET_ID, principal.address), args: "0x"},
-            {enforcer: addresses.periodEnforcer, terms: periodTerms(addresses.mockKRW, 2_000n, 86_400n, now - 60n), args: "0x"},
-            {enforcer: addresses.payeeEnforcer, terms: payeeTerms([merchant]), args: "0x"},
+            {enforcer: addresses.periodEnforcer, terms: periodTerms(addresses.mockKRW, 5_000n, 86_400n, now - 60n), args: "0x"},
+            {enforcer: addresses.payeeEnforcer, terms: payeeTerms([merchant, merchantB]), args: "0x"},
             {enforcer: addresses.timestampEnforcer, terms: timestampTerms(0n, now + 7n * 86_400n), args: "0x"},
+            {enforcer: addresses.perPaymentEnforcer, terms: perPaymentTerms(1_000n), args: "0x"},
         ],
         salt: BigInt(Date.now()),
     });
@@ -96,14 +106,18 @@ async function main() {
         }),
     };
     const context = encodePermissionContext([signed]);
-    console.log(`human issued: account ${ACCOUNT}, merchant ${merchant}, cap 2000/day`);
+    console.log(`human issued: account ${ACCOUNT}, payees ${merchant} + ${merchantB}, cap 5000/day, 1000/payment`);
 
     /* -------------------------- phase 2: the client ------------------------- */
     // Deliberately NO context in the env: the harness hands it over mid-conversation via
-    // load_context, the way a human pasting into a chat would.
+    // load_context, the way a human pasting into a chat would. The run gets its own profile,
+    // wiped first, so contexts persisted by real sessions (or previous runs) cannot leak in -
+    // persistence is a feature everywhere except in a test that asserts an empty start.
+    rmSync(join(homedir(), ".mapae", "harness"), {recursive: true, force: true});
     const child = spawn("node", ["/Users/ahn_euijin/mapae/mcp/dist/index.js"], {
         env: {
             ...process.env,
+            MAPAE_PROFILE: "harness",
             MAPAE_AGENT_PRIVATE_KEY: process.env.AGENT_PRIVATE_KEY,
             MAPAE_PERMISSION_CONTEXT: "",
         },
@@ -160,29 +174,63 @@ async function main() {
     console.log(`tools: ${tools.result.tools.map((t: {name: string}) => t.name).join(", ")}`);
 
     const empty = await call("list_permissions");
-    if (!empty.includes("No permission contexts")) throw new Error("expected empty start");
+    if (!empty.includes('"held": 0')) throw new Error("expected empty start");
     const loaded = await call("load_context", {context});
     if (!loaded.includes('"forThisAgent": true')) throw new Error("load_context failed");
+    if (!loaded.includes("no single payment may exceed")) throw new Error("perPayment condition not decoded");
     await call("list_permissions");
-    await call("check_budget");
-    await call("request_permission", {
+
+    const budget = await call("check_budget");
+    if (!budget.includes('"maxPerPayment": "₩1,000 mKRW"')) throw new Error("check_budget missing per-payment ceiling");
+    if (!budget.includes('"largestSinglePaymentNow": "₩1,000 mKRW"')) throw new Error("ceiling should bound the largest payment");
+
+    const status = await call("agent_status");
+    if (!JSON.parse(status).authorities?.[0]?.maxPerPayment) throw new Error("agent_status missing per-Mapae headroom");
+
+    const req = await call("request_permission", {
         agentName: "Harness Agent",
         amountPerPeriod: 30_000,
         period: "day",
-        merchant,
+        maxPerPayment: 5_000,
+        merchants: [merchant, merchantB],
+        merchantNames: ["Lunch counter", "Data API"],
         validDays: 14,
     });
+    const link = JSON.parse(req).askTheHuman as string;
+    if (!link.includes("perTx=5000")) throw new Error("request link missing perTx");
+    if (!link.includes("merchantNames=")) throw new Error("request link missing merchantNames");
+    const reqBad = await call("request_permission", {
+        agentName: "Harness Agent",
+        amountPerPeriod: 1_000,
+        maxPerPayment: 2_000,
+        merchants: [merchant],
+    });
+    if (!reqBad.includes("could never bind")) throw new Error("nonsensical per-payment request not rejected");
+
     const paid = await call("pay", {amount: 700});
     if (!paid.includes('"PAID"')) throw new Error("pay did not settle");
+    if (!paid.toLowerCase().includes(merchant.toLowerCase())) throw new Error("default payee should be the first allowed");
+
+    const paidB = await call("pay", {amount: 300, payee: merchantB});
+    if (!paidB.includes('"PAID"') || !paidB.toLowerCase().includes(merchantB.toLowerCase()))
+        throw new Error("pay to second allowed payee failed");
+
+    const outsider = await call("pay", {amount: 100, payee: agent.address});
+    if (!outsider.includes('"NOT_IN_POLICY"')) throw new Error("off-policy payee was not rejected");
+
     await call("check_budget");
     const over = await call("pay", {amount: 1_500});
-    if (!over.includes('"REFUSED"')) throw new Error("over-cap pay was not refused");
+    if (!over.includes('"REFUSED"')) throw new Error("over-ceiling pay was not refused");
+    if (!over.includes("PerPaymentCapExceeded")) throw new Error(`expected PerPaymentCapExceeded, got: ${over}`);
 
-    const redel = await call("redelegate", {to: merchant, capAmount: 500});
+    const redel = await call("redelegate", {to: merchant, capAmount: 500, maxPerPayment: 200});
     const ctx2 = JSON.parse(redel).permissionContext as Hex;
     const [chain2] = decodeAbiParameters(DELEGATION_PARAMS, ctx2) as unknown as [Delegation[]];
     if (chain2.length !== 2) throw new Error("child context is not 2 hops");
-    console.log(`\nredelegated context verified: ${chain2.length} hops, child delegate ${chain2[0].delegate}`);
+    if (chain2[0].caveats.length !== 2) throw new Error("child should carry period + per-payment caveats");
+    if (chain2[0].caveats[1].enforcer.toLowerCase() !== addresses.perPaymentEnforcer.toLowerCase())
+        throw new Error("child per-payment caveat missing");
+    console.log(`\nredelegated context verified: ${chain2.length} hops, child delegate ${chain2[0].delegate}, ${chain2[0].caveats.length} narrowing caveats`);
 
     child.kill();
     console.log("\nALL GREEN");

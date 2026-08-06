@@ -20,12 +20,13 @@ Optional env: `MAPAE_AGENT_PRIVATE_KEY` overrides the stored key;
 
 | Tool | Signs with | What it does |
 |---|---|---|
-| `request_permission` | nothing | Composes a policy and returns a prefilled link **for the human to review and sign in their own wallet** |
+| `request_permission` | nothing | Composes a policy — period cap, per-payment ceiling, one or many named payees — and returns a prefilled link **for the human to review and sign in their own wallet** |
 | `load_context` | nothing | Accepts the context the human hands back in conversation — the whole grant loop never leaves the chat |
 | `list_permissions` | nothing | Held authorities with live on-chain state (disabled? identity live? budget left?) |
-| `check_budget` | nothing | Remaining period cap, read from the enforcer |
-| `pay` | agent key | Spends within the signed policy — **payee and token come from the policy, not from arguments** |
-| `redelegate` | agent key | Signs a *narrower* child authority to a sub-agent, no transaction |
+| `agent_status` | nothing | The agent's identity, gas tank, and one line of headroom per held authority |
+| `check_budget` | nothing | Remaining period cap read from the enforcer, the per-payment ceiling, and the largest single payment both allow right now |
+| `pay` | agent key | Spends within the signed policy — **the allowed payees and the token come from the policy**; when several payees are allowed, `payee` picks which one, and an address outside the signed list is rejected before any transaction |
+| `redelegate` | agent key | Signs a *narrower* child authority to a sub-agent — tighter period cap and/or per-payment ceiling — no transaction |
 
 The human's whole job is: click the link the agent composed, read the policy as a sentence, sign
 in their own wallet, paste the context back. Composition knowledge lives with the agent; judgment
@@ -56,5 +57,7 @@ pnpm install && pnpm build   # bundles the SDK into dist/index.js
 node dist/index.js           # or: npx mapae-mcp once published
 ```
 
-Verified end-to-end against GIWA Sepolia by `harness.ts`: a real payment settled, an over-cap
-attempt refused with the decoded reason, and a 2-hop redelegated context validated.
+Verified end-to-end against GIWA Sepolia by `harness.ts`: real payments settled to both of two
+allowed payees, an over-ceiling attempt refused on-chain with the decoded reason
+(`PerPaymentCapExceeded(1500, 1000)`), an off-policy payee rejected before any transaction, and
+a 2-hop redelegated context carrying both narrowing caveats validated.

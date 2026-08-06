@@ -444,8 +444,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <div class="scroll"><table>
         <tr><th>도구</th><th>하는 일</th></tr>
         <tr><td><code>list_permissions</code></td><td>보유한 마패 목록과 각각의 조건</td></tr>
-        <tr><td><code>check_budget</code></td><td>이번 기간의 사용액과 잔여 한도</td></tr>
-        <tr><td><code>pay</code></td><td>결제 — 수취인·토큰은 서명된 정책에서 나온다</td></tr>
+        <tr><td><code>check_budget</code></td><td>이번 기간의 사용액·잔여 한도, 그리고 회당 한도</td></tr>
+        <tr><td><code>pay</code></td><td>결제 — 수취인·토큰은 서명된 정책에서 나오고, 복수 수취인이면 그 안에서 고른다</td></tr>
         <tr><td><code>agent_status</code></td><td>에이전트 주소·가스 잔량·남은 결제 여력</td></tr>
         <tr><td><code>request_permission</code></td><td>사람에게 보낼 권한 요청 링크 생성 (ERC-7715)</td></tr>
         <tr><td><code>load_context</code></td><td>발급받은 마패를 대화 안에서 바로 장착</td></tr>
@@ -913,8 +913,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <div class="scroll"><table>
         <tr><th>Tool</th><th>What it does</th></tr>
         <tr><td><code>list_permissions</code></td><td>Held delegations and the conditions on each</td></tr>
-        <tr><td><code>check_budget</code></td><td>Spent and remaining allowance for the current period</td></tr>
-        <tr><td><code>pay</code></td><td>Payment &mdash; recipient and token come from the signed policy</td></tr>
+        <tr><td><code>check_budget</code></td><td>Spent and remaining allowance for the period, and the per-payment ceiling</td></tr>
+        <tr><td><code>pay</code></td><td>Payment &mdash; allowed payees and token come from the signed policy; several payees means choosing among them</td></tr>
         <tr><td><code>agent_status</code></td><td>Agent address, gas balance, payments still affordable</td></tr>
         <tr><td><code>request_permission</code></td><td>Builds a request link for a person to sign (ERC-7715)</td></tr>
         <tr><td><code>load_context</code></td><td>Loads a granted delegation into the running session</td></tr>

@@ -567,6 +567,7 @@ export default function Create() {
             const v = params.get(k);
             return v && isAddress(v, {strict: false}) ? (v as Address) : null;
         };
+        const perTx = num("perTx");
         return {
             ...base,
             agentName: params.get("agentName")?.slice(0, 64) ?? base.agentName,
@@ -577,6 +578,9 @@ export default function Create() {
             amount: num("amount") ?? base.amount,
             period: num("period") ?? base.period,
             validDays: num("validDays") ? Number(num("validDays")) : base.validDays,
+            // A requested per-payment ceiling arrives as `perTx` and pre-arms the toggle; the
+            // human still sees it spelled out in the sentence before anything is signed.
+            ...(perTx !== null && perTx > 0n ? {usePerTx: true, perTx} : {}),
         };
     });
 
