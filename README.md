@@ -252,7 +252,18 @@ chain validation runs strictly before any caveat.
 
 Re-delegation is a first-class ERC-7710 operation, so an agent can pass part of its authority on.
 Every link's caveats are evaluated, which is what makes a child able to **narrow** what it
-received and never widen it — the property the chain suite exists to defend.
+received and never widen it — the property the chain suite exists to defend, and which is also
+[mined live three hops deep](docs/DEMO.md): a person signs once to A, A hires B, B hires C, and
+neither hire is a transaction or carries the person's signature. B is free to *write* C a ceiling
+five times the root's; nothing prevents signing it. It simply does not survive redemption.
+
+That run exists for the row after it. The person revokes their own attestation — one transaction,
+no Mapae contract in it, no delegation named — and both the leaf and the branch they actually
+remember stop together. The narrow claim is the true one: **disabling a root severs a chain in any
+ERC-7710 framework**, and that is the standard working rather than something we add. What is ours
+runs the other way — the person acts on their identity, and every tree they ever rooted stops,
+including the branches they never signed and cannot enumerate. Revoking what you remember is easy.
+The authority that hurts you is the one you cannot list.
 
 ## The product
 

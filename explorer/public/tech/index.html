@@ -638,8 +638,23 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p>재위임은 ERC-7710의 일급 연산이다. 에이전트가 자기 권한의 일부를 다른 에이전트에게 넘길
        수 있다. 사슬의 <strong>모든 링크의 조건이 평가</strong>되므로, 자식은 받은 것을 좁힐 수만
        있고 넓힐 수 없다.</p>
-    <p>뿌리를 비활성화하면 상위에서 존재를 모르는 하위 에이전트까지 함께 정지한다. 이 성질을 지키는 것이 사슬
-       테스트 스위트의 존재 이유다.</p>
+    <p>이 성질은 세 홉으로 라이브 채굴돼 있다. 사람이 A에게 한 번 서명하고, A가 B를, B가 C를
+       고용한다. 두 고용 모두 <strong>트랜잭션이 아니고</strong> 사람의 서명도 없다 — 위임은 서명이라,
+       하위 에이전트는 체인을 건드리지 않고 생긴다. B는 C에게 뿌리의 다섯 배인 회당 ₩50,000을
+       <em>써줄 수 있다.</em> 서명을 막는 것은 없다. 다만 상환에서 살아남지 못한다 —
+       <code>PerPaymentCapExceeded(8000, 5000)</code>.</p>
+    <div class="note">
+        <strong>주장은 좁게 유지한다.</strong> "위임 트리를 죽이는 건 마패뿐"은 거짓이다. 뿌리를
+        비활성화하면 어느 ERC-7710 프레임워크에서든 사슬이 끊긴다 — 그건 표준이 동작하는 것이지
+        우리가 더한 것이 아니다.<br><br>
+        참인 것은 방향이 다르다. 사람이 <strong>자기 신원</strong>에 대해 행동하고 — 마패 컨트랙트를
+        건드리지도, 어떤 위임을 지목하지도 않는 트랜잭션 하나로 — <strong>자기가 뿌리를 놓은 모든
+        트리</strong>가 동시에 멈춘다. 서명한 적 없어 <em>열거할 수도 없는</em> 가지까지.
+        기억나는 권한을 취소하는 건 쉽다. 위험한 건 목록으로 적을 수 없는 권한이다.
+    </div>
+    <p>전체 원장은 <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/DEMO.md">docs/DEMO.md</a>에
+       있다 — 세 홉 아래의 결제, 부모를 넘으려다 거부된 자식, 신원 취소로 잎과 뿌리가 함께 멈추는
+       장면, 그리고 재발급으로 사람이 이름조차 댈 수 없는 부분까지 되살아나는 장면.</p>
 </section>
 
 <section id="s10">
@@ -1504,8 +1519,27 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p>Re-delegation is a first-class ERC-7710 operation, so an agent can pass part of its
        authority on. <strong>Every link's caveats are evaluated</strong>, which is what lets a child
        narrow what it received and never widen it.</p>
-    <p>Disabling the root also stops a sub-agent nobody upstream has heard of. Defending that
-       property is why the chain test suite exists.</p>
+    <p>That property is mined live, three hops deep. A person signs once, to A; A hires B; B hires
+       C. Neither hire is a <strong>transaction</strong> and neither carries the person's signature
+       &mdash; a delegation is a signature, so a sub-agent appears without touching the chain. B is
+       free to <em>write</em> C a per-payment ceiling of ₩50,000, five times the root's. Nothing
+       prevents signing it. What it cannot do is survive redemption:
+       <code>PerPaymentCapExceeded(8000, 5000)</code>.</p>
+    <div class="note">
+        <strong>The claim is kept narrow.</strong> "Only Mapae can kill a delegation tree" is false.
+        Disabling the root severs the chain in any ERC-7710 framework &mdash; that is the standard
+        working, not something we add.<br><br>
+        What is true runs the other way. The person acts on <strong>their own identity</strong>, in
+        one transaction that touches no Mapae contract and names no delegation, and
+        <strong>every tree they ever rooted</strong> stops at once &mdash; including the branches
+        they never signed and <em>cannot enumerate</em>. Revoking what you remember is easy. The
+        authority that hurts you is the one you cannot list.
+    </div>
+    <p>The full ledger is in
+       <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/DEMO.md">docs/DEMO.md</a>:
+       a payment three hops down, a child refused for reaching past its parent, the leaf and the
+       root stopping together on one revocation, and a re-issue bringing back even the part the
+       person could not have named.</p>
 </section>
 
 <section id="e10">

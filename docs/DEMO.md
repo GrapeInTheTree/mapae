@@ -238,3 +238,41 @@ own channels, so the confirming half cannot be staged here - the refusal is the 
 can be proven, and it is the half that matters.
 
 Reproduce with `pnpm tsx scripts/tiers-demo.ts <account>`.
+
+## Depth - the authority nobody remembers granting
+
+One person signed one delegation, to agent A. A hired B; B hired C. Neither hire was a
+transaction and neither carries the person's signature, so **the tree that spends their money
+is not a tree they can enumerate.** This run checks that rather than assuming it: neither
+sub-agent's address appears anywhere in what the person signed.
+
+| Hop | Signed by | Per-payment ceiling |
+|---|---|---|
+| A | the person | ₩10,000 |
+| B | A | ₩5,000 |
+| C | B | ₩50,000 — five times the root's |
+
+| What was attempted | Outcome on chain | Transaction |
+|---|---|---|
+| ₩3,000 by a sub-sub-agent the person never saw | **settled** | [0x93b64a86…](https://sepolia-explorer.giwa.io/tx/0x93b64a86330751b85bba1311ee79b4d4e289871a768ca0e3247456081d651328) |
+| ₩8,000 — within C's own ceiling, above B's | **refused** `PerPaymentCapExceeded(8000, 5000)` | [0x295c8b71…](https://sepolia-explorer.giwa.io/tx/0x295c8b71492d67372e4aef965f19a517708dbc4bcc2fa1c469f946a4486cfe32) |
+| ₩3,000 by C, after the identity was revoked | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x8581e7a0…](https://sepolia-explorer.giwa.io/tx/0x8581e7a0fe580966a9e71e5ed9b4512736d50cf819a70499e0f5933487e5d17f) |
+| ₩3,000 by A, the agent they actually granted to | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x671f72d7…](https://sepolia-explorer.giwa.io/tx/0x671f72d785f6494bd065cef774ad17450e5673d589a557920e2679d6ab7b4814) |
+| ₩3,000 by C, after the identity was restored | **settled** | [0x8d9f8aae…](https://sepolia-explorer.giwa.io/tx/0x8d9f8aaec86834e4027376da7004d9c9af244d30d59c2dff63031b4492827b02) |
+
+The second row is redelegation's load-bearing property. B was free to *write* C a ceiling
+above the root's; nothing prevents signing it. What it cannot do is survive redemption -
+every hop's conditions run, so the tightest one binds and a child can only narrow.
+
+Rows three and four are the point of the whole script. The revocation is one transaction
+sent to an attestation registry: it names no delegation, touches no Mapae contract, and the
+person could not have named C if they had wanted to. The leaf stops, and so does the branch
+they do remember. Restoring the identity brings back all of it.
+
+The narrow claim is worth keeping narrow. **Disabling a root delegation severs a chain in
+any ERC-7710 framework** - that is the standard working, not something Mapae adds. What is
+ours is the other direction: the person acts on *their own identity*, and every tree they
+ever rooted stops at once, including the branches they never signed. Revoking what you
+remember is easy. The authority that hurts you is the one you cannot list.
+
+Reproduce with `pnpm tsx scripts/depth-demo.ts <account>`.
