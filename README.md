@@ -219,6 +219,24 @@ and signed a two-hop child authority narrowed to ₩500/day and ₩200 per payme
 transaction. The package on npm was then verified cold — fresh cache, throwaway profile,
 straight from the registry — to behave as shipped.
 
+## The index — an accelerator, never a dependency
+
+[**index.mapae.org**](https://index.mapae.org/api/stats) serves the aggregates and the attempt
+list the explorer used to compute per visit ([GrapeInTheTree/mapae-ponder](https://github.com/GrapeInTheTree/mapae-ponder),
+a Ponder monorepo, self-hosted). Every row in it is derivable from logs alone, so the database
+can be dropped and rebuilt from the chain at any time — it is a cache, and the explorer treats
+it as one. The client asks the index first with a two-second deadline and falls back to reading
+GIWA directly, which is why losing the machine costs speed and nothing else. Verified against a
+server that accepts connections and never answers: the page still rendered, from the chain, in
+275ms.
+
+Two things are worth naming. **Refusals are recovered, not skipped** — a reverted transaction has
+no logs, so the one thing a log indexer structurally cannot see is the thing Mapae treats as
+first-class; the API supplies them with their intent decoded from calldata. And `/api/stats`
+reports **`ready`**, because Ponder advances one checkpoint across every source: while any source
+is still backfilling, its counts are a fraction of the truth, and a fast wrong number is worse
+than a slow right one. The explorer ignores an index that says it is not ready.
+
 ## The x402 path
 
 x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of them — `eip3009`,
@@ -304,7 +322,7 @@ pnpm trace <any T1 hash>
 | **EIP-7702 path** | Verified active on GIWA by behavioural test. The principal's EOA becomes the delegator directly — the Upbit-attested address itself holds the delegation, no account contract. The enforcer already accepts this shape (`principal == delegator`). |
 | **Graduated autonomy** | `VerifiedCodeEnforcer` is deployed and verified: Dojang's Verified Code attests an *off-chain human confirmation* (OTP-style, under a service domain), so high-value delegations can require a person in the loop per confirmation window while small ones run unattended — the historical mapae tiers, as caveats. Awaiting the first Verified Code issuer integration for a live flow; today only Upbit issues them, through its own channel. |
 | **More conditions** | Lifetime total, call count, allowed function selector, and an approved-order hash that binds a payment to a purpose without any Dojang change. The per-payment ceiling shipped first - deployed, verified, and proven live with a settle/refuse pair. |
-| **Attestation query API** | GIWA has no off-chain Dojang query surface ([docs/GAPS.md](docs/GAPS.md)). A Ponder-based index of real-issuer attestations and Mapae redemptions is measured and scoped. |
+| **Attestation query API** | The index is live (below); what remains is extending it to real-issuer Dojang attestations, the off-chain query surface GIWA does not have ([docs/GAPS.md](docs/GAPS.md)). |
 | **ERC-7715** | [docs/ERC7715.md](docs/ERC7715.md) maps Mapae onto `wallet_requestExecutionPermissions` — the wallet-side request surface GIWA Wallet could implement, including a proposed `dojang-verified` permission type. The Composer is already that screen. |
 | **ERC-8004** | Deliberately not adopted. Its identity registry is permissionless self-registration, which proves nothing and adds no link to the accountability chain (and no 8004 registry exists on GIWA — verified by probing). Agent identity here is gated the GIWA-native way: attested code via `VerifiedCodeEnforcer`. If registries mature into something attestation-backed, the enforcer pattern extends to them in one caveat. |
 
@@ -317,6 +335,7 @@ pnpm trace <any T1 hash>
 - [docs/GAPS.md](docs/GAPS.md) — measured ecosystem gaps, with the measurements
 - [docs/ERC7715.md](docs/ERC7715.md) — the wallet-integration mapping
 - [mcp/README.md](mcp/README.md) — the MCP server: the seven tools, and what is deliberately absent
+- [GrapeInTheTree/mapae-ponder](https://github.com/GrapeInTheTree/mapae-ponder) — the index, and why refusals are the hard part to index
 - [docs/DEPLOY.md](docs/DEPLOY.md) — deploying the explorer, and why it has no backend
 
 ## License

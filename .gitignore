@@ -29,3 +29,6 @@ docs/team/
 # Local agent config
 .claude/
 .env.local
+
+# The indexer URL is public and must reach the build - it is configuration, not a secret.
+!explorer/.env.production
