@@ -62,8 +62,7 @@ contract MetaMaskPortabilityTest is Test {
 
     bytes32 internal constant ATTESTER = keccak256("dojang.dojangattesterids.upbitkorea");
 
-    IForeignDelegationManager internal theirManager =
-        IForeignDelegationManager(METAMASK_DELEGATION_MANAGER);
+    IForeignDelegationManager internal theirManager = IForeignDelegationManager(METAMASK_DELEGATION_MANAGER);
 
     MapaeAccountFactory internal factory;
     MapaeAccount internal account;
@@ -98,7 +97,9 @@ contract MetaMaskPortabilityTest is Test {
 
         // Everything on the Mapae side is built pointing at THEIR manager.
         factory = new MapaeAccountFactory(METAMASK_DELEGATION_MANAGER);
-        dojang = new DojangVerifiedEnforcer(IDojangScroll(address(scroll)), IMapaeAccountRegistry(address(factory)));
+        dojang = new DojangVerifiedEnforcer(
+            IDojangScroll(address(scroll)), IMapaeAccountRegistry(address(factory))
+        );
         payee = new AllowedPayeeEnforcer();
         perPayment = new PerPaymentLimitEnforcer();
 
@@ -112,7 +113,7 @@ contract MetaMaskPortabilityTest is Test {
 
     /// @notice The address holds their manager, and it answers as a delegation manager should.
     function test_TheirManagerIsLiveAndSpeaksTheSameProtocol() public view {
-        assertGt(METAMASK_DELEGATION_MANAGER.code.length, 1_000, "their manager is not deployed here");
+        assertGt(METAMASK_DELEGATION_MANAGER.code.length, 1000, "their manager is not deployed here");
         assertTrue(theirDomain != bytes32(0), "their EIP-712 domain did not read back");
     }
 
@@ -153,7 +154,7 @@ contract MetaMaskPortabilityTest is Test {
 
         vm.prank(agent);
         vm.expectRevert();
-        theirManager.redeemDelegations(_ctx(d_), _modes(), _execs(_transfer(outsider, 1_000)));
+        theirManager.redeemDelegations(_ctx(d_), _modes(), _execs(_transfer(outsider, 1000)));
 
         assertEq(krw.balanceOf(outsider), 0, "an unlisted payee was paid");
     }
@@ -174,11 +175,8 @@ contract MetaMaskPortabilityTest is Test {
     /// The three conditions written in this repository: identity, payee set, per-payment ceiling.
     function _mapaeCaveats() internal view returns (Caveat[] memory caveats_) {
         caveats_ = new Caveat[](3);
-        caveats_[0] = Caveat({
-            enforcer: address(dojang),
-            terms: abi.encodePacked(ATTESTER, alice.addr),
-            args: ""
-        });
+        caveats_[0] =
+            Caveat({enforcer: address(dojang), terms: abi.encodePacked(ATTESTER, alice.addr), args: ""});
         caveats_[1] = Caveat({enforcer: address(payee), terms: abi.encodePacked(merchant), args: ""});
         caveats_[2] = Caveat({enforcer: address(perPayment), terms: abi.encode(uint256(10_000)), args: ""});
     }

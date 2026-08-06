@@ -52,7 +52,9 @@ contract ManagerReentryTest is Test {
         krw = new MockKRW();
         manager = new MapaeDelegationManager();
         factory = new MapaeAccountFactory(address(manager));
-        dojang = new DojangVerifiedEnforcer(IDojangScroll(address(scroll)), IMapaeAccountRegistry(address(factory)));
+        dojang = new DojangVerifiedEnforcer(
+            IDojangScroll(address(scroll)), IMapaeAccountRegistry(address(factory))
+        );
 
         domainHash = manager.getDomainHash();
         scroll.issue(alice.addr, ATTESTER, keccak256("uid"), 0);
@@ -75,7 +77,9 @@ contract ManagerReentryTest is Test {
         // The execution targets the MANAGER, not a token: enableDelegation(victim). Routed through
         // the account it would arrive with msg.sender == the delegator the manager checks for.
         bytes memory exec_ = ExecutionLib.encodeSingle(
-            address(manager), 0, abi.encodeWithSelector(MapaeDelegationManager.enableDelegation.selector, victim_)
+            address(manager),
+            0,
+            abi.encodeWithSelector(MapaeDelegationManager.enableDelegation.selector, victim_)
         );
 
         vm.prank(agent);
@@ -99,7 +103,11 @@ contract ManagerReentryTest is Test {
             abi.encodeWithSelector(
                 MapaeAccount.execute.selector,
                 ModeLib.encodeSimpleSingle(),
-                ExecutionLib.encodeSingle(address(krw), 0, abi.encodeWithSignature("transfer(address,uint256)", agent, uint256(1_000_000)))
+                ExecutionLib.encodeSingle(
+                    address(krw),
+                    0,
+                    abi.encodeWithSignature("transfer(address,uint256)", agent, uint256(1_000_000))
+                )
             )
         );
 
@@ -116,11 +124,8 @@ contract ManagerReentryTest is Test {
     /// The widest delegation this system can issue: identity, and nothing else.
     function _identityOnly(address delegate_, uint256 salt_) internal returns (Delegation memory) {
         Caveat[] memory caveats_ = new Caveat[](1);
-        caveats_[0] = Caveat({
-            enforcer: address(dojang),
-            terms: abi.encodePacked(ATTESTER, alice.addr),
-            args: ""
-        });
+        caveats_[0] =
+            Caveat({enforcer: address(dojang), terms: abi.encodePacked(ATTESTER, alice.addr), args: ""});
         Delegation memory d_ = Delegation({
             delegate: delegate_,
             delegator: address(account),

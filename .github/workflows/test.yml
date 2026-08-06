@@ -12,6 +12,10 @@ on:
 env:
   FOUNDRY_PROFILE: ci
   GIWA_SEPOLIA_RPC_URL: https://sepolia-rpc.giwa.io
+  # Ethereum Sepolia, for the portability suite that calls MetaMask's own deployed manager.
+  # A public endpoint rather than a secret: the property under test is their bytecode, which
+  # is the same whoever reads it.
+  ETH_SEPOLIA_RPC_URL: https://ethereum-sepolia-rpc.publicnode.com
 
 jobs:
   contracts:
