@@ -73,6 +73,53 @@ demonstrably works and two programs agreeing with themselves.
 
 ---
 
+## What two regulators are asking, in 2026
+
+Nothing here is a compliance claim. Mapae is not a licensed institution and does not implement
+any reporting obligation. What follows is only this: the questions being asked in public right
+now have a shape, and it is the shape of this repository.
+
+**The United Kingdom.** HM Treasury published *Modernising Payment Services Regulation* in July
+2026 (PU 3657, open until 6 October). It observes at 3.35 that "the PSRs were designed before the
+development of AI and may not fully facilitate the use of agentic AI", and then asks two questions
+verbatim:
+
+> **Question 12:** How does the payment services regulatory framework need to adapt to support the
+> use of smart contracts and programmable payments underpinning them?
+>
+> **Question 15:** How does existing payment services regulation need to adapt to support agentic
+> payments? For example, do provisions relating to authentication and consent of payments
+> transactions, and liability for unauthorised payment transactions, need updating?
+
+Authentication, consent, and liability for what was never authorised. A Mapae delegation is a
+person's consent written as machine-readable scope; the identity condition is what binds a payment
+to that person at the moment it settles; and a payment outside the scope does not settle at all.
+
+**Korea.** The amended Act on Reporting and Using Specified Financial Transaction Information
+takes effect on **20 August 2026**. The subordinate rules the Financial Services Commission put
+out for comment on 30 March extend the Travel Rule — today applied only to transfers of
+₩1,000,000 or more between virtual asset service providers — to transfers below that floor, and
+place an obligation on the *receiving* provider: obtain the originator information, and where it
+does not arrive, request it and **refuse the transfer**.
+
+The FSC's stated reason is a number worth sitting with: **60% of domestic VASP-to-VASP transfers,
+by count in the second half of 2025, were under ₩1,000,000.** Small and numerous is exactly what
+agent traffic looks like, and small and numerous is what stops being exempt this month.
+
+Two things follow, and neither is a claim about compliance.
+
+The first is that the direction is toward every transfer carrying an identifiable originator, with
+no de-minimis floor to hide beneath. The second is subtler and it is the one worth reading twice:
+**the remedy the rule prescribes for a transfer whose originator cannot be established is to
+refuse it.** That is not an approximation of what `DojangVerifiedEnforcer` does. It is the same
+sentence, one written for institutions to execute and one written in Solidity.
+
+GIWA is where those two sentences can meet, because Dojang attestations are issued by the very
+institutions the rule governs. Identity does not have to be imported from somewhere it can be
+disputed; it is already on the chain the payment settles on.
+
+---
+
 ## What is deployed
 
 GIWA Sepolia (chain 91342). All nine are source-verified on
@@ -135,6 +182,45 @@ that word — but to **one exact value**, so *may pay only these three merchants
 delegations, or a fresh signature for every payment. `AllowedPayeeEnforcer` reads the same word
 against a **set**, which makes that policy one signature. It denies by default: an empty payee
 list is an error, never an allow-all.
+
+## Compared with spend permissions
+
+The closest deployed thing to Mapae is not another delegation framework. It is Coinbase's
+[Spend Permissions](https://github.com/coinbase/spend-permissions), which lets a smart account
+grant a recurring allowance to a spender. It is well built and widely used, and reading it is the
+fastest way to see what a spending allowance leaves undecided.
+
+```solidity
+struct SpendPermission {
+    address account;      address spender;   address token;
+    uint160 allowance;    uint48  period;    uint48  start;   uint48 end;
+    uint256 salt;         bytes   extraData;
+}
+
+// SpendPermissionManager.spend()
+_transferFrom(spendPermission.token, spendPermission.account, spendPermission.spender, value);
+```
+
+There is no recipient parameter, because there is no recipient concept: funds move to the
+`spender`. That is not a weakness in the design — it is the design. A spend permission answers
+*how much may leave this account, how often*, and the chain's involvement ends when the spender
+receives it. Where the money goes next, and on whose authority it left, are questions settled
+somewhere the chain cannot see. `extraData` is the natural place to write an intent or an
+authorising identity into the grant, and the manager hashes it but never reads it: whatever it
+says is enforced by convention among the parties, not by the contract.
+
+Two consequences, stated as differences rather than faults.
+
+|  | Spend permission | Mapae delegation |
+|---|---|---|
+| Who receives the funds | The `spender` named in the grant | Any payee in a signed set, checked at calldata `[4:36]` |
+| Where the chain stops caring | When the spender is paid | When the payee is paid |
+| Who authorised it | Known off-chain, if recorded at all | A live attestation, read at every redemption |
+| Revoking the person | Not a concept — the grant is the unit | Revokes every grant that named them, in one transaction they never send |
+
+Mapae is not a better allowance. It is an allowance with two more questions answered on-chain:
+**where it may go, and who is standing behind it.** That second question is the one an auditor,
+a counterparty, or a regulator asks first, and it is the one no deployed grant format asks at all.
 
 ## Architecture
 

@@ -291,9 +291,59 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        수탁 계정과 서버측 한도로 푼다. 탐색 예산에는 맞는 답이다. 다만 한도를 강제하는 주체가
        발급자 자신이고, 신원은 자기 선언에 머문다 — 책임이 필요한 자리에 남는 공백이 이
        문서의 주제다.</p>
+    <p>비수탁 쪽에서 가장 가까운 것은 코인베이스의 <strong>Spend Permissions</strong>다. 잘 만들어
+       널리 쓰이고, 읽어보면 <em>지출 한도</em>라는 물건이 무엇을 정하지 않은 채 남기는지가 가장
+       빨리 보인다. 수취인 인자가 없다 — 정확히는 수취인이라는 개념이 없다.</p>
+    <pre><code>// SpendPermissionManager.spend()
+_transferFrom(spendPermission.token, spendPermission.account,
+              <span class="k">spendPermission.spender</span>, value);</code></pre>
+    <p>자금은 <code>spender</code>에게 간다. 이건 설계의 약점이 아니라 설계 그 자체다. 지출 권한이
+       답하는 질문은 <em>이 계정에서 얼마가, 얼마나 자주 나갈 수 있나</em>이고, 체인의 관여는
+       spender가 받는 순간 끝난다. 그 돈이 다음에 어디로 가는지, 누구의 권한으로 나갔는지는 체인이
+       보지 못하는 곳에서 정해진다. 의도나 신원을 적어둘 자리로 <code>extraData</code>가 있지만
+       매니저는 그것을 해시에 넣을 뿐 <strong>읽지 않는다</strong> — 거기 뭐라고 쓰든 강제하는 것은
+       컨트랙트가 아니라 당사자 간의 관행이다.</p>
+    <p>마패는 더 나은 한도가 아니다. 한도에 <strong>어디로 갈 수 있는가</strong>와
+       <strong>누가 뒤에 서 있는가</strong> 두 질문을 온체인으로 더 답한 것이다.</p>
     <p>그리고 한도만으로는 부족하다. 사고가 났을 때 <strong>누가 이 권한을 줬는지</strong>가
        남지 않으면 책임 주체를 특정할 수 없고, 가맹점은 에이전트 결제를 받을 이유가 없다.
        이 마지막 조각이 기와에만 있다 — 다른 체인에는 조건으로 걸 신원 자체가 없다.</p>
+
+    <h3>규제가 지금 묻고 있는 것</h3>
+    <p>먼저 분명히 해둔다. <strong>여기 어느 문장도 규제 준수 주장이 아니다.</strong> 마패는
+       인가받은 기관이 아니고 어떤 보고 의무도 이행하지 않는다. 말하려는 것은 하나다 — 지금
+       공개적으로 던져지고 있는 질문에 모양이 있고, 그 모양이 이 문서가 설명하는 구조다.</p>
+    <p><strong>영국.</strong> 재무부가 2026년 7월 <em>Modernising Payment Services
+       Regulation</em> 협의 문서를 냈다(PU 3657, 10월 6일까지 의견 접수). 3.35항은 "PSRs는 AI가
+       나오기 전에 설계되었고 에이전트형 AI를 온전히 수용하지 못할 수 있다"고 적은 뒤, 두 질문을
+       던진다. 원문 그대로다.</p>
+    <div class="note">
+        <strong>Question 12</strong> — 결제서비스 규제 체계는 스마트 컨트랙트와 그 위에 놓인
+        프로그래머블 결제를 지원하기 위해 어떻게 바뀌어야 하는가?<br><br>
+        <strong>Question 15</strong> — 기존 결제서비스 규제는 에이전트 결제를 지원하기 위해 어떻게
+        바뀌어야 하는가? 예컨대 결제거래의 <strong>인증과 동의</strong>, 그리고 <strong>승인되지
+        않은 결제거래의 책임</strong>에 관한 조항을 손봐야 하는가?
+    </div>
+    <p>인증, 동의, 그리고 승인한 적 없는 것에 대한 책임. 마패의 위임은 사람의 동의를 기계가 읽는
+       범위로 쓴 것이고, 신원 조건은 그 결제를 정산 순간에 그 사람에게 묶는 장치이며, 범위 밖
+       결제는 애초에 정산되지 않는다.</p>
+    <p><strong>한국.</strong> 개정 특정금융정보법이 <strong>2026년 8월 20일</strong> 시행된다.
+       금융위원회가 3월 30일 입법예고한 시행령·감독규정 개정안은, 현재 가상자산사업자 간
+       <strong>100만원 이상</strong> 이전에만 걸리는 트래블룰을 100만원 미만까지 확대하고,
+       <strong>수신 사업자</strong>에게도 의무를 지운다 — 송신 사업자로부터 정보를 받고, 받지
+       못하면 정보제공을 요구하며, 그래도 오지 않으면 <strong>거래를 거절</strong>한다.</p>
+    <p>금융위가 밝힌 근거가 곱씹을 만한 수치다. <strong>국내 사업자 간 이전거래의 60%가
+       (2025년 하반기, 건수 기준) 100만원 미만이었다.</strong> 작고 잦은 것 — 그게 정확히 에이전트
+       트래픽의 모양이고, 이달부터 면제에서 빠지는 트래픽의 모양이다.</p>
+    <p>여기서 두 가지가 따라 나온다. 하나는 방향이다. 규제는 <em>모든</em> 이전이 원발신자를
+       식별한 채로 움직이는 쪽으로 가고 있고, 숨을 하한선은 사라진다.</p>
+    <p>다른 하나는 덜 눈에 띄지만 두 번 읽을 값이 있다. <strong>원발신자를 확인할 수 없는 이전에
+       규정이 처방하는 구제책은 거절이다.</strong> 이건 <code>DojangVerifiedEnforcer</code>가 하는
+       일의 비유가 아니라 같은 문장이다. 하나는 기관이 집행하도록 쓰였고, 하나는 솔리디티로
+       쓰였을 뿐이다.</p>
+    <p>그 두 문장이 만날 수 있는 곳이 기와다. 도장 attestation을 발급하는 주체가 바로 그 규정이
+       규율하는 기관들이기 때문이다. 신원을 다툴 여지가 있는 어딘가에서 들여올 필요가 없다 —
+       결제가 정산되는 그 체인에 이미 있다.</p>
 </section>
 
 <section id="s3">
@@ -1081,10 +1131,69 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        budget that is the right answer. But the limits are enforced by their issuer, and identity
        stays self-declared &mdash; the gap that remains where accountability is required is this
        document's subject.</p>
+    <p>On the non-custodial side the closest thing is Coinbase's <strong>Spend Permissions</strong>.
+       It is well built and widely used, and reading it is the fastest way to see what a spending
+       allowance leaves undecided. There is no recipient parameter &mdash; more precisely, there is
+       no recipient concept.</p>
+    <pre><code>// SpendPermissionManager.spend()
+_transferFrom(spendPermission.token, spendPermission.account,
+              <span class="k">spendPermission.spender</span>, value);</code></pre>
+    <p>Funds move to the <code>spender</code>. That is not a weakness in the design, it is the
+       design. A spend permission answers <em>how much may leave this account, how often</em>, and
+       the chain's involvement ends when the spender is paid. Where the money goes next, and on
+       whose authority it left, are settled somewhere the chain cannot see. <code>extraData</code>
+       is the natural place to write an intent or an authorising identity into the grant, and the
+       manager hashes it but <strong>never reads it</strong>: whatever it says is enforced by
+       convention among the parties, not by the contract.</p>
+    <p>Mapae is not a better allowance. It is an allowance with two further questions answered
+       on-chain: <strong>where it may go</strong>, and <strong>who is standing behind it</strong>.</p>
     <p>And a cap alone is not enough. If <strong>who granted the authority</strong> does not
        survive the incident, no party can be held responsible, and a merchant has no reason to
        accept agent payments at all. That last piece exists only on GIWA &mdash; no other chain has
        an identity to condition on.</p>
+
+    <h3>What regulators are asking, in 2026</h3>
+    <p>To be clear at the outset: <strong>nothing here is a compliance claim.</strong> Mapae is not
+       a licensed institution and implements no reporting obligation. The point is narrower. The
+       questions being asked in public right now have a shape, and it is the shape of the structure
+       this document describes.</p>
+    <p><strong>The United Kingdom.</strong> HM Treasury published <em>Modernising Payment Services
+       Regulation</em> in July 2026 (PU 3657, open until 6 October). Paragraph 3.35 notes that the
+       PSRs "were designed before the development of AI and may not fully facilitate the use of
+       agentic AI", and then asks two questions. Both verbatim:</p>
+    <div class="note">
+        <strong>Question 12</strong> &mdash; How does the payment services regulatory framework need
+        to adapt to support the use of smart contracts and programmable payments underpinning
+        them?<br><br>
+        <strong>Question 15</strong> &mdash; How does existing payment services regulation need to
+        adapt to support agentic payments? For example, do provisions relating to
+        <strong>authentication and consent</strong> of payments transactions, and
+        <strong>liability for unauthorised payment transactions</strong>, need updating?
+    </div>
+    <p>Authentication, consent, and liability for what was never authorised. A Mapae delegation is a
+       person's consent written as machine-readable scope; the identity condition binds a payment to
+       that person at the moment it settles; and a payment outside the scope does not settle.</p>
+    <p><strong>Korea.</strong> The amended Act on Reporting and Using Specified Financial
+       Transaction Information takes effect on <strong>20 August 2026</strong>. The subordinate
+       rules the Financial Services Commission put out for comment on 30 March extend the Travel
+       Rule &mdash; applied today only to transfers of <strong>₩1,000,000 or more</strong> between
+       virtual asset service providers &mdash; to transfers below that floor, and place an
+       obligation on the <strong>receiving</strong> provider: obtain the originator information,
+       request it where it is missing, and where it still does not arrive,
+       <strong>refuse the transfer</strong>.</p>
+    <p>The FSC's stated reason is a figure worth sitting with. <strong>60% of domestic
+       provider-to-provider transfers, by count in the second half of 2025, were under
+       ₩1,000,000.</strong> Small and numerous is what agent traffic looks like, and small and
+       numerous is what stops being exempt this month.</p>
+    <p>Two things follow. The first is direction: toward every transfer carrying an identifiable
+       originator, with no de-minimis floor to sit beneath.</p>
+    <p>The second is quieter and worth reading twice. <strong>The remedy the rule prescribes for a
+       transfer whose originator cannot be established is to refuse it.</strong> That is not an
+       analogy for what <code>DojangVerifiedEnforcer</code> does. It is the same sentence &mdash;
+       one written for institutions to execute, one written in Solidity.</p>
+    <p>GIWA is where those two sentences can meet, because Dojang attestations are issued by the
+       very institutions the rule governs. Identity need not be imported from somewhere it can be
+       disputed; it is already on the chain the payment settles on.</p>
 </section>
 
 <section id="e3">

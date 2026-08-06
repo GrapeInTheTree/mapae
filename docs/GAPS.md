@@ -67,6 +67,24 @@ caveat enforcers MetaMask ships, and every enforcer we could find on any chain, 
 a delegation on identity**. The chain with a licensed exchange as its attestation issuer is
 precisely where that enforcer belongs.
 
+We are not the only ones who notice the shape of this. Writing in February 2026, before any of
+this existed, [Oso Knows](https://www.osoknows.com/caveat/who-authorized-the-agent) put it as a
+property of the standard rather than an oversight:
+
+> ERC-7710 is deliberately identity-agnostic: it handles permissions without opining on who "who"
+> actually is. That's a feature for composability, but for the broader agent ecosystem, identity
+> and permissions need to work together.
+
+That is the more honest framing, and we adopt it. The count of zero is ours and is a measurement;
+what the quotation adds is that the absence is by design at the standard layer, which is precisely
+why it has to be filled at the enforcer layer instead. An enforcer is the one place where identity
+can be made a condition without asking ERC-7710 to become opinionated about identity — which it
+should not.
+
+Filling it needs a chain that can answer the question. That is the argument for doing this on
+GIWA rather than anywhere else, and it is why the portability test can carry the machine to
+Ethereum Sepolia but has to leave the meaning behind.
+
 **Target allowlists cannot express payees; calldata pinning expresses only one.** Target enforcers
 gate the execution target, which for an ERC-20 payment is the token contract. The recipient sits at
 calldata `[4:36]`, and a generic calldata enforcer does reach it — pinned to one exact value, which
