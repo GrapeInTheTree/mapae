@@ -402,8 +402,11 @@ server.tool(
         // The largest single payment that can settle right now is bounded by BOTH caps -
         // stating it saves the model an arithmetic mistake at the moment it matters.
         const ceiling = perPayment?.kind === "perPayment" ? perPayment.max : null;
-        const payableNow =
+        const capBound =
             live.available === null ? ceiling : ceiling === null ? live.available : ceiling < live.available ? ceiling : live.available;
+        // Zero while the delegation is off or the identity is not live: the caps still say what
+        // they say, but nothing settles under them right now, and this field answers the latter.
+        const payableNow = live.disabled || live.identityLive === false ? 0n : capBound;
         return text({
             cap: period?.kind === "period" ? fmtWon(period.amount) : null,
             per: period?.kind === "period" ? (Number(period.duration) === 86_400 ? "day" : `${Number(period.duration)}s`) : null,
@@ -427,6 +430,16 @@ server.tool(
     },
     async ({amount, payee: payeeArg, contextIndex}) => {
         const h = pick(contextIndex);
+        // The same guard `pay` applies. Answering from local reads for a context this agent
+        // cannot sign for would let the dry run promise a settlement that `pay` refuses to
+        // attempt - the one disagreement this tool must never have.
+        if (h.leaf.delegate.toLowerCase() !== agent.address.toLowerCase()) {
+            return text({
+                wouldSettle: false,
+                refusedBy: "notMine",
+                explanation: `This authority is delegated to ${h.leaf.delegate}, but I sign as ${agent.address}. No amount settles under it through me.`,
+            });
+        }
         const payee = h.conditions.find((c) => c.kind === "payee");
         const period = h.conditions.find((c) => c.kind === "period");
         const perPayment = h.conditions.find((c) => c.kind === "perPayment");
@@ -458,8 +471,17 @@ server.tool(
 
         // The largest payment BOTH caps allow at this moment. Saying it turns a refusal into an
         // instruction: the agent knows what to ask for instead of guessing downwards.
-        const largest =
+        //
+        // A disabled delegation or a revoked identity refuses every amount, so the answer there
+        // is zero, not what the caps would have allowed. `largestThatWouldSettleNow` is a claim
+        // about what happens if the agent tries, and an agent that reads only that line would
+        // otherwise spend gas on a transaction certain to revert - the exact failure this tool
+        // exists to prevent. Zero, not null: null means "no cap is set", which is a different
+        // statement from "nothing settles right now".
+        const nothingSettles = live.disabled || live.identityLive === false;
+        const capBound =
             remaining === null ? ceiling : ceiling === null ? remaining : ceiling < remaining ? ceiling : remaining;
+        const largest = nothingSettles ? 0n : capBound;
 
         // Name the binding constraint before consulting the chain. The chain gives the
         // authoritative answer, but "reverted" does not tell an agent what to do next.
@@ -512,6 +534,8 @@ server.tool(
                     : "Every condition read here allows this payment."),
             chainReason: chainRefusal,
             largestThatWouldSettleNow: largest === null ? null : fmtWon(largest),
+            disabled: live.disabled,
+            identityLive: live.identityLive,
             note: "Nothing was broadcast. A refusal costs no gas, which is the point of asking first.",
         });
     },

@@ -13,10 +13,10 @@ import {spawn} from "node:child_process";
 import {rmSync} from "node:fs";
 import {homedir} from "node:os";
 import {join} from "node:path";
-import {createPublicClient, decodeAbiParameters, decodeFunctionData, http, keccak256, toHex, type Address, type Hex} from "viem";
+import {createPublicClient, createWalletClient, decodeAbiParameters, decodeFunctionData, encodeFunctionData, http, keccak256, toHex, type Address, type Hex} from "viem";
 import {privateKeyToAccount} from "viem/accounts";
-import {addresses, giwaSepolia, TESTNET_FAUCET_ID} from "/Users/ahn_euijin/mapae/sdk/src/constants.js";
-import {managerAbi} from "/Users/ahn_euijin/mapae/sdk/src/abi.js";
+import {addresses, giwaSepolia, MODE_SIMPLE_SINGLE, TESTNET_FAUCET_ID} from "/Users/ahn_euijin/mapae/sdk/src/constants.js";
+import {accountAbi, managerAbi} from "/Users/ahn_euijin/mapae/sdk/src/abi.js";
 import {
     DELEGATION_TYPES,
     delegationDomain,
@@ -27,6 +27,7 @@ import {
     perPaymentTerms,
     timestampTerms,
     rootDelegation,
+    encodeExecutionSingle,
     type Delegation,
 } from "/Users/ahn_euijin/mapae/sdk/src/delegation.js";
 
@@ -237,6 +238,61 @@ async function main() {
     const over = await call("pay", {amount: 1_500});
     if (!over.includes('"REFUSED"')) throw new Error("over-ceiling pay was not refused");
     if (!over.includes("PerPaymentCapExceeded")) throw new Error(`expected PerPaymentCapExceeded, got: ${over}`);
+
+    // A kill switch has to reach the dry run, not only the payment. The first version of
+    // simulate_payment computed the largest settleable amount from the caps alone, so a disabled
+    // delegation still advertised a four-figure headroom - and an agent reading that one line
+    // would have paid gas for a certain revert, which is the failure the tool exists to prevent.
+    //
+    // The switch belongs to the delegator, which is the account, so the owner drives it through
+    // `execute` - the same path a person takes from the permissions page.
+    const principalWallet = createWalletClient({account: principal, chain: giwaSepolia, transport: http()});
+    const killSwitch = async (fn: "disableDelegation" | "enableDelegation") => {
+        const tx = await principalWallet.writeContract({
+            address: ACCOUNT,
+            abi: accountAbi,
+            functionName: "execute",
+            args: [
+                MODE_SIMPLE_SINGLE,
+                encodeExecutionSingle(addresses.manager, 0n,
+                    encodeFunctionData({abi: managerAbi, functionName: fn, args: [signed]})),
+            ],
+        });
+        const r = await pub.waitForTransactionReceipt({hash: tx, timeout: 120_000});
+        // A reverted kill switch would make every assertion below test the state it was already
+        // in, and pass. waitForTransactionReceipt does not raise on a reverted status.
+        if (r.status !== "success") throw new Error(`${fn} reverted: ${tx}`);
+    };
+
+    // GIWA's public RPC load-balances across backends at different heights, so a read taken right
+    // after a receipt can still answer from before it. Poll rather than assert once - the same
+    // lag that made a settled total come out short of its own rows.
+    const settlesAgain = async (): Promise<string> => {
+        let last = "";
+        for (let i = 0; i < 10; i++) {
+            last = await call("simulate_payment", {amount: 100});
+            if (last.includes('"wouldSettle": true')) return last;
+            await new Promise((r) => setTimeout(r, 3_000));
+        }
+        return last;
+    };
+
+    await killSwitch("disableDelegation");
+
+    const dryDisabled = await call("simulate_payment", {amount: 100});
+    if (!dryDisabled.includes('"wouldSettle": false') || !dryDisabled.includes('"refusedBy": "disabled"'))
+        throw new Error(`simulate did not see the delegation was switched off: ${dryDisabled}`);
+    if (!dryDisabled.includes('"largestThatWouldSettleNow": "\u20a90') && !dryDisabled.includes('largestThatWouldSettleNow": "₩0'))
+        throw new Error(`a disabled delegation must advertise no headroom: ${dryDisabled}`);
+    const budgetDisabled = await call("check_budget");
+    if (!budgetDisabled.includes('"disabled": true')) throw new Error("check_budget missed the disable");
+    if (!budgetDisabled.includes('largestSinglePaymentNow": "₩0'))
+        throw new Error(`check_budget still advertised headroom while disabled: ${budgetDisabled}`);
+
+    await killSwitch("enableDelegation");
+    const dryBack = await settlesAgain();
+    if (!dryBack.includes('"wouldSettle": true')) throw new Error(`re-enabling did not restore the tier: ${dryBack}`);
+    console.log(`\nkill switch reached the dry run: disabled -> ₩0 headroom, re-enabled -> settles again`);
 
     const redel = await call("redelegate", {to: merchant, capAmount: 500, maxPerPayment: 200});
     const ctx2 = JSON.parse(redel).permissionContext as Hex;
