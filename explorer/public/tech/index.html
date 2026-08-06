@@ -160,6 +160,9 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     h1 { font-size: 31px; }
     h2 { font-size: 21px; gap: 10px; }
     header { padding-top: 60px; }
+    /* On a phone the fixed toggle sits over running text mid-scroll - move it to the
+       bottom corner, where a floating control is expected and covers nothing being read. */
+    .lang { top: auto; bottom: 16px; right: 16px; box-shadow: 0 4px 18px rgba(0,0,0,.45); }
     .grid2 { grid-template-columns: 1fr; }
     .tier { flex-direction: column; align-items: stretch; }
     .arr { width: auto; padding: 2px 0; }
@@ -233,16 +236,18 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 
 <section id="s1">
     <h2><span class="num">01</span>요약</h2>
-    <p>x402로 에이전트가 스스로 결제하는 경로는 이미 열렸다. 막힌 것은 <strong>권한을 넘기는
-       방법</strong>이다. 지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수 없다)
-       수탁 서비스를 믿는 것 둘뿐이다.</p>
+    <p>x402로 에이전트가 스스로 결제하는 경로는 이미 열렸다 — 공개 1년 남짓에 온체인 정산이
+       <strong>1억 5,700만 건</strong>을 넘었고(2026-07 기준), 표준을 관리하는 재단에는
+       카카오페이가 <strong>국내 유일 창립 멤버</strong>로 들어가 있다. 막힌 것은 <strong>권한을
+       넘기는 방법</strong>이다. 지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수
+       없다) 수탁 서비스를 믿는 것 둘뿐이다.</p>
     <p>마패는 세 번째 길이다. 위임 메커니즘 자체는 발명하지 않았다 — ERC-7710/7715와 x402를
        채택하고, <em>어디에도 없던 조건 하나</em>를 보탠다. <strong>위임자의 신원</strong>이다.</p>
     <div class="scroll"><table>
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
         <tr><td>테스트</td><td class="n">155</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
         <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명 — 그중 셋(신원·수취인·회당)은 배포된 어디에도 없던 조건</td></tr>
-        <tr><td>백엔드 서버</td><td class="n">0</td><td>권한이 유효한지는 체인만 답한다</td></tr>
+        <tr><td>x402 정산 경로</td><td class="n">1</td><td>GIWA에서 실제로 동작하는 유일한 방식(erc7710)을 구현 — 한 서명으로 여러 번 정산, 라이브 증명</td></tr>
     </table></div>
 </section>
 
@@ -257,6 +262,15 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도가 사람의 서명에 고정되어
         있었다면, 같은 오해를 했더라도 돈은 그 이상 움직이지 못했다.
     </div>
+    <p>그리고 이 레일이 커지는 속도는 추정이 아니라 집계다.</p>
+    <div class="scroll"><table>
+        <tr><td>x402 온체인 정산 누적</td><td class="n">1.57억 건</td><td>스테이블코인 4,100만 달러 · 체인 7 · facilitator 18 (2026-07 기준)</td></tr>
+        <tr><td>활성 에이전트</td><td class="n">69,000</td><td>Coinbase 집계, 2026-04</td></tr>
+        <tr><td>x402 재단</td><td class="n">2026-04</td><td>Linux Foundation 산하 — Coinbase·Google·AWS·Microsoft·Visa·Mastercard·Stripe·Shopify, 그리고 <strong>카카오페이(국내 유일 창립 멤버)</strong></td></tr>
+    </table></div>
+    <p>이 트래픽의 상당 부분은 아직 테스트와 투기다 — 그 사실이 논지를 약화하지 않고 오히려
+       벼린다. 한도도 신원도 지지 않는 레일은 그런 트래픽부터 채워지고, 실물 상거래는
+       <strong>책임질 주체가 생긴 다음에야</strong> 온다. 마패가 놓는 것이 그 층이다.</p>
     <p>수탁형 접근에는 이제 이름이 있다 — 2026년 8월 Cloudflare가 발표한 Wallets가 같은 문제를
        수탁 계정과 서버측 한도로 푼다. 탐색 예산에는 맞는 답이다. 다만 한도를 강제하는 주체가
        발급자 자신이고, 신원은 자기 선언에 머문다 — 책임이 필요한 자리에 남는 공백이 이
@@ -436,6 +450,9 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 이것은 우회가 아니라 설계 목표다. 정책 판정이 전부 온체인에 있으므로 정산자는 정책을 알 필요가 없고, 알 수도 없다.</p>
     <p>GIWA에는 EIP-3009 토큰이 없어 다른 두 방식은 애초에 불가능하다. 라이브 증명에서는 같은
        서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부된다.</p>
+    <p>프로토콜 자체는 2026년 4월부터 Linux Foundation 산하 x402 재단이 관리한다. 창립 멤버에
+       Coinbase·Google·Visa·Mastercard와 함께 <strong>카카오페이가 국내 유일</strong>로
+       참여했다 — 에이전트 결제가 한국 시장으로 온다는 신호로 이보다 나은 것이 없다.</p>
 </section>
 
 <section id="s11">
@@ -530,7 +547,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>위임 표준</td><td>발명하지 않고 채택했다. 감사된 조건들이 무수정으로 우리 매니저에서 돌고, 우리 신원 조건도 그들 매니저에 꽂힌다</td></tr>
         <tr><td>온체인 레지스트리</td><td>발급 시점 저장을 강요하면 "발급은 오프체인 서명, 트랜잭션 없음"이라는 모델이 깨진다. 게이트 이벤트 한 줄이 역추적 고리를 닫는다</td></tr>
         <tr><td>ERC-8004</td><td>퍼미션리스 자가 등록은 책임 사슬에 아무것도 보태지 않는다. 에이전트 신원은 기와 방식으로 — 검증된 코드 조건으로</td></tr>
-        <tr><td>자체 백엔드</td><td>권한이 유효한지는 체인만 답해야 한다. 조회를 빠르게 할 인덱서는 로드맵에 있지만, 그것은 가공과 캐시이지 진실의 원본이 아니다</td></tr>
+        <tr><td>진실을 쥔 백엔드</td><td>권한이 유효한지는 체인만 답한다. 조회를 빠르게 할 자체 인덱서는 따로 두되, 그 데이터베이스는 체인에서 언제든 통째로 재구축된다 — 캐시이지 진실의 원본이 아니다</td></tr>
     </table></div>
 </section>
 
@@ -690,11 +707,13 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 
 <section id="e1">
     <h2><span class="num">01</span>Summary</h2>
-    <p>x402 opened the path for an agent to pay for things on its own. What is still missing is a
-       way to <strong>hand over the authority to do so</strong>. Today there are two options: give
-       the agent a private key, with no cap, no payee restriction and no expiry; or trust a
-       custodial service, which reintroduces the intermediary that on-chain payment was meant to
-       remove.</p>
+    <p>x402 opened the path for an agent to pay for things on its own &mdash; over
+       <strong>157 million settlements</strong> on-chain in little more than a year (as of July
+       2026), with a foundation behind the standard that counts <strong>KakaoPay as its only
+       Korean founding member</strong>. What is still missing is a way to <strong>hand over the
+       authority to do so</strong>. Today there are two options: give the agent a private key,
+       with no cap, no payee restriction and no expiry; or trust a custodial service, which
+       reintroduces the intermediary that on-chain payment was meant to remove.</p>
     <p>Mapae is a third option. The delegation mechanism itself is not invented here &mdash;
        ERC-7710/7715 and x402 are adopted as they stand, and the contribution is
        <em>one condition that did not exist anywhere</em>: <strong>the identity of the delegator</strong>.</p>
@@ -702,7 +721,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
         <tr><td>Tests</td><td class="n">155</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
         <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, payee, per-payment) deployed nowhere else</td></tr>
-        <tr><td>Backend servers</td><td class="n">0</td><td>Whether an authority is valid is answered by the chain alone</td></tr>
+        <tr><td>x402 settlement path</td><td class="n">1</td><td>The only asset-transfer method that actually works on GIWA (erc7710) &mdash; one signature, multiple settlements, proven live</td></tr>
     </table></div>
 </section>
 
@@ -718,6 +737,16 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <strong>a single misunderstanding by the agent</strong>. Had the cap been fixed in a human
         signature, no misunderstanding could have moved more than that cap.
     </div>
+    <p>And how fast this rail is growing is a tally, not an estimate.</p>
+    <div class="scroll"><table>
+        <tr><td>Cumulative x402 settlements</td><td class="n">157M</td><td>USD 41M in stablecoins &middot; 7 chains &middot; 18 facilitators (as of July 2026)</td></tr>
+        <tr><td>Active agents</td><td class="n">69,000</td><td>Coinbase count, April 2026</td></tr>
+        <tr><td>x402 Foundation</td><td class="n">2026-04</td><td>Under the Linux Foundation &mdash; Coinbase, Google, AWS, Microsoft, Visa, Mastercard, Stripe, Shopify, and <strong>KakaoPay as the only Korean founding member</strong></td></tr>
+    </table></div>
+    <p>Much of this traffic is still testing and speculation &mdash; which sharpens the argument
+       rather than weakening it. Rails that carry no cap and no identity fill with exactly that
+       traffic first; real commerce arrives <strong>after someone can be held responsible</strong>.
+       That layer is what Mapae builds.</p>
     <p>The custodial approach now has a name: Cloudflare Wallets, announced in August 2026,
        answers the same problem with custodial accounts and server-side limits. For an exploration
        budget that is the right answer. But the limits are enforced by their issuer, and identity
@@ -908,6 +937,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        adjudication is entirely on-chain, the settler does not need to know the policy, and cannot.</p>
     <p>GIWA has no EIP-3009 token, so the other two methods are not available here at all. In the
        live run, one signed payload settles twice and a third attempt is refused before broadcast.</p>
+    <p>The protocol itself has been governed since April 2026 by the x402 Foundation under the
+       Linux Foundation. Its founding members include Coinbase, Google, Visa and Mastercard &mdash;
+       and <strong>KakaoPay, the only Korean one</strong>. There is no better signal that agent
+       payments are coming to the Korean market.</p>
 </section>
 
 <section id="e11">
@@ -1005,7 +1038,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>A delegation standard</td><td>Adopted, not invented. Audited enforcers run unmodified on this manager, and this identity enforcer runs on theirs</td></tr>
         <tr><td>An on-chain registry</td><td>Requiring storage at grant time would break the model where a grant is an off-chain signature with no transaction. One gate event closes the traceback loop instead</td></tr>
         <tr><td>ERC-8004</td><td>Permissionless self-registration adds nothing to an accountability chain, and no registry exists on GIWA (verified by probing). Agent identity is gated the GIWA-native way, through attested code</td></tr>
-        <tr><td>A backend</td><td>Whether an authority is valid must be answered by the chain. An index for fast queries is on the roadmap, but that is caching and shaping &mdash; not the source of truth</td></tr>
+        <tr><td>A backend that owns the truth</td><td>Whether an authority is valid is answered by the chain. A self-hosted index speeds up queries, but its database can be dropped and rebuilt from the chain at any time &mdash; a cache, never the source of truth</td></tr>
     </table></div>
 </section>
 

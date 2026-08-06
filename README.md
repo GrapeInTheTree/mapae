@@ -224,7 +224,9 @@ straight from the registry — to behave as shipped.
 x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of them — `eip3009`,
 `permit2` — authorise at the token layer and die with their nonce. The third, `erc7710`, is
 verified by *simulating the delegation manager*, and is the only one a single authorisation can
-settle **more than once**.
+settle **more than once**. This is not a niche rail: x402 has settled 157M+ payments on-chain
+(July 2026), and the foundation governing it — under the Linux Foundation, alongside Coinbase,
+Google, Visa and Mastercard — counts **KakaoPay as its only Korean founding member**.
 
 Mapae plugs into that slot. The
 [gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator) (branch
