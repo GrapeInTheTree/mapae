@@ -263,7 +263,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
         <tr><td>테스트</td><td class="n">155</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
         <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명 — 그중 셋(신원·수취인·회당)은 배포된 어디에도 없던 조건</td></tr>
-        <tr><td>x402 정산 경로</td><td class="n">1</td><td>GIWA에서 실제로 동작하는 유일한 방식(erc7710)을 구현 — 한 서명으로 여러 번 정산, 라이브 증명</td></tr>
+        <tr><td>온체인 거부</td><td class="n">26</td><td>실패한 결제가 사유와 함께 체인에 남아 있다 — 거부는 감출 것이 아니라 이 시스템의 산출물이다</td></tr>
     </table></div>
 </section>
 
@@ -408,6 +408,37 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         있어서, 두 킬스위치가 동시에 걸렸을 때 어떤 에러가 나올지도 정해져 있다. 배치는
         원자적이다 — 2건 중 2번째가 실패하면 1번째도 롤백된다.
     </div>
+    <h3>거부의 언어</h3>
+    <p>거부는 이 시스템의 정상 출력이고, 그러면 거부가 <strong>무엇을 하라는 것인지</strong>도
+       출력의 일부여야 한다. 규칙은 하나다 — 읽을 수 없거나 존재하지 않는 값이 판단 자리에 오면
+       통과가 아니라 <strong>고유한 사유를 가진 거부</strong>가 되어야 한다.</p>
+    <p>거부는 세 층에서 나온다. 층이 다르면 해야 할 일도 다르다.</p>
+    <div class="scroll"><table>
+        <tr><th>층</th><th>거부</th><th>뜻과 대응</th></tr>
+        <tr><td rowspan="4">매니저<br><em>조건 이전</em></td><td><code>CannotUseADisabledDelegation</code></td><td>사람이 껐다. 다시 켜달라고 부탁하는 것 외에 방법이 없다</td></tr>
+        <tr><td><code>InvalidDelegate</code></td><td>이 권한은 다른 주소의 것이다. 호출자가 말단 delegate가 아니다</td></tr>
+        <tr><td><code>InvalidEOASignature</code> · <code>InvalidERC1271Signature</code></td><td>서명이 사슬과 맞지 않는다. 컨텍스트가 손상됐거나 잘린 것이다</td></tr>
+        <tr><td><code>InvalidAuthority</code></td><td>재위임 사슬의 고리가 끊겼다. 부모 해시가 자식이 주장하는 것과 다르다</td></tr>
+        <tr><td rowspan="5">조건<br><em>정책</em></td><td><code>NotDojangVerified</code></td><td>위임한 사람의 신원이 지금 유효하지 않다 — 취소·만료·미발급이 전부 이 하나로 접힌다</td></tr>
+        <tr><td><code>PerPaymentCapExceeded(amount, cap)</code></td><td>기간 예산과 무관하게 한 번에 너무 크다. 쪼개면 통과할 수 있다</td></tr>
+        <tr><td><code>PayeeNotAllowed(payee)</code></td><td>서명된 목록 밖이다. 사람이 새 권한을 발급해야 한다</td></tr>
+        <tr><td><code>transfer-amount-exceeded</code></td><td>기간 한도 소진. 다음 주기까지 기다리면 회복된다</td></tr>
+        <tr><td><code>expired-delegation</code> · <code>early-delegation</code></td><td>시간 창 밖이다</td></tr>
+        <tr><td rowspan="4">계정<br><em>실행 형태</em></td><td><code>UnsupportedCallType</code></td><td>배치나 delegatecall을 보냈다. 단일 호출만 받는다</td></tr>
+        <tr><td><code>UnsupportedExecType</code></td><td>실패를 삼키는 실행이다. 거부되는 이유는 §6</td></tr>
+        <tr><td><code>DelegatedCallToManager</code></td><td>위임받은 권한을 매니저에 겨눴다</td></tr>
+        <tr><td><code>ExecutionFailed</code></td><td>조건은 다 통과했는데 이체 자체가 실패했다 — 보통 잔고 부족이다</td></tr>
+    </table></div>
+    <div class="note">
+        <strong>왜 자료형까지 정하나.</strong> <code>InvalidTermsLength(uint256)</code>는 길이를
+        되돌려주고 <code>PerPaymentCapExceeded(uint256,uint256)</code>는 시도한 금액과 한도를 함께
+        준다. 덕분에 정산자나 에이전트가 <em>사유를 문자열에서 추측하지 않고</em> 그대로 쓸 수
+        있다. 알아보지 못한 셀렉터는 원본 4바이트를 붙여 그대로 돌려준다 — 조건이 하나 늘 때마다
+        정산자 코드를 고쳐야 한다면 그건 결합이다.
+    </div>
+    <p>세 층의 순서도 정해져 있다. <strong>매니저 검증이 조건보다 항상 먼저</strong>이므로, 도장이
+       죽고 위임도 꺼진 상태에서는 <em>언제나</em> 위임 쪽 에러가 나온다. 이건 테스트로 고정되어
+       있다 — 두 킬스위치를 함께 시험할 때 결과가 우연에 기대지 않도록.</p>
 </section>
 
 <section id="s6">
@@ -706,6 +737,39 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         같은 <strong>남의 주소에서 소스를 빌려</strong> 보여주고 있었다. 지금은 자기 자격으로
         검증되어 있다.
     </div>
+    <h3>각 층이 실제로 증명하는 것</h3>
+    <p>테스트 개수는 신뢰의 근거가 아니다. 무엇을 <em>반증하려 했는가</em>가 근거다.</p>
+    <p><strong>포크 테스트</strong>는 목을 쓰지 않는다. 블록 31,909,542에 고정해 <em>실제
+       DojangScroll 배포본</em>을 상대로 돈다. 그래서 "업비트 KYC를 통과한 진짜 주소가 게이트를
+       통과한다"가 우리가 만든 목이 아니라 그 체인의 사실이 된다. 업비트와 아무 관계 없이도
+       재현된다.</p>
+    <p><strong>불변식</strong>은 독립된 <em>유령 원장</em>을 옆에서 굴린다. 컨트랙트가 자기 상태를
+       보고하는 것을 믿지 않고, 무작위 호출 사이사이 별도로 계산한 장부와 비교한다. 그중 하나는
+       논지 자체다 — <strong>신원이 죽어 있는 동안에는 어떤 결제도 성립하지 않는다.</strong>
+       1,000회 × 256콜을 돌려 반례를 찾는다.</p>
+    <p><strong>3언어 바이트 패리티</strong>는 같은 위임을 Solidity가, TypeScript SDK가, Go
+       facilitator가 각각 인코딩하게 하고 <em>바이트가 같은지</em> 본다. 한쪽만 맞으면 서로 다른
+       것을 서명하고 있어도 각자는 정상으로 보이기 때문이다. 이 픽스처가 없었다면 그 부류의
+       버그는 라이브에서야 드러났을 것이다.</p>
+    <p><strong>인코딩 적합성</strong>은 상수를 <em>리터럴로 박아두고</em> 재계산하지 않는다.
+       타입해시를 코드로 다시 계산해 비교하면, 코드가 틀렸을 때 테스트도 같이 틀린다.</p>
+
+    <h3>인덱서 — 캐시이지 진실이 아니다</h3>
+    <p>익스플로러는 인덱서 없이도 옳다. <em>index.mapae.org</em>는 속도를 위한 것이고, 클라이언트는
+       2초 안에 답이 없으면 체인을 직접 읽는 쪽으로 넘어간다. 이 성질은 실제로 시험했다 —
+       연결은 받고 영원히 응답하지 않는 서버를 세워 두고도 홈 화면이 275ms에 렌더됐다.</p>
+    <p>인덱싱에서 가장 어려운 것이 하필 우리가 일급으로 다루는 것이다. <strong>거부된 결제에는
+       로그가 없다.</strong> revert된 트랜잭션은 이벤트를 남기지 않으므로 로그 인덱서는 구조적으로
+       그것을 볼 수 없다. 그래서 매니저를 <em>계정</em>으로 인덱싱해 트랜잭션 본문을 읽고, 시도된
+       의도(어느 권한으로, 어느 토큰을, 누구에게, 얼마)를 calldata에서 복원한다.</p>
+    <div class="note">
+        <strong>준비되지 않은 인덱서는 무시한다.</strong> Ponder는 모든 소스를 하나의 체크포인트로
+        전진시키므로, 백필 중에는 집계가 진실의 일부다. 그래서 API가 <code>ready</code>를 함께
+        보내고 익스플로러는 준비되지 않았다고 말하는 인덱서의 숫자를 쓰지 않는다 —
+        <em>빠른 오답보다 느린 정답이 낫다.</em> 이 판단을 안 넣었을 때 실제로 위임 4·결제 6이
+        표시됐다. 체인의 진실은 28·39였다.
+    </div>
+
     <h3>검증이 실제로 잡은 버그</h3>
     <ul>
         <li>모드워드 패킹 오류가 실행 형태 가드 둘을 조용히 무력화하고 있었다. all-zero 테스트가
@@ -750,6 +814,54 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <tr><td>임의의 컨트랙트</td><td>등록되지 않은 컨트랙트의 <code>owner()</code>는 공격자가 정하는 값이므로, 조건은 팩토리 등록 여부를 먼저 확인한다</td></tr>
         <tr><td>재위임 하위 사슬</td><td>사슬의 모든 링크의 조건이 평가되므로 자식은 부모를 넓힐 수 없다. 뿌리 비활성화가 사슬 전체를 관통한다</td></tr>
     </table></div>
+    <h3>대리인이 탈취됐다고 가정하면</h3>
+    <p>신뢰 경계는 "에이전트를 믿을 수 있는가"가 아니라 <strong>완전히 탈취됐을 때 최대 피해가
+       얼마인가</strong>로 정의된다. 그리고 이 질문에서 급소는 하나다.</p>
+    <div class="note">
+        <strong>실행은 서명된 것이 아니다.</strong> 위임자가 서명한 것은 조건이고, 실제로 무엇을
+        실행할지는 <em>상환 시점에 calldata로</em> 들어온다. 즉 대리인과 "계정으로서의 임의 호출"
+        사이에 서 있는 것은 조건뿐이다.
+    </div>
+    <p>아래는 탈취된 대리인이 할 수 있는 시도와, 그것을 거부하는 주체다. 각 행은 테스트로
+       실행되며, <strong>조작만 제거한 같은 실행은 정상 정산된다</strong> — 대조군이 없으면
+       거부가 조작 때문인지 다른 이유(예산 소진, 만료) 때문인지 구분되지 않는다.</p>
+    <div class="scroll"><table>
+        <tr><th>시도</th><th>거부하는 주체</th><th>revert</th></tr>
+        <tr><td>허용 목록 밖으로 송금</td><td>AllowedPayeeEnforcer</td><td><code>PayeeNotAllowed</code></td></tr>
+        <tr><td>기간 예산은 남았지만 한 번에 더 크게</td><td>PerPaymentLimitEnforcer</td><td><code>PerPaymentCapExceeded</code></td></tr>
+        <tr><td>이체 대신 <code>approve</code>로 무제한 인출권 확보</td><td>AllowedPayeeEnforcer</td><td><code>InvalidMethod</code></td></tr>
+        <tr><td>토큰이 아닌 다른 컨트랙트로 호출 전환</td><td>ERC20PeriodTransferEnforcer</td><td><code>invalid-contract</code></td></tr>
+        <tr><td>주소 워드의 남는 12바이트에 값 밀어넣기</td><td>AllowedPayeeEnforcer</td><td><code>DirtyRecipientWord</code></td></tr>
+        <tr><td>delegatecall로 계정 스토리지 다시 쓰기</td><td>MapaeAccount</td><td><code>UnsupportedCallType</code></td></tr>
+        <tr><td>실패를 삼키는 실행으로 한도만 소진</td><td>MapaeAccount</td><td><code>UnsupportedExecType</code></td></tr>
+        <tr><td>사람이 내린 킬스위치를 되돌리기</td><td>MapaeAccount</td><td><code>DelegatedCallToManager</code></td></tr>
+    </table></div>
+
+    <h3>마지막 행은 우리가 찾은 실제 구멍이다</h3>
+    <p>계정이 곧 위임자이므로, 매니저에서 <code>msg.sender == delegator</code>로 열리는 함수는
+       모두 계정을 통해 닿는다. <code>enableDelegation</code>이 그런 함수다. 그래서 대리인이 실행
+       대상을 <strong>매니저</strong>로 잡으면 — 토큰이 아니라 —
+       <em>사람이 꺼둔 위임을 다시 켤 수 있었다.</em></p>
+    <p class="cap">가드가 없던 상태의 테스트 결과</p>
+    <pre><code>[FAIL: a disabled delegation must stay disabled]
+  test_Delegate_CannotReEnableThroughTheAccount()</code></pre>
+    <p>실제 노출 범위는 좁았다. 발급 화면은 기간 한도를 <strong>항상</strong> 붙이고, 그 조건이
+       <code>target == token</code>과 <code>transfer</code> 셀렉터를 강제하므로
+       <strong>제품으로 발급된 마패는 처음부터 안전했다.</strong> 닿을 수 있는 것은 SDK로 직접
+       조합한 "신원만" 위임이었다.</p>
+    <p>그래도 고쳤다. <strong>시스템이 하는 보증이 "어떤 조건을 붙였느냐"에 기대면 안 되기
+       때문이다.</strong> 위임 경로에서만 매니저를 겨냥한 실행을 거부한다 — owner의
+       <code>execute</code>는 일부러 열어뒀다. 매니저를 부르는 것이 사람이 킬스위치를 내리는
+       방법이다.</p>
+    <div class="note">
+        <strong>배포 상태를 정직하게.</strong> 이 가드는 소스와 테스트에 있고(157 통과), 아직
+        <em>온체인에 없다.</em> 심사에 제출한 주소를 재배포로 무효화하지 않기 위해 8월 중순
+        이후로 미뤘다. 현재 배포본에서도 발급된 마패는 기간 조건이 막고 있으므로 실사용 노출은
+        없다.
+    </div>
+    <p>이 발견은 다른 팀이 공개한 위협 모델을 우리 컨트랙트에 대고 돌려본 결과다. 배포된 프레임
+       워크를 공유하는 생태계에서는 <strong>남의 보안 문서가 곧 무료 감사</strong>다.</p>
+
     <h3>알려진 한계</h3>
     <ul>
         <li><strong>발급 시점의 신원은 보증하지 않는다.</strong> 조건은 결제 순간의 liveness를 읽을 뿐,
@@ -906,7 +1018,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
         <tr><td>Tests</td><td class="n">155</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
         <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, payee, per-payment) deployed nowhere else</td></tr>
-        <tr><td>x402 settlement path</td><td class="n">1</td><td>The only asset-transfer method that actually works on GIWA (erc7710) &mdash; one signature, multiple settlements, proven live</td></tr>
+        <tr><td>Refusals on-chain</td><td class="n">26</td><td>Failed payments sit on the chain with their reasons &mdash; a refusal is this system's output, not something to hide</td></tr>
     </table></div>
 </section>
 
@@ -1064,6 +1176,40 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         are thrown at once. Batches are atomic: if the second of two executions fails, the first
         rolls back.
     </div>
+    <h3>The vocabulary of refusal</h3>
+    <p>A refusal is this system's normal output, which makes <strong>what to do about it</strong>
+       part of that output too. One rule runs through the guard code: a value that could not be
+       read, or does not exist, placed in a judgment position must produce
+       <strong>a refusal with its own distinct reason</strong> &mdash; never satisfaction.</p>
+    <p>Refusals come from three layers, and the layer tells you what to do next.</p>
+    <div class="scroll"><table>
+        <tr><th>Layer</th><th>Refusal</th><th>What it means, and what to do</th></tr>
+        <tr><td rowspan="4">Manager<br><em>before caveats</em></td><td><code>CannotUseADisabledDelegation</code></td><td>A person switched it off. Nothing to do but ask them to switch it back</td></tr>
+        <tr><td><code>InvalidDelegate</code></td><td>This authority belongs to another address &mdash; the caller is not the leaf delegate</td></tr>
+        <tr><td><code>InvalidEOASignature</code> &middot; <code>InvalidERC1271Signature</code></td><td>A signature does not match the chain. The context is corrupt or truncated</td></tr>
+        <tr><td><code>InvalidAuthority</code></td><td>A link in the re-delegation chain is broken: the parent hash is not what the child claims</td></tr>
+        <tr><td rowspan="5">Caveat<br><em>policy</em></td><td><code>NotDojangVerified</code></td><td>The granting human's identity is not live right now &mdash; revoked, expired and never-issued all fold into this one</td></tr>
+        <tr><td><code>PerPaymentCapExceeded(amount, cap)</code></td><td>Too large for one payment regardless of the period budget. Splitting it may pass</td></tr>
+        <tr><td><code>PayeeNotAllowed(payee)</code></td><td>Outside the signed list. Only a new grant from the person changes that</td></tr>
+        <tr><td><code>transfer-amount-exceeded</code></td><td>The period allowance is spent. It recovers at the next rollover</td></tr>
+        <tr><td><code>expired-delegation</code> &middot; <code>early-delegation</code></td><td>Outside the time window</td></tr>
+        <tr><td rowspan="4">Account<br><em>execution shape</em></td><td><code>UnsupportedCallType</code></td><td>A batch or a delegatecall was sent. Only single calls are admitted</td></tr>
+        <tr><td><code>UnsupportedExecType</code></td><td>An execution that swallows failure &mdash; refused for the reason in §6</td></tr>
+        <tr><td><code>DelegatedCallToManager</code></td><td>Delegated authority was aimed at the manager</td></tr>
+        <tr><td><code>ExecutionFailed</code></td><td>Every condition passed and the transfer itself failed &mdash; usually an empty balance</td></tr>
+    </table></div>
+    <div class="note">
+        <strong>Why the arguments are typed.</strong> <code>InvalidTermsLength(uint256)</code>
+        hands back the length it saw; <code>PerPaymentCapExceeded(uint256,uint256)</code> hands back
+        both the attempted amount and the cap. A settler or an agent can then act on the reason
+        <em>without parsing it out of a string</em>. Selectors it does not recognise come back with
+        their raw four bytes attached &mdash; if adding one enforcer meant editing the settler,
+        that would be coupling.
+    </div>
+    <p>The layers are ordered too. <strong>Manager validation always precedes caveats</strong>, so
+       when the identity is dead and the delegation is disabled at the same time, the delegation
+       error comes back <em>every time</em>. That ordering is pinned by tests, so that exercising
+       both kill switches together does not depend on luck.</p>
 </section>
 
 <section id="e6">
@@ -1378,6 +1524,45 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         Blockscout was borrowing source from a different address with identical bytecode that
         someone else had verified. It is verified in its own right now.
     </div>
+    <h3>What each layer actually proves</h3>
+    <p>A test count is not a reason to trust anything. What was <em>attempted as a
+       refutation</em> is.</p>
+    <p><strong>Fork tests</strong> use no mocks. Pinned at block 31,909,542, they run against the
+       <em>real DojangScroll deployment</em>, which turns "a genuinely Upbit-KYC'd address passes
+       the gate" from a claim about our own mock into a fact about that chain &mdash; reproducible
+       by anyone, with no relationship to Upbit required.</p>
+    <p><strong>Invariants</strong> keep an independent <em>ghost ledger</em> alongside. Rather than
+       believing the contract's report of its own state, they compare it against a separately
+       computed book between random calls. One of them is the thesis itself: <strong>no payment
+       settles while the identity is dead</strong>. A thousand runs of 256 calls look for a
+       counterexample.</p>
+    <p><strong>Three-language byte parity</strong> makes Solidity, the TypeScript SDK and the Go
+       facilitator each encode the same delegation, then checks that <em>the bytes match</em>. Get
+       it right in one place only and each side still looks correct while signing different
+       things. Without these fixtures that class of bug surfaces live.</p>
+    <p><strong>Encoding conformance</strong> pins constants as <em>literals</em> and never
+       recomputes them. Recompute a typehash to compare against itself and a wrong implementation
+       takes the test down with it.</p>
+
+    <h3>The index is a cache, not the truth</h3>
+    <p>The explorer is correct without it. <em>index.mapae.org</em> exists for speed, and the
+       client falls back to reading the chain directly when it does not answer within two seconds.
+       That property was tested rather than assumed: against a server that accepts connections and
+       never replies, the home page still rendered in 275ms.</p>
+    <p>The hardest thing to index happens to be the thing this system treats as first-class.
+       <strong>Refused payments have no logs.</strong> A reverted transaction emits no events, so a
+       log indexer structurally cannot see one. The manager is therefore indexed as an
+       <em>account</em>, reading transaction bodies, and the attempted intent &mdash; which
+       authority, which token, which payee, how much &mdash; is recovered from calldata.</p>
+    <div class="note">
+        <strong>An index that is not ready is ignored.</strong> Ponder advances one checkpoint
+        across every source, so while any of them is backfilling the aggregates are a fraction of
+        the truth. The API reports <code>ready</code> and the explorer declines to use the numbers
+        of an index that says it is not &mdash; <em>a fast wrong number is worse than a slow right
+        one</em>. Before that judgment existed it displayed 4 delegations and 6 payments. The chain
+        held 28 and 39.
+    </div>
+
     <h3>Bugs verification actually caught</h3>
     <ul>
         <li>A mode-word packing error silently disabled two execution-shape guards. It hid while the
@@ -1422,6 +1607,59 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <tr><td>Arbitrary contracts</td><td><code>owner()</code> on an unregistered contract is attacker-controlled, so the gate checks factory registration first</td></tr>
         <tr><td>Downstream delegations</td><td>Every link's caveats are evaluated, so a child cannot widen a parent, and disabling the root reaches the whole chain</td></tr>
     </table></div>
+    <h3>Assume the delegate is compromised</h3>
+    <p>A trust boundary is not defined by whether the agent can be trusted but by
+       <strong>the maximum damage when it is fully compromised</strong>. On that question one fact
+       does the work.</p>
+    <div class="note">
+        <strong>The execution is not signed.</strong> What the delegator signed is a set of
+        conditions; what will actually be executed arrives <em>as calldata at redemption time</em>.
+        The only thing standing between a delegate and an arbitrary call made as the account is
+        the caveat set.
+    </div>
+    <p>Below is what a compromised delegate can attempt and what refuses it. Each row is executed
+       by a test, and <strong>the same execution with only the tampering removed settles
+       normally</strong> &mdash; without that control, a refusal could just as well come from an
+       exhausted budget or an expired window as from the tampering.</p>
+    <div class="scroll"><table>
+        <tr><th>Attempt</th><th>Refused by</th><th>Revert</th></tr>
+        <tr><td>Pay outside the allowlist</td><td>AllowedPayeeEnforcer</td><td><code>PayeeNotAllowed</code></td></tr>
+        <tr><td>Take more in one payment, with period budget to spare</td><td>PerPaymentLimitEnforcer</td><td><code>PerPaymentCapExceeded</code></td></tr>
+        <tr><td>Turn a transfer into an unlimited <code>approve</code></td><td>AllowedPayeeEnforcer</td><td><code>InvalidMethod</code></td></tr>
+        <tr><td>Redirect the call to a contract other than the token</td><td>ERC20PeriodTransferEnforcer</td><td><code>invalid-contract</code></td></tr>
+        <tr><td>Smuggle a value through the padding of the address word</td><td>AllowedPayeeEnforcer</td><td><code>DirtyRecipientWord</code></td></tr>
+        <tr><td>Rewrite the account's storage via delegatecall</td><td>MapaeAccount</td><td><code>UnsupportedCallType</code></td></tr>
+        <tr><td>Consume the allowance with an execution that swallows failure</td><td>MapaeAccount</td><td><code>UnsupportedExecType</code></td></tr>
+        <tr><td>Undo the kill switch a person threw</td><td>MapaeAccount</td><td><code>DelegatedCallToManager</code></td></tr>
+    </table></div>
+
+    <h3>That last row is a hole we found in ourselves</h3>
+    <p>The account is the delegator, so every manager function gated on
+       <code>msg.sender == delegator</code> is reachable through it &mdash; and
+       <code>enableDelegation</code> is one of those. Point the execution at the
+       <strong>manager</strong> rather than at a token and
+       <em>a delegate could switch a delegation the principal had disabled back on.</em></p>
+    <p class="cap">The test, before the guard existed</p>
+    <pre><code>[FAIL: a disabled delegation must stay disabled]
+  test_Delegate_CannotReEnableThroughTheAccount()</code></pre>
+    <p>The real exposure was narrow. The Composer always attaches a period cap, and that condition
+       requires <code>target == token</code> with the <code>transfer</code> selector, so
+       <strong>every permission the product issues was safe from the start</strong>. What could
+       reach it was an identity-only delegation composed by hand through the SDK.</p>
+    <p>It was fixed anyway, because <strong>a guarantee this system makes must not rest on which
+       conditions someone chose to attach</strong>. Executions aimed at the manager are refused on
+       the delegated path only; the owner's <code>execute</code> is deliberately left open, since
+       calling the manager is how a principal throws the kill switch.</p>
+    <div class="note">
+        <strong>Where this stands, precisely.</strong> The guard is in the source and under test
+        (157 passing) and is <em>not yet on-chain</em>. Redeploying would invalidate the addresses
+        submitted for review, so it waits until mid-August. On the currently deployed contracts,
+        issued permissions are still covered by the period condition, so there is no live exposure.
+    </div>
+    <p>The finding came from running another team's published threat model against our own
+       contracts. In an ecosystem sharing deployed frameworks, <strong>someone else's security
+       write-up is a free audit</strong>.</p>
+
     <h3>Known limits</h3>
     <ul>
         <li><strong>Issuance-time identity is not guaranteed.</strong> The gate reads liveness at the
