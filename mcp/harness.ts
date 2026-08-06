@@ -73,7 +73,12 @@ async function fleetAccount(): Promise<Address> {
 /** Spawn the built server over stdio and complete the MCP handshake. Returns a client bound to
  *  it, so a run can raise a second server under a different environment and compare. */
 async function connect(env: Record<string, string>) {
-    const child = spawn("node", ["/Users/ahn_euijin/mapae/mcp/dist/index.js"], {
+    // Defaults to the local build. Point MAPAE_MCP_CMD at the published package to run this same
+    // battery against what is actually on the registry - a tools/list that answers proves the
+    // tarball unpacks, not that the thing pays anyone.
+    //   MAPAE_MCP_CMD="npx -y mapae-mcp@0.7.0" pnpm tsx mcp/harness.ts
+    const [cmd, ...cmdArgs] = (process.env.MAPAE_MCP_CMD ?? "node /Users/ahn_euijin/mapae/mcp/dist/index.js").split(" ");
+    const child = spawn(cmd, cmdArgs, {
         env: {
             ...process.env,
             MAPAE_AGENT_PRIVATE_KEY: process.env.AGENT_PRIVATE_KEY,
