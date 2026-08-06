@@ -49,12 +49,25 @@ jobs:
 
       # Pinned at block 31909542 against GIWA Sepolia's public RPC. The endpoint load-balances
       # across backends that sometimes fail under load, so this job is retried once.
+      # FORK_TESTS opts in; without it these suites skip, which is what keeps a bare `forge test`
+      # from depending on a shared public endpoint. Here we want them to actually run, so the step
+      # afterwards fails the job if they did not - a green check over zero executed tests would be
+      # worse than a red one.
       - name: Fork tests
         uses: nick-fields/retry@v3
+        env:
+          FORK_TESTS: true
         with:
           timeout_minutes: 10
           max_attempts: 2
-          command: forge test --match-path 'test/fork/*'
+          command: forge test --match-path 'test/fork/*' | tee fork.log
+
+      - name: Assert the fork suites actually ran
+        run: |
+          grep -qE '15 tests passed' fork.log || {
+            echo "::error::fork suites did not run all 15 tests - see fork.log"; exit 1; }
+          grep -qE '0 skipped' fork.log || {
+            echo "::error::fork suites skipped; FORK_TESTS or the endpoint is wrong"; exit 1; }
 
   byte-parity:
     name: Cross-language byte parity

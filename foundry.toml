@@ -13,6 +13,14 @@ via_ir = false                   # DO NOT ENABLE - breaks Blockscout verificatio
 bytecode_hash = "none"
 cbor_metadata = false
 verbosity = 2
+
+# The fork suites reach public endpoints, and on a cold cache they fetch every account and slot
+# they touch. The default per-request budget is not enough for that first run: it surfaced as
+# `operation timed out` on a fresh clone while passing on a machine whose cache was warm.
+#
+# Do NOT set no_rpc_rate_limit here. It disables Foundry's own throttling, and against a public
+# endpoint that turns a slow first run into HTTP 429 `over rate limit`. Measured, both ways.
+eth_rpc_timeout = 120_000
 fs_permissions = [
     {access = "read-write", path = "./deployments"},
     {access = "read-write", path = "./test/fixtures"},

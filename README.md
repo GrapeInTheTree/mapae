@@ -421,11 +421,14 @@ races on GIWA's load-balanced public endpoint are documented in [docs/GAPS.md](d
 ```bash
 git clone --recursive https://github.com/GrapeInTheTree/mapae && cd mapae
 
-# everything: 157 unit, integration and invariant tests, plus 15 forked against GIWA Sepolia
-# and Ethereum Sepolia. No configuration - the fork suites default to public endpoints, and
-# report SKIP rather than failing if one is down. Set GIWA_SEPOLIA_RPC_URL or
-# ETH_SEPOLIA_RPC_URL to point them elsewhere.
+# 157 unit, integration and invariant tests. No configuration, no network, ~27s.
 forge test
+
+# 15 more, forked against live GIWA Sepolia and Ethereum Sepolia. Opt-in because they depend on
+# shared public endpoints: measured over cold clones, one run in three failed on a rate limit or
+# a timeout that had nothing to do with this code. They skip rather than fail when an endpoint
+# is down. Set GIWA_SEPOLIA_RPC_URL or ETH_SEPOLIA_RPC_URL to use your own.
+FORK_TESTS=true forge test
 
 # cross-language byte parity and the policy codec
 pnpm install && pnpm fixtures
