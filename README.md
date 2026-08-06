@@ -365,8 +365,10 @@ x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of the
 `permit2` — authorise at the token layer and die with their nonce. The third, `erc7710`, is
 verified by *simulating the delegation manager*, and is the only one a single authorisation can
 settle **more than once**. This is not a niche rail: x402 has settled 157M+ payments on-chain
-(July 2026), and the foundation governing it — under the Linux Foundation, alongside Coinbase,
-Google, Visa and Mastercard — counts **KakaoPay as its only Korean founding member**.
+(July 2026), and the foundation stewarding it under the Linux Foundation went operational on 14
+July with 40 members — Coinbase, Google, Visa and Mastercard among the Premier tier, and
+**KakaoPay, Galaxia Moneytree and Hecto Financial** among the General one. Three Korean payment
+companies, not one.
 
 **It runs, publicly, at [x402.mapae.org](https://x402.mapae.org/supported).** Point an x402 client
 at it and the settlement path below is the one that answers.

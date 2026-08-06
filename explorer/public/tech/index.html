@@ -251,7 +251,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <h2><span class="num">01</span>요약</h2>
     <p>에이전트가 스스로 결제하는 경로는 이미 열려 있습니다. x402는 공개된 지 1년 남짓 만에
        온체인 정산 <strong>1억 5,700만 건</strong>을 넘겼고(2026년 7월 기준), 표준을 관리하는
-       재단에는 카카오페이가 <strong>국내 유일 창립 멤버</strong>로 참여하고 있습니다.</p>
+       재단에는 <strong>한국 결제사 세 곳</strong>이 이름을 올렸습니다.</p>
     <p>정작 막혀 있는 것은 결제가 아니라 <strong>권한을 넘기는 방법</strong>입니다. 지금 쓸 수
        있는 방법은 두 가지뿐입니다. 개인키를 통째로 넘기거나, 수탁 서비스에 맡기는 것입니다.
        앞의 방법으로는 한도도 수취인도 기한도 걸 수 없고, 뒤의 방법은 온체인 결제를 하려고 다시
@@ -287,7 +287,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     <div class="scroll"><table>
         <tr><td>x402 온체인 정산 누적</td><td class="n">1.57억 건</td><td>스테이블코인 4,100만 달러 · 체인 7 · facilitator 18 (2026-07 기준)</td></tr>
         <tr><td>활성 에이전트</td><td class="n">69,000</td><td>Coinbase 집계, 2026-04</td></tr>
-        <tr><td>x402 재단</td><td class="n">2026-04</td><td>Linux Foundation 산하 — Coinbase·Google·AWS·Microsoft·Visa·Mastercard·Stripe·Shopify, 그리고 <strong>카카오페이(국내 유일 창립 멤버)</strong></td></tr>
+        <tr><td>x402 재단</td><td class="n">40개사</td><td>Linux Foundation 산하, 2026-07-14 운영 개시. Premier에 Coinbase·Google·AWS·Visa·Mastercard·Stripe·Shopify·Cloudflare 등, General에 <strong>카카오페이·갈럭시아머니트리·헥토파이낸셜</strong></td></tr>
     </table></div>
     <p>물론 이 거래량의 상당 부분은 아직 테스트와 투기성 거래입니다. 하지만 그 사실은 오히려
        논지를 분명하게 만듭니다. 한도도 신원도 확인하지 않는 결제 수단에는 그런 거래가 먼저
@@ -585,7 +585,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        조건은 이 자리에 닿기는 하지만 <strong>정확히 한 값</strong>으로만 고정할 수 있어서, 위임
        하나에 수취인 하나가 됩니다.</p>
     <p>우리 조건은 같은 자리를 <strong>주소 집합</strong>과 대조해 읽습니다. 그리고 이 32바이트
-       가운데 주소가 쓰지 않는 앞쪽 12바이트에 0이 아닌 값이 들어 있으면 거부한다
+       가운데 주소가 쓰지 않는 앞쪽 12바이트에 0이 아닌 값이 들어 있으면 거부합니다
        (<code>DirtyRecipientWord</code>). 쓰이지 않는 자리에 값을 실어 검사를 비껴가려는 시도를
        막기 위해서입니다.</p>
 </section>
@@ -709,9 +709,10 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        <em>결과 불명</em>으로 답합니다 — 브로드캐스트된 트랜잭션은 아무도 기다리지 않아도 살아
        있고, 거기에 "실패"라고 답하는 것이 한 결제를 두 번 청구하게 만드는 경로입니다. 그렇게 미확정
        상태로 남은 것은 디스크에 적히고, 다음 프로세스가 체인에 물어 해소합니다.</p>
-    <p>프로토콜 자체는 2026년 4월부터 Linux Foundation 산하 x402 재단이 관리합니다. 창립 멤버에
-       Coinbase·Google·Visa·Mastercard와 함께 <strong>카카오페이가 국내 유일</strong>로
-       참여했습니다 — 에이전트 결제가 한국 시장으로 온다는 신호로 이보다 나은 것이 없습니다.</p>
+    <p>프로토콜은 Linux Foundation 산하 x402 재단이 관리하며, 2026년 7월 14일 40개사로 운영을
+       시작했습니다. Premier 등급에 Coinbase·Google·Visa·Mastercard·Stripe·Cloudflare가 있고,
+       General 등급에 <strong>카카오페이·갈럭시아머니트리·헥토파이낸셜</strong> 세 곳이 있습니다.
+       한국 결제사가 하나도 아니고 셋이 이미 이 표준 안에 들어와 있다는 뜻입니다.</p>
 </section>
 
 <section id="s11">
@@ -1158,8 +1159,8 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <h2><span class="num">01</span>Summary</h2>
     <p>x402 opened the path for an agent to pay for things on its own &mdash; over
        <strong>157 million settlements</strong> on-chain in little more than a year (as of July
-       2026), with a foundation behind the standard that counts <strong>KakaoPay as its only
-       Korean founding member</strong>. What is still missing is a way to <strong>hand over the
+       2026), and the foundation that stewards the standard has <strong>three Korean payment
+       companies</strong> in it. What is still missing is a way to <strong>hand over the
        authority to do so</strong>. Today there are two options: give the agent a private key,
        with no cap, no payee restriction and no expiry; or trust a custodial service, which
        reintroduces the intermediary that on-chain payment was meant to remove.</p>
@@ -1194,7 +1195,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <div class="scroll"><table>
         <tr><td>Cumulative x402 settlements</td><td class="n">157M</td><td>USD 41M in stablecoins &middot; 7 chains &middot; 18 facilitators (as of July 2026)</td></tr>
         <tr><td>Active agents</td><td class="n">69,000</td><td>Coinbase count, April 2026</td></tr>
-        <tr><td>x402 Foundation</td><td class="n">2026-04</td><td>Under the Linux Foundation &mdash; Coinbase, Google, AWS, Microsoft, Visa, Mastercard, Stripe, Shopify, and <strong>KakaoPay as the only Korean founding member</strong></td></tr>
+        <tr><td>x402 Foundation</td><td class="n">40 members</td><td>Under the Linux Foundation, operational 14 July 2026. Premier includes Coinbase, Google, AWS, Visa, Mastercard, Stripe, Shopify, Cloudflare; General includes <strong>KakaoPay, Galaxia Moneytree and Hecto Financial</strong></td></tr>
     </table></div>
     <p>Much of this traffic is still testing and speculation &mdash; which sharpens the argument
        rather than weakening it. Rails that carry no cap and no identity fill with exactly that
@@ -1634,10 +1635,11 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        transaction stays live whether or not anyone is still waiting, and calling that a failure is
        how one payment gets charged twice. Whatever stays unresolved is written to disk, and the
        next process asks the chain about it rather than forgetting it.</p>
-    <p>The protocol itself has been governed since April 2026 by the x402 Foundation under the
-       Linux Foundation. Its founding members include Coinbase, Google, Visa and Mastercard &mdash;
-       and <strong>KakaoPay, the only Korean one</strong>. There is no better signal that agent
-       payments are coming to the Korean market.</p>
+    <p>The protocol is stewarded by the x402 Foundation under the Linux Foundation, operational
+       since 14 July 2026 with 40 members. Premier members include Coinbase, Google, Visa,
+       Mastercard, Stripe and Cloudflare; among the General members are <strong>KakaoPay, Galaxia
+       Moneytree and Hecto Financial</strong>. Three Korean payment companies are already inside
+       this standard, which is a better signal than any one of them would be alone.</p>
 </section>
 
 <section id="e11">

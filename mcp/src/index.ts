@@ -223,12 +223,24 @@ function describe(c: Condition): string {
 }
 
 async function liveState(h: Held) {
+    // Every read below is pinned to one block, and the block is reported.
+    //
+    // Two reasons, and the second is the one that bites. GIWA's public RPC load-balances across
+    // backends at different heights, so three unpinned reads can answer from three different
+    // blocks - a budget from one, a disabled flag from another. Pinning makes the answer a
+    // consistent snapshot rather than a collage.
+    //
+    // And a snapshot can still be behind the chain. A delegation switched off moments ago may
+    // read as live, which reports MORE authority than exists. No caveat can fix that; what can
+    // be fixed is the silence about it, so the block number rides along in every answer.
+    const asOfBlock = await pub.getBlockNumber();
     const [disabled, budget] = await Promise.all([
         pub.readContract({
             address: addresses.manager,
             abi: managerAbi,
             functionName: "disabledDelegations",
             args: [h.hash],
+            blockNumber: asOfBlock,
         }) as Promise<boolean>,
         (async () => {
             const caveat = h.root.caveats.find(
@@ -240,6 +252,7 @@ async function liveState(h: Held) {
                 abi: periodEnforcerAbi,
                 functionName: "getAvailableAmount",
                 args: [h.hash, addresses.manager, caveat.terms],
+                blockNumber: asOfBlock,
             })) as readonly [bigint, boolean, bigint];
             return available;
         })(),
@@ -252,9 +265,10 @@ async function liveState(h: Held) {
                   abi: dojangScrollAbi,
                   functionName: "isVerified",
                   args: [identity.principal, identity.attesterId],
+                  blockNumber: asOfBlock,
               })) as boolean)
             : null;
-    return {disabled, available: budget, identityLive};
+    return {disabled, available: budget, identityLive, asOfBlock};
 }
 
 /** Decoded custom error out of viem's nested cause chain - the refusal REASON is the payload
@@ -429,6 +443,7 @@ server.tool(
             remaining: live.available === null ? null : fmtWon(live.available),
             spent: period?.kind === "period" && live.available !== null ? fmtWon(period.amount - live.available) : null,
             maxPerPayment: ceiling === null ? null : fmtWon(ceiling),
+            asOfBlock: Number(live.asOfBlock),
             largestSinglePaymentNow: payableNow === null ? null : fmtWon(payableNow),
             disabled: live.disabled,
             identityLive: live.identityLive,
@@ -552,6 +567,7 @@ server.tool(
             largestThatWouldSettleNow: largest === null ? null : fmtWon(largest),
             disabled: live.disabled,
             identityLive: live.identityLive,
+            asOfBlock: Number(live.asOfBlock),
             note: "Nothing was broadcast. A refusal costs no gas, which is the point of asking first.",
         });
     },
