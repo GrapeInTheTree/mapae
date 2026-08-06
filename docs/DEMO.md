@@ -186,3 +186,24 @@ Chain: principal -> agent (4 caveats) -> facilitator settlement signer `0x0Cde5B
 
 Merchant received exactly ₩40,000 across two settlements of ONE signed payload - multi-use is the
 property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM spec.
+
+## x402 facilitator - the erc7710 path, live
+
+An HTTP facilitator ([gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator),
+`feat/giwa-erc7710`) settling Mapae delegations. The client signed two typed-data payloads and
+spoke HTTP - it broadcast nothing and needed no gas. The facilitator held no policy and no funds:
+verification is simulation of the delegation manager, and every cap, payee, window and identity
+check ran on-chain.
+
+Chain: principal -> agent (4 caveats) -> facilitator settlement signer `0x0Cde5B7742B2C67c5BF6f5aEa339db868684336a`.
+
+| Step | Result | Tx |
+|---|---|---|
+| F1 /verify 20,000 | isValid=true, payer=0x4b6B26Cc68011FB4e9c9B6C0a4E15df040BFc23e (the account, not the agent) | - |
+| F2 /verify 60,000 | isValid=false, reason=delegation_cap_exceeded - the facilitator evaluated NO policy; the chain did | - |
+| F3 /settle 20,000 | success, gas paid by facilitator, funds account->merchant | [0xbf506e8f…](https://sepolia-explorer.giwa.io/tx/0xbf506e8fe914b92bc91c840b739a4fb68573e6b7db882f2600eb5abef968301b) |
+| F4 /settle 20,000 again | success - one payload, second settlement. An EIP-3009 authorization cannot do this | [0x63bdf487…](https://sepolia-explorer.giwa.io/tx/0x63bdf4875c46b4848a9daec8dbd214b6bc30f1bb26fd57f21bf2d2497ec22957) |
+| F5 /settle third 20,000 | rejected before broadcast: reason=delegation_cap_exceeded - fee payer wasted zero gas | - |
+
+Merchant received exactly ₩40,000 across two settlements of ONE signed payload - multi-use is the
+property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM spec.

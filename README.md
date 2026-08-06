@@ -246,6 +246,9 @@ settle **more than once**. This is not a niche rail: x402 has settled 157M+ paym
 (July 2026), and the foundation governing it — under the Linux Foundation, alongside Coinbase,
 Google, Visa and Mastercard — counts **KakaoPay as its only Korean founding member**.
 
+**It runs, publicly, at [x402.mapae.org](https://x402.mapae.org/supported).** Point an x402 client
+at it and the settlement path below is the one that answers.
+
 Mapae plugs into that slot. The `erc7710` method is
 [implemented upstream in gosuda/x402-facilitator](https://github.com/gosuda/x402-facilitator/tree/feature/erc7710)
 — contributed as a general implementation against any pinned ERC-7710 manager, not as a Mapae

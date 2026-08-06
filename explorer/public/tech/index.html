@@ -586,6 +586,12 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 낸다. 이것은 우회가 아니라 설계 목표다. 정책 판정이 전부 온체인에 있으므로 정산자는 정책을 알 필요가 없고, 알 수도 없다.</p>
     <p>GIWA에는 EIP-3009 토큰이 없어 다른 두 방식은 애초에 불가능하다. 라이브 증명에서는 같은
        서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에 거부된다.</p>
+    <p>이 정산자는 <strong>공개로 돌고 있다</strong> — <em>x402.mapae.org</em>. 정산은 영수증이
+       나오고 <strong>토큰의 Transfer 로그가 정확한 금액을 정확한 수취인에게 옮긴 것을 확인한
+       뒤에만</strong> 성공으로 답한다. 확인 창 안에 영수증이 없으면 실패가 아니라
+       <em>결과 불명</em>으로 답한다 — 브로드캐스트된 트랜잭션은 아무도 기다리지 않아도 살아
+       있고, 거기에 "실패"라고 답하는 것이 한 결제를 두 번 청구하게 만드는 경로다. 그렇게 미확정
+       상태로 남은 것은 디스크에 적히고, 다음 프로세스가 체인에 물어 해소한다.</p>
     <p>프로토콜 자체는 2026년 4월부터 Linux Foundation 산하 x402 재단이 관리한다. 창립 멤버에
        Coinbase·Google·Visa·Mastercard와 함께 <strong>카카오페이가 국내 유일</strong>로
        참여했다 — 에이전트 결제가 한국 시장으로 온다는 신호로 이보다 나은 것이 없다.</p>
@@ -1365,6 +1371,13 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        adjudication is entirely on-chain, the settler does not need to know the policy, and cannot.</p>
     <p>GIWA has no EIP-3009 token, so the other two methods are not available here at all. In the
        live run, one signed payload settles twice and a third attempt is refused before broadcast.</p>
+    <p>This settler <strong>runs publicly</strong> at <em>x402.mapae.org</em>. A settlement is
+       reported as successful only after the receipt arrives <strong>and the token's own Transfer
+       log shows the exact amount reaching the exact payee</strong>. With no receipt inside the
+       confirmation window it answers <em>unknown</em> rather than failed &mdash; a broadcast
+       transaction stays live whether or not anyone is still waiting, and calling that a failure is
+       how one payment gets charged twice. Whatever stays unresolved is written to disk, and the
+       next process asks the chain about it rather than forgetting it.</p>
     <p>The protocol itself has been governed since April 2026 by the x402 Foundation under the
        Linux Foundation. Its founding members include Coinbase, Google, Visa and Mastercard &mdash;
        and <strong>KakaoPay, the only Korean one</strong>. There is no better signal that agent
