@@ -7,9 +7,9 @@
 
 <h1>M&nbsp;A&nbsp;P&nbsp;A&nbsp;E</h1>
 
-**Don't give AI your wallet. Give it bounded authority.**
+**Authority moves. Identity stays.**
 
-The authority layer for delegated payments on GIWA, rooted in verified identity.<br>
+Don't give AI your wallet — give it bounded authority, granted by someone the chain can name.<br>
 AI에게 지갑을 주지 마세요. 범위를 정한 권한만 주세요.
 
 <sub>
