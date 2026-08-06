@@ -249,16 +249,18 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 
 <section id="s1">
     <h2><span class="num">01</span>요약</h2>
-    <p>x402로 에이전트가 스스로 결제하는 경로는 이미 열렸다 — 공개 1년 남짓에 온체인 정산이
-       <strong>1억 5,700만 건</strong>을 넘었고(2026-07 기준), 표준을 관리하는 재단에는
-       카카오페이가 <strong>국내 유일 창립 멤버</strong>로 들어가 있다. 막힌 것은 <strong>권한을
-       넘기는 방법</strong>이다. 지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수
-       없다) 수탁 서비스를 믿는 것 둘뿐이다.</p>
-    <p>마패는 세 번째 길이다. 위임 메커니즘 자체는 발명하지 않았다 — ERC-7710/7715와 x402를
-       채택하고, <em>어디에도 없던 조건 하나</em>를 보탠다. <strong>위임자의 신원</strong>이다.
-       배포된 위임 프레임워크들은 감사된 지출 조건을 수십 종 갖추고 있지만(MetaMask 하나만 해도
-       38종), <strong>위임을 신원에 거는 것은 그중 하나도 없다</strong> — 조건으로 걸 온체인
-       신원이 있는 체인이 없었기 때문이다. 기와에는 도장이 있다.</p>
+    <p>에이전트가 스스로 결제하는 경로는 이미 열려 있다. x402는 공개 1년 남짓에 온체인 정산
+       <strong>1억 5,700만 건</strong>을 넘겼고(2026-07 기준), 표준을 관리하는 재단에는
+       카카오페이가 <strong>국내 유일 창립 멤버</strong>로 참여하고 있다.</p>
+    <p>막힌 곳은 결제가 아니라 <strong>권한을 넘기는 방법</strong>이다. 지금 쓸 수 있는 방법은
+       두 가지뿐이다. 개인키를 통째로 넘기거나, 수탁 서비스에 맡기거나. 앞의 방법은 한도도
+       수취인도 기한도 걸 수 없고, 뒤의 방법은 온체인 결제를 하려고 다시 중개인을 세운다.</p>
+    <p>마패는 세 번째 길이다. 위임 메커니즘을 새로 만들지는 않았다. ERC-7710/7715와 x402를
+       그대로 쓰고, 거기에 <em>어디에도 없던 조건 하나</em>를 보탠다. <strong>위임한 사람이
+       누구인가</strong>다.</p>
+    <p>배포된 위임 프레임워크들은 감사받은 지출 조건을 수십 종 갖추고 있다. MetaMask 하나만
+       해도 38종이다. 그런데 <strong>위임을 신원에 거는 조건은 그중 하나도 없다.</strong>
+       조건으로 걸 온체인 신원을 가진 체인이 없었기 때문이다. 기와에는 도장이 있다.</p>
     <div class="scroll"><table>
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
         <tr><td>테스트</td><td class="n">172</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
@@ -269,31 +271,30 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 
 <section id="s2">
     <h2><span class="num">02</span>문제</h2>
-    <p>에이전트에게 결제를 맡기는 방법은 지금 둘뿐이고, 결함은 하나로 같다. <strong>범위가
-       없다.</strong> 개인키를 넘기면 에이전트가 곧 지갑이 되고, 수탁에 맡기면 온체인 결제를
-       하려고 다시 중개인을 세우는 셈이다.</p>
+    <p>두 방법의 결함은 같다. <strong>범위가 없다.</strong> 개인키를 넘기면 에이전트가 곧
+       지갑이 되고, 수탁에 맡기면 온체인 결제를 하려고 다시 중개인을 세운다.</p>
     <div class="note">
         <strong>2026년 2월</strong> — OpenClaw 프레임워크로 만든 트레이딩 에이전트가 요청 금액을
         잘못 읽어 보유 토큰 5,243만 개(당시 약 25만 달러) 전량을 전송했다. 해킹도 컨트랙트
         취약점도 아니었다. <strong>에이전트의 오해 하나</strong>였다. 한도가 사람의 서명에 고정되어
         있었다면, 같은 오해를 했더라도 돈은 그 이상 움직이지 못했다.
     </div>
-    <p>그리고 이 레일이 커지는 속도는 추정이 아니라 집계다.</p>
+    <p>이 레일이 커지는 속도는 추정치가 아니라 집계된 수치다.</p>
     <div class="scroll"><table>
         <tr><td>x402 온체인 정산 누적</td><td class="n">1.57억 건</td><td>스테이블코인 4,100만 달러 · 체인 7 · facilitator 18 (2026-07 기준)</td></tr>
         <tr><td>활성 에이전트</td><td class="n">69,000</td><td>Coinbase 집계, 2026-04</td></tr>
         <tr><td>x402 재단</td><td class="n">2026-04</td><td>Linux Foundation 산하 — Coinbase·Google·AWS·Microsoft·Visa·Mastercard·Stripe·Shopify, 그리고 <strong>카카오페이(국내 유일 창립 멤버)</strong></td></tr>
     </table></div>
-    <p>이 트래픽의 상당 부분은 아직 테스트와 투기다 — 그 사실이 논지를 약화하지 않고 오히려
-       벼린다. 한도도 신원도 지지 않는 레일은 그런 트래픽부터 채워지고, 실물 상거래는
+    <p>이 트래픽의 상당 부분은 아직 테스트와 투기다. 그 사실이 논지를 약화하지 않고 오히려
+       벼린다. 한도도 신원도 없는 레일은 그런 트래픽부터 채워지고, 실물 상거래는
        <strong>책임질 주체가 생긴 다음에야</strong> 온다. 마패가 놓는 것이 그 층이다.</p>
-    <p>수탁형 접근에는 이제 이름이 있다 — 2026년 8월 Cloudflare가 발표한 Wallets가 같은 문제를
-       수탁 계정과 서버측 한도로 푼다. 탐색 예산에는 맞는 답이다. 다만 한도를 강제하는 주체가
-       발급자 자신이고, 신원은 자기 선언에 머문다 — 책임이 필요한 자리에 남는 공백이 이
-       문서의 주제다.</p>
-    <p>비수탁 쪽에서 가장 가까운 것은 코인베이스의 <strong>Spend Permissions</strong>다. 잘 만들어
-       널리 쓰이고, 읽어보면 <em>지출 한도</em>라는 물건이 무엇을 정하지 않은 채 남기는지가 가장
-       빨리 보인다. 수취인 인자가 없다 — 정확히는 수취인이라는 개념이 없다.</p>
+    <p>수탁형 접근에는 이제 이름이 붙었다. 2026년 8월 Cloudflare가 발표한 Wallets가 같은 문제를
+       수탁 계정과 서버측 한도로 푼다. 가볍게 써볼 용도라면 맞는 답이다. 다만 한도를 강제하는
+       주체가 발급자 자신이고, 신원은 자기 선언에 머문다. 책임이 필요한 자리에 남는 이 공백이
+       이 문서의 주제다.</p>
+    <p>비수탁 쪽에서 가장 가까운 것은 코인베이스의 <strong>Spend Permissions</strong>다. 잘
+       만들어 널리 쓰이고, 무엇보다 <em>지출 한도</em>라는 물건이 무엇을 정하지 않은 채 남기는지
+       가장 빨리 보여준다. 수취인을 받는 인자가 없다. 정확히는 수취인이라는 개념 자체가 없다.</p>
     <pre><code>// SpendPermissionManager.spend()
 _transferFrom(spendPermission.token, spendPermission.account,
               <span class="k">spendPermission.spender</span>, value);</code></pre>
@@ -301,18 +302,19 @@ _transferFrom(spendPermission.token, spendPermission.account,
        답하는 질문은 <em>이 계정에서 얼마가, 얼마나 자주 나갈 수 있나</em>이고, 체인의 관여는
        spender가 받는 순간 끝난다. 그 돈이 다음에 어디로 가는지, 누구의 권한으로 나갔는지는 체인이
        보지 못하는 곳에서 정해진다. 의도나 신원을 적어둘 자리로 <code>extraData</code>가 있지만
-       매니저는 그것을 해시에 넣을 뿐 <strong>읽지 않는다</strong> — 거기 뭐라고 쓰든 강제하는 것은
-       컨트랙트가 아니라 당사자 간의 관행이다.</p>
-    <p>마패는 더 나은 한도가 아니다. 한도에 <strong>어디로 갈 수 있는가</strong>와
-       <strong>누가 뒤에 서 있는가</strong> 두 질문을 온체인으로 더 답한 것이다.</p>
-    <p>그리고 한도만으로는 부족하다. 사고가 났을 때 <strong>누가 이 권한을 줬는지</strong>가
-       남지 않으면 책임 주체를 특정할 수 없고, 가맹점은 에이전트 결제를 받을 이유가 없다.
-       이 마지막 조각이 기와에만 있다 — 다른 체인에는 조건으로 걸 신원 자체가 없다.</p>
+       매니저는 그것을 해시에 넣을 뿐 <strong>읽지 않는다</strong>. 거기 무엇을 적든 그것을
+       지키게 하는 힘은 컨트랙트가 아니라 당사자 사이의 관행에서 나온다.</p>
+    <p>마패는 한도가 남겨둔 두 질문을 온체인에서 마저 답한다. <strong>어디로 갈 수 있는가</strong>,
+       그리고 <strong>누가 뒤에 서 있는가</strong>.</p>
+    <p>한도만으로 부족한 이유는 사고가 난 다음에 드러난다. <strong>누가 이 권한을 줬는지</strong>가
+       남지 않으면 책임질 주체를 특정할 수 없고, 가맹점이 에이전트 결제를 받을 이유도 사라진다.
+       이 마지막 조각을 가진 체인이 기와뿐이다. 다른 곳에는 조건으로 걸 신원 자체가 없다.</p>
 
     <h3>규제가 지금 묻고 있는 것</h3>
-    <p>먼저 분명히 해둔다. <strong>여기 어느 문장도 규제 준수 주장이 아니다.</strong> 마패는
-       인가받은 기관이 아니고 어떤 보고 의무도 이행하지 않는다. 말하려는 것은 하나다 — 지금
-       공개적으로 던져지고 있는 질문에 모양이 있고, 그 모양이 이 문서가 설명하는 구조다.</p>
+    <p>먼저 분명히 해둔다. <strong>이 절의 어떤 문장도 규제 준수를 주장하지 않는다.</strong>
+       마패는 인가받은 기관이 아니고 어떤 보고 의무도 이행하지 않는다. 말하려는 것은 하나다.
+       지금 공개적으로 던져지는 질문들에는 일관된 방향이 있고, 그 방향이 이 문서가 설명하는
+       구조와 겹친다.</p>
     <p><strong>영국.</strong> 재무부가 2026년 7월 <em>Modernising Payment Services
        Regulation</em> 협의 문서를 냈다(PU 3657, 10월 6일까지 의견 접수). 3.35항은 "PSRs는 AI가
        나오기 전에 설계되었고 에이전트형 AI를 온전히 수용하지 못할 수 있다"고 적은 뒤, 두 질문을
@@ -324,26 +326,27 @@ _transferFrom(spendPermission.token, spendPermission.account,
         바뀌어야 하는가? 예컨대 결제거래의 <strong>인증과 동의</strong>, 그리고 <strong>승인되지
         않은 결제거래의 책임</strong>에 관한 조항을 손봐야 하는가?
     </div>
-    <p>인증, 동의, 그리고 승인한 적 없는 것에 대한 책임. 마패의 위임은 사람의 동의를 기계가 읽는
-       범위로 쓴 것이고, 신원 조건은 그 결제를 정산 순간에 그 사람에게 묶는 장치이며, 범위 밖
-       결제는 애초에 정산되지 않는다.</p>
+    <p>인증, 동의, 그리고 승인한 적 없는 결제에 대한 책임. 마패는 이 셋에 각각 대응한다.
+       위임은 사람의 동의를 기계가 읽을 수 있는 범위로 옮겨 적은 것이고, 신원 조건은 그 결제를
+       정산되는 순간에 그 사람에게 묶는다. 범위를 벗어난 결제는 애초에 정산되지 않는다.</p>
     <p><strong>한국.</strong> 개정 특정금융정보법이 <strong>2026년 8월 20일</strong> 시행된다.
        금융위원회가 3월 30일 입법예고한 시행령·감독규정 개정안은, 현재 가상자산사업자 간
        <strong>100만원 이상</strong> 이전에만 걸리는 트래블룰을 100만원 미만까지 확대하고,
-       <strong>수신 사업자</strong>에게도 의무를 지운다 — 송신 사업자로부터 정보를 받고, 받지
-       못하면 정보제공을 요구하며, 그래도 오지 않으면 <strong>거래를 거절</strong>한다.</p>
-    <p>금융위가 밝힌 근거가 곱씹을 만한 수치다. <strong>국내 사업자 간 이전거래의 60%가
-       (2025년 하반기, 건수 기준) 100만원 미만이었다.</strong> 작고 잦은 것 — 그게 정확히 에이전트
-       트래픽의 모양이고, 이달부터 면제에서 빠지는 트래픽의 모양이다.</p>
-    <p>여기서 두 가지가 따라 나온다. 하나는 방향이다. 규제는 <em>모든</em> 이전이 원발신자를
-       식별한 채로 움직이는 쪽으로 가고 있고, 숨을 하한선은 사라진다.</p>
-    <p>다른 하나는 덜 눈에 띄지만 두 번 읽을 값이 있다. <strong>원발신자를 확인할 수 없는 이전에
-       규정이 처방하는 구제책은 거절이다.</strong> 이건 <code>DojangVerifiedEnforcer</code>가 하는
+       <strong>수신 사업자</strong>에게도 의무를 지운다. 송신 사업자로부터 정보를 받아야 하고,
+       받지 못하면 정보 제공을 요구해야 하며, 그래도 오지 않으면 <strong>거래를 거절</strong>해야
+       한다.</p>
+    <p>금융위가 밝힌 근거는 곱씹을 만한 수치다. <strong>국내 사업자 간 이전거래의 60%가
+       (2025년 하반기, 건수 기준) 100만원 미만이었다.</strong> 작고 잦은 거래, 정확히 에이전트
+       트래픽의 성격이다. 그리고 8월 20일부터 면제에서 빠지는 거래이기도 하다.</p>
+    <p>여기서 두 가지가 따라 나온다. 첫째는 방향이다. 규제는 <em>모든</em> 이전이 보낸 사람을
+       식별한 채로 움직이는 쪽으로 가고 있고, 숨을 곳이던 하한선은 사라진다.</p>
+    <p>둘째는 덜 눈에 띄지만 두 번 읽을 값이 있다. <strong>보낸 사람을 확인할 수 없는 이전에
+       규정이 처방하는 조치는 거절이다.</strong> 이것은 <code>DojangVerifiedEnforcer</code>가 하는
        일의 비유가 아니라 같은 문장이다. 하나는 기관이 집행하도록 쓰였고, 하나는 솔리디티로
        쓰였을 뿐이다.</p>
-    <p>그 두 문장이 만날 수 있는 곳이 기와다. 도장 attestation을 발급하는 주체가 바로 그 규정이
-       규율하는 기관들이기 때문이다. 신원을 다툴 여지가 있는 어딘가에서 들여올 필요가 없다 —
-       결제가 정산되는 그 체인에 이미 있다.</p>
+    <p>그 두 문장이 만나는 자리가 기와다. 도장 증명을 발급하는 주체가 바로 그 규정이 규율하는
+       기관들이기 때문이다. 신원을 어디 다른 곳에서 들여와 다툴 필요가 없다. 결제가 정산되는
+       그 체인에 이미 있다.</p>
 </section>
 
 <section id="s3">
@@ -358,13 +361,13 @@ _transferFrom(spendPermission.token, spendPermission.account,
         </div>
         <div class="vgap"></div>
         <div class="tier">
-            <div class="box"><b>도장 (DojangScroll)</b><span>결제 시점 liveness 조회</span></div>
+            <div class="box"><b>도장 (DojangScroll)</b><span>결제 시점에<br>유효한지 조회</span></div>
             <div class="arr">조회<i>←</i></div>
             <div class="box k"><b>위임 매니저</b><span>서명·사슬·조건 전수 검사</span></div>
             <div class="arr">실행<i>→</i></div>
             <div class="box"><b>계정 (자금)</b><span>owner immutable</span></div>
         </div>
-        <div class="dcap">조건 4종이 매니저에서 평가된다 — 신원 · 기간 한도 · 수취인 · 기한.
+        <div class="dcap">조건 4종이 매니저에서 평가된다. 신원, 기간 한도, 수취인, 기한.
             하나라도 실패하면 결제가 통째로 거부된다.</div>
     </div>
     <div class="scroll"><table>
@@ -373,9 +376,9 @@ _transferFrom(spendPermission.token, spendPermission.account,
         <tr><td><code>MapaeAccount</code></td><td>자금과 위임 상태를 보유. <code>owner</code>는 immutable</td></tr>
         <tr><td><code>MapaeAccountFactory</code></td><td>CREATE2 배포 + 소유자 동의 서명(EIP-712) 검증 + 등록부</td></tr>
         <tr><td><code>DojangVerifiedEnforcer</code></td><td><strong>기여물.</strong> 위임자의 실명 증명을 결제 조건으로 건다</td></tr>
-        <tr><td><code>AllowedPayeeEnforcer</code></td><td>타겟(토큰)이 아니라 이체 calldata 안의 수취인을 검사</td></tr>
-        <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask 감사본을 무수정 vendoring — 호환성의 실증</td></tr>
-        <tr><td><code>PerPaymentLimitEnforcer</code></td><td>결제 한 건의 금액을 제한 — 기간 예산을 조각으로 나눈다</td></tr>
+        <tr><td><code>AllowedPayeeEnforcer</code></td><td>토큰 컨트랙트가 아니라 이체 호출 안의 수취인 주소를 검사</td></tr>
+        <tr><td><code>ERC20PeriodTransferEnforcer</code><br><code>TimestampEnforcer</code></td><td>MetaMask 감사본을 고치지 않고 그대로 가져다 씀. 호환성의 실증이다</td></tr>
+        <tr><td><code>PerPaymentLimitEnforcer</code></td><td>결제 한 건의 금액을 제한한다. 기간 예산을 조각으로 나누는 역할</td></tr>
         <tr><td><code>VerifiedCodeEnforcer</code></td><td>사람 확인 티어. 살아 있는 오프체인 확인이 있을 때만 통과</td></tr>
     </table></div>
 
@@ -387,23 +390,24 @@ _transferFrom(spendPermission.token, spendPermission.account,
         <tr><td>보유 상태</td><td><code>disabledDelegations</code> 하나</td><td>자금</td><td>등록부</td></tr>
         <tr><td>불변</td><td>무상태 EIP-712 도메인</td><td><code>owner</code>, <code>DELEGATION_MANAGER</code></td><td><code>DELEGATION_MANAGER</code></td></tr>
     </table></div>
-    <p><strong>매니저</strong>는 위임 사슬을 검사한다 — 배열 길이, 호출자가 말단 delegate인지,
-       사슬의 모든 서명(EOA는 ECDSA, 계정은 ERC-1271), 비활성 플래그, <code>authority</code>
-       연결. 그 전부가 통과해야 조건 평가로 넘어간다. 상태는 <code>disabledDelegations</code>
-       매핑 하나뿐이고, 위임 자체는 어디에도 저장하지 않는다 — 발급이 트랜잭션 없는 서명이라는
-       모델이 그래야 성립한다.</p>
+    <p><strong>매니저</strong>는 위임 사슬을 검사한다. 배열 길이, 호출자가 사슬 끝의 대리인이
+       맞는지, 사슬에 실린 모든 서명(EOA는 ECDSA, 계정은 ERC-1271), 비활성 플래그,
+       <code>authority</code> 연결까지 전부 통과해야 조건 평가로 넘어간다. 보관하는 상태는
+       <code>disabledDelegations</code> 매핑 하나뿐이고 위임 자체는 어디에도 저장하지 않는다.
+       발급이 트랜잭션 없는 서명이라는 모델은 그래야 성립한다.</p>
     <p><strong>계정</strong>은 자금을 쥔다. 실행 진입점이 둘이고 각각 다른 문지기가 있다:
-       <code>executeFromExecutor</code>는 매니저만, <code>execute</code>는 owner만. 그리고
-       <code>owner</code>가 immutable이라는 것이 신원 조건이 성립하는 유일한 근거다 — 바꿀 수
-       있다면 검증된 사람을 가리키다가 나중에 갈아치울 수 있다.</p>
+       <code>executeFromExecutor</code>는 매니저만, <code>execute</code>는 소유자만 부를 수 있다.
+       그리고 <code>owner</code>를 나중에 바꿀 수 없다는 사실이 신원 조건을 떠받치는 유일한
+       근거다. 바꿀 수 있다면 처음에는 검증된 사람을 가리켜 두었다가 나중에 갈아치우는 일이
+       가능해진다.</p>
     <p><strong>팩토리</strong>는 CREATE2로 계정을 찍되, <strong>소유자 본인의 EIP-712 동의
        서명</strong>을 요구한다. 타입해시는 이렇다.</p>
     <pre><code>CREATION_TYPEHASH = keccak256(
     "MapaeAccountCreation(address owner,uint256 salt)"
 )</code></pre>
-    <p>이게 없으면 누구나 남의 검증된 주소를 <code>owner</code>로 하는 계정을 배포할 수 있다.
-       훔치는 것은 없지만 <em>책임 사슬을 위조</em>하는 것이고, 그 사슬이 이 시스템이 보증하는
-       전부다. 그래서 신원 조건은 <code>owner()</code>를 믿기 전에
+    <p>이 서명이 없으면 누구나 남의 검증된 주소를 <code>owner</code>로 지정한 계정을 배포할 수
+       있다. 훔쳐 가는 것은 없지만 <em>책임 사슬을 위조</em>하는 일이고, 이 시스템이 보증하는
+       것이 바로 그 사슬이다. 그래서 신원 조건은 <code>owner()</code>를 믿기 전에
        <code>isMapaeAccount()</code>로 등록 여부를 먼저 본다. 순서가 뒤바뀌면 방어가 사라진다.</p>
 
     <h3>조건이 불리는 순서</h3>
@@ -430,8 +434,8 @@ _transferFrom(spendPermission.token, spendPermission.account,
     <p>그래서 주소를 둘로 나눴다. <strong>자금과 위임 상태는 계정이, 신원은 그 계정의 소유자인
        사람이</strong> 가진다. 조건은 계정이 아니라 <code>owner</code>를 평가한다.</p>
     <p>이 분리는 위조 경로를 하나 연다. 아무나 컨트랙트를 배포해 <code>owner()</code>가 남의
-       검증된 주소를 가리키게 만들 수 있다 — 훔치는 것은 없지만 <strong>책임 사슬을
-       위조</strong>하는 것이며, 그 사슬이 이 시스템이 보증하는 전부다. 두 겹으로 막는다.</p>
+       검증된 주소를 가리키게 만들 수 있다. 그 자체로 훔쳐 가는 것은 없지만 <strong>책임 사슬을
+       위조</strong>하는 일이고, 이 시스템이 보증하는 것이 바로 그 사슬이다. 두 겹으로 막는다.</p>
     <div class="card">
         <h4>① 계정 생성에 소유자 본인의 EIP-712 동의 서명을 요구한다</h4>
         <p>팩토리가 서명을 검증하고 등록한다. 동의 없이는 그 주소를 owner로 하는 계정이 존재할 수 없다.</p>
@@ -448,7 +452,7 @@ _transferFrom(spendPermission.token, spendPermission.account,
     <h2><span class="num">05</span>결제가 지나는 경로</h2>
     <div class="steps">
         <div class="step"><div>에이전트가 매니저에 <code>redeemDelegations</code> 호출</div></div>
-        <div class="step"><div>배열 길이 → 호출자가 말단 delegate인가 → <b>사슬의 모든 서명</b>(EOA는 ECDSA, 계정은 ERC-1271) → 비활성 플래그와 authority 연결</div></div>
+        <div class="step"><div>배열 길이 → 호출자가 사슬 끝의 대리인인가 → <b>사슬의 모든 서명</b>(EOA는 ECDSA, 계정은 ERC-1271) → 비활성 플래그와 authority 연결</div></div>
         <div class="step"><div>조건 평가: <code>beforeAll</code> → <code>before</code>를 <b>말단에서 뿌리 방향</b>으로</div></div>
         <div class="step"><div>실행은 <b>뿌리 위임자의 계정</b>에서 (ERC-7579 단일 실행)</div></div>
         <div class="step"><div><code>after</code> → <code>afterAll</code>을 뿌리에서 말단 방향으로</div></div>
@@ -466,7 +470,7 @@ _transferFrom(spendPermission.token, spendPermission.account,
     <div class="scroll"><table>
         <tr><th>층</th><th>거부</th><th>뜻과 대응</th></tr>
         <tr><td rowspan="4">매니저<br><em>조건 이전</em></td><td><code>CannotUseADisabledDelegation</code></td><td>사람이 껐다. 다시 켜달라고 부탁하는 것 외에 방법이 없다</td></tr>
-        <tr><td><code>InvalidDelegate</code></td><td>이 권한은 다른 주소의 것이다. 호출자가 말단 delegate가 아니다</td></tr>
+        <tr><td><code>InvalidDelegate</code></td><td>이 권한은 다른 주소의 것이다. 호출자가 사슬 끝의 대리인이 아니다</td></tr>
         <tr><td><code>InvalidEOASignature</code> · <code>InvalidERC1271Signature</code></td><td>서명이 사슬과 맞지 않는다. 컨텍스트가 손상됐거나 잘린 것이다</td></tr>
         <tr><td><code>InvalidAuthority</code></td><td>재위임 사슬의 고리가 끊겼다. 부모 해시가 자식이 주장하는 것과 다르다</td></tr>
         <tr><td rowspan="5">조건<br><em>정책</em></td><td><code>NotDojangVerified</code></td><td>위임한 사람의 신원이 지금 유효하지 않다 — 취소·만료·미발급이 전부 이 하나로 접힌다</td></tr>
@@ -552,12 +556,15 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p class="cap">단일 실행 — 빈틈없이 패킹</p>
     <pre><code>target(20) ‖ value(32) ‖ callData
   └ ERC-20 이체면 callData = 0xa9059cbb ‖ to(32) ‖ amount(32) = 68바이트</code></pre>
-    <p>수취인이 <code>callData[4:36]</code>에 있다는 사실이 <code>AllowedPayeeEnforcer</code>가
-       존재하는 이유다. 타겟 allowlist는 <em>토큰</em>을 볼 뿐 수취인을 못 보고, 범용 calldata
-       조건은 그 워드에 닿긴 하지만 <strong>정확히 한 값</strong>에만 핀할 수 있다 — 위임 하나에
-       수취인 하나다. 우리 조건은 같은 워드를 <strong>집합</strong>에 대고 읽는다. 그리고 그
-       32바이트 워드의 상위 12바이트가 0이 아니면 거부한다(<code>DirtyRecipientWord</code>):
-       주소로 안 쓰이는 자리에 값을 실어 검사를 우회하려는 시도를 막는다.</p>
+    <p>위 그림에서 보이듯 <strong>수취인 주소는 함수 선택자 4바이트 바로 뒤 32바이트</strong>에
+       들어 있다. <code>AllowedPayeeEnforcer</code>가 존재하는 이유가 여기 있다. 타겟 목록으로
+       거는 조건은 <em>토큰 컨트랙트</em>까지만 볼 뿐 그 안의 수취인을 보지 못한다. 범용 calldata
+       조건은 이 자리에 닿기는 하지만 <strong>정확히 한 값</strong>으로만 고정할 수 있어서, 위임
+       하나에 수취인 하나가 된다.</p>
+    <p>우리 조건은 같은 자리를 <strong>주소 집합</strong>과 대조해 읽는다. 그리고 이 32바이트
+       가운데 주소가 쓰지 않는 앞쪽 12바이트에 0이 아닌 값이 들어 있으면 거부한다
+       (<code>DirtyRecipientWord</code>). 쓰이지 않는 자리에 값을 실어 검사를 비껴가려는 시도를
+       막기 위해서다.</p>
 </section>
 
 <section id="s7">
@@ -581,16 +588,17 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
            변경 없이 조건도 넓어진다.</p>
     </div>
     <div class="card key">
-        <h4>③ liveness는 캐시하지 않고 사용 시점에 읽는다</h4>
-        <p>Dojang의 리졸버 자체가 "attestation은 사용 시점에 검증되어야 하며 인덱서는 liveness의
-           진실 소스가 아니다"라고 명시한다. 이 설계를 그대로 따랐고, 그래서 취소와 만료가
-           <strong>트랜잭션 없는 즉시 킬스위치</strong>가 된다.</p>
+        <h4>③ 유효한지 여부는 캐시하지 않고 쓰는 순간에 읽는다</h4>
+        <p>도장을 만든 쪽에서 직접 "증명은 쓰는 시점에 검증해야 하며, 인덱서는 유효성의 원본이
+           아니다"라고 밝혀 두었다. 그 설계를 그대로 따랐다. 덕분에 취소와 만료가
+           <strong>트랜잭션 없이 즉시 작동하는 킬스위치</strong>가 된다.</p>
     </div>
     <div class="card key">
         <h4>④ boolean 조회 먼저, uid 조회는 나중</h4>
-        <p>uid 게터는 미검증 주소에 revert한다. boolean 읽기는 부재·만료·취소를 전부 false
-           하나로 모아 주므로, 결제자가 받는 에러는 <strong>언제나 같은 하나</strong>다 — 무엇을
-           해야 하는지가 에러만 보고도 분명하다.</p>
+        <p>증명 식별자를 돌려주는 함수는 검증되지 않은 주소에 대해 revert한다. 반면 참·거짓만
+           묻는 조회는 미발급·만료·취소를 모두 <code>false</code> 하나로 모아 준다. 그래서
+           결제자가 받는 에러는 <strong>언제나 같은 하나</strong>이고, 그 에러만 보고도 무엇을
+           해야 하는지 알 수 있다.</p>
     </div>
     <div class="card key">
         <h4>⑤ 이식성은 주장이 아니라 테스트다</h4>
@@ -606,12 +614,15 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p>이 컨트랙트는 무상태이고 실행 calldata를 파싱하지 않는다. 그래서 어떤 호출 형태와도
        조합되고, 훅을 직접 불러 오염시킬 저장 상태 자체가 없다.</p>
     <h3>두 번째 빈칸 — 수취인 조건</h3>
-    <p>작업 중에 격차가 하나 더 드러났다. 타겟 allowlist는 <strong>토큰 컨트랙트</strong>를
-       검사하고, ERC-20 결제의 실제 수취인은 calldata 바이트 <code>[4:36]</code>에 있다. 범용
-       calldata 조건이 그 워드에 닿긴 한다 — 다만 <strong>정확히 한 값</strong>에만. 그래서
-       <em>"이 세 가맹점에만"</em>을 표현하려면 위임을 셋 만들거나 결제마다 새로 서명해야 한다.
-       <code>AllowedPayeeEnforcer</code>는 같은 워드를 <strong>집합</strong>에 대고 읽어서, 그
-       정책을 <strong>사람의 서명 한 번</strong>으로 만든다. 목록이 바뀌어도 한 번이다.</p>
+    <p>작업 중에 빈칸이 하나 더 드러났다. 타겟 목록으로 거는 조건은 <strong>토큰
+       컨트랙트</strong>까지만 검사하는데, ERC-20 결제에서 돈을 실제로 받는 주소는 그 호출
+       데이터 안에 따로 들어 있다(<a href="#s6">06절</a>의 실행 인코딩 참고). 범용 calldata
+       조건이 그 자리에 닿기는 하지만 <strong>정확히 한 값</strong>으로만 고정된다. 그래서
+       <em>"이 세 가맹점에만"</em>이라는 정책을 표현하려면 위임을 세 개 만들거나 결제할 때마다
+       새로 서명받아야 한다.</p>
+    <p><code>AllowedPayeeEnforcer</code>는 같은 자리를 <strong>주소 집합</strong>과 대조해 읽는다.
+       그 덕분에 같은 정책이 <strong>사람의 서명 한 번</strong>으로 끝난다. 가맹점 목록이 몇 개로
+       늘어도 서명은 한 번이다.</p>
 </section>
 
 <section id="s8">
@@ -638,23 +649,26 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p>재위임은 ERC-7710의 일급 연산이다. 에이전트가 자기 권한의 일부를 다른 에이전트에게 넘길
        수 있다. 사슬의 <strong>모든 링크의 조건이 평가</strong>되므로, 자식은 받은 것을 좁힐 수만
        있고 넓힐 수 없다.</p>
-    <p>이 성질은 세 홉으로 라이브 채굴돼 있다. 사람이 A에게 한 번 서명하고, A가 B를, B가 C를
-       고용한다. 두 고용 모두 <strong>트랜잭션이 아니고</strong> 사람의 서명도 없다 — 위임은 서명이라,
-       하위 에이전트는 체인을 건드리지 않고 생긴다. B는 C에게 뿌리의 다섯 배인 회당 ₩50,000을
-       <em>써줄 수 있다.</em> 서명을 막는 것은 없다. 다만 상환에서 살아남지 못한다 —
-       <code>PerPaymentCapExceeded(8000, 5000)</code>.</p>
+    <p>이 성질은 세 단계 체인으로 실제 채굴해 두었다. 사람이 A에게 한 번 서명하고, A가 B를,
+       B가 C를 고용한다. 두 고용 모두 <strong>트랜잭션이 아니고</strong> 사람의 서명도 없다.
+       위임은 서명이라서, 하위 에이전트는 체인을 건드리지 않고 생긴다.</p>
+    <p>B는 C에게 뿌리의 다섯 배인 회당 ₩50,000을 <em>써줄 수 있다.</em> 그렇게 서명하는 것을
+       막는 장치는 없다. 다만 결제 시점에 살아남지 못한다.
+       <code>PerPaymentCapExceeded(8000, 5000)</code>가 그 순간 나오는 응답이다.</p>
     <div class="note">
-        <strong>주장은 좁게 유지한다.</strong> "위임 트리를 죽이는 건 마패뿐"은 거짓이다. 뿌리를
-        비활성화하면 어느 ERC-7710 프레임워크에서든 사슬이 끊긴다 — 그건 표준이 동작하는 것이지
-        우리가 더한 것이 아니다.<br><br>
-        참인 것은 방향이 다르다. 사람이 <strong>자기 신원</strong>에 대해 행동하고 — 마패 컨트랙트를
-        건드리지도, 어떤 위임을 지목하지도 않는 트랜잭션 하나로 — <strong>자기가 뿌리를 놓은 모든
-        트리</strong>가 동시에 멈춘다. 서명한 적 없어 <em>열거할 수도 없는</em> 가지까지.
-        기억나는 권한을 취소하는 건 쉽다. 위험한 건 목록으로 적을 수 없는 권한이다.
+        <strong>주장은 좁게 유지한다.</strong> "위임 트리를 통째로 끊는 건 마패뿐"은 사실이
+        아니다. 뿌리를 비활성화하면 어느 ERC-7710 프레임워크에서든 사슬이 끊긴다. 그건 표준이
+        제대로 동작하는 것이지 우리가 보탠 기능이 아니다.<br><br>
+        사실인 쪽은 방향이 다르다. 사람이 <strong>자기 신원</strong>에 대해 행동하면
+        <strong>자기가 뿌리를 놓은 모든 트리</strong>가 한꺼번에 멈춘다. 마패 컨트랙트를 건드리지도
+        않고 어떤 위임을 지목하지도 않는 트랜잭션 하나로, 서명한 적이 없어 <em>목록으로 적을
+        수조차 없는</em> 가지까지. 기억나는 권한을 취소하는 일은 쉽다. 정작 위험한 것은 기억나지
+        않는 권한이다.
     </div>
     <p>전체 원장은 <a href="https://github.com/GrapeInTheTree/mapae/blob/main/docs/DEMO.md">docs/DEMO.md</a>에
-       있다 — 세 홉 아래의 결제, 부모를 넘으려다 거부된 자식, 신원 취소로 잎과 뿌리가 함께 멈추는
-       장면, 그리고 재발급으로 사람이 이름조차 댈 수 없는 부분까지 되살아나는 장면.</p>
+       있다. 세 단계 아래에서 이뤄진 결제, 부모의 한도를 넘으려다 거부된 자식, 신원 취소 하나로
+       끝과 뿌리가 함께 멈추는 장면, 그리고 재발급 후 사람이 이름조차 댈 수 없는 부분까지
+       되살아나는 장면이 차례로 기록되어 있다.</p>
 </section>
 
 <section id="s10">
@@ -805,13 +819,14 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
 <section id="s12">
     <h2><span class="num">12</span>제품</h2>
-    <p>익스플로러는 정적 SPA다. <strong>서버가 없다</strong> — 브라우저가 GIWA를 직접 읽는다.
-       세 화면이 있다.</p>
+    <p>익스플로러는 정적 SPA다. <strong>서버가 없고</strong> 브라우저가 기와를 직접 읽는다.
+       화면은 셋이다.</p>
     <div class="card">
         <h4>발급</h4>
-        <p>조건을 조합하고 <strong>자기 언어의 한 문장으로</strong> 읽은 뒤 서명한다. 가스 0,
-           트랜잭션 0. 문장과 바이트가 <strong>같은 구조에서 생성</strong>되므로, 읽은 것과 서명한
-           것이 어긋날 수 없다 — 코덱이 서로의 역함수임을 테스트가 강제한다.</p>
+        <p>조건을 조합한 뒤 <strong>자기 언어로 된 한 문장</strong>으로 확인하고 서명한다.
+           가스도 트랜잭션도 들지 않는다. 화면에 보이는 문장과 실제로 서명되는 바이트가
+           <strong>같은 구조에서 생성</strong>되므로 둘이 어긋날 수 없다. 인코더와 디코더가 서로의
+           역함수라는 것을 테스트가 강제한다.</p>
     </div>
     <div class="card">
         <h4>권한 관리</h4>
@@ -823,10 +838,12 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <h4>추적</h4>
         <p>결제 해시를 넣으면 위임 사슬 전체를 조건과 함께 펼친다.</p>
     </div>
-    <p>블록 익스플로러와 다른 점 둘. <strong>거부가 일급이다</strong> — 거부된 결제에는 로그가
-       없으므로 위임을 calldata에서 복원하고, 직전 블록 상태에서 다시 실행해 거부 사유를 되살린다.
-       그리고 <strong>시제가 정직하다</strong> — 당시엔 유효했던 결제는 두 사실을 다 보여준다.
-       게이트 이벤트가 증명하는 그때의 유효함과, 라이브 조회가 말하는 지금의 취소됨.</p>
+    <p>일반적인 블록 익스플로러와 다른 점이 둘 있다.</p>
+    <p>첫째, <strong>거부를 일급으로 다룬다.</strong> 거부된 결제는 이벤트를 남기지 않으므로,
+       호출 데이터에서 위임을 복원한 뒤 직전 블록 상태에서 다시 실행해 거부 사유를 되살린다.</p>
+    <p>둘째, <strong>시제를 정직하게 쓴다.</strong> 결제할 당시에는 유효했던 신원이 지금은 취소된
+       경우, 두 사실을 모두 보여준다. 게이트 이벤트가 증명하는 그때의 유효함과, 지금 체인을 읽어
+       확인한 취소 상태를 나란히 놓는다.</p>
 </section>
 
 <section id="s13">
@@ -898,12 +915,12 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 <section id="s14">
     <h2><span class="num">14</span>만들지 않은 것</h2>
     <div class="scroll"><table>
-        <tr><td>지갑</td><td>기와 월렛의 자리다. ERC-7715 요청 경로를 미리 구현해 두었다 — 월렛이 표준을 켜면 통합이 아니라 스위치다</td></tr>
+        <tr><td>지갑</td><td>기와 월렛의 자리다. ERC-7715 요청 경로를 미리 구현해 두었기 때문에, 월렛이 표준을 켜는 순간 별도 통합 작업 없이 연결된다</td></tr>
         <tr><td>스테이블코인</td><td>원화 스테이블이 나오면 주소만 바꾼다. 테스트 토큰은 어떤 표준 확장도 <strong>일부러 구현하지 않은</strong> 맨몸 ERC-20이고, 그 위에서 전부 동작한 것이 자산 불가지론의 증명이다</td></tr>
         <tr><td>위임 표준</td><td>발명하지 않고 채택했다. 감사된 조건들이 무수정으로 우리 매니저에서 돌고, 우리 신원 조건도 그들 매니저에 꽂힌다</td></tr>
         <tr><td>온체인 레지스트리</td><td>발급 시점 저장을 강요하면 "발급은 오프체인 서명, 트랜잭션 없음"이라는 모델이 깨진다. 게이트 이벤트 한 줄이 역추적 고리를 닫는다</td></tr>
-        <tr><td>ERC-8004</td><td>퍼미션리스 자가 등록은 책임 사슬에 아무것도 보태지 않는다. 에이전트 신원은 기와 방식으로 — 검증된 코드 조건으로</td></tr>
-        <tr><td>진실을 쥔 백엔드</td><td>권한이 유효한지는 체인만 답한다. 조회를 빠르게 할 자체 인덱서는 따로 두되, 그 데이터베이스는 체인에서 언제든 통째로 재구축된다 — 캐시이지 진실의 원본이 아니다</td></tr>
+        <tr><td>ERC-8004</td><td>누구나 스스로 등록하는 방식은 책임 사슬에 아무것도 보태지 않는다. 에이전트 신원은 기와 방식, 즉 검증된 코드 조건으로 다룬다</td></tr>
+        <tr><td>진실을 쥔 백엔드</td><td>권한이 유효한지는 체인만 답한다. 조회를 빠르게 할 자체 인덱서는 두되, 그 데이터베이스는 체인에서 언제든 통째로 다시 만들 수 있다. 캐시이지 원본이 아니다</td></tr>
     </table></div>
 </section>
 
@@ -917,7 +934,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <tr><td>도장 발급자</td><td>거래소가 실명 확인을 정확히 수행하고, 취소 사유가 생기면 취소한다. 마패는 발급 정확성을 검증하지 않는다 — 다만 <strong>어떤 발급자를 믿을지는 위임자가 서명으로 고른다</strong></td></tr>
         <tr><td>EAS · DojangScroll</td><td>attestation의 만료·취소 상태를 정확히 반영한다. 조건은 이 값을 매 결제마다 읽는다</td></tr>
         <tr><td>체인</td><td>GIWA의 합의, 그리고 체인 재구성(reorg)이 뒤집히지 않는다는 가정. 이 문서의 모든 강제는 온체인 실행에 의존한다</td></tr>
-        <tr><td>vendoring한 코드</td><td>기간 한도·기한 조건은 MetaMask 감사본을 무수정으로 쓴다. 감사 결과를 신뢰하되, 실제 실행은 우리 테스트가 재확인한다</td></tr>
+        <tr><td>가져다 쓴 코드</td><td>기간 한도·기한 조건은 MetaMask 감사본을 고치지 않고 그대로 쓴다. 감사 결과를 신뢰하되, 실제 실행은 우리 테스트가 재확인한다</td></tr>
     </table></div>
     <h3>신뢰하지 않는 것</h3>
     <div class="scroll"><table>
@@ -978,7 +995,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
     <h3>알려진 한계</h3>
     <ul>
-        <li><strong>발급 시점의 신원은 보증하지 않는다.</strong> 조건은 결제 순간의 liveness를 읽을 뿐,
+        <li><strong>발급 시점의 신원은 보증하지 않는다.</strong> 조건은 결제하는 순간에 유효한지만 읽을 뿐,
             거래소가 잘못 발급한 attestation을 걸러내지 못한다. 이는 도장 계층의 책임이다.</li>
         <li><strong>가스는 에이전트가 낸다.</strong> 잔액이 떨어지면 결제가 실패한다. 대납(paymaster)은
             기와에 번들러 인프라가 서면 검토한다.</li>
@@ -1007,23 +1024,25 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <h2><span class="num">17</span>다음</h2>
     <div class="card key">
         <h4>감사된 조건 38종 전부 탑재</h4>
-        <p>지금은 결제에 필요한 6종이 올라가 있다 — 여섯 번째인 회당 한도까지 배포·검증과
-           정산/거부 쌍의 라이브 증명을 마쳤다. 표준 호환이라 나머지는 수정이 아니라
-           <strong>검증의 일</strong>이다 — 누적 총액, 호출 횟수, 허용 함수 셀렉터, 결제를
-           목적에 묶는 주문 해시. 구독·법인 경비 같은 시나리오 프리셋으로 조합을 제품화한다.</p>
+        <p>지금은 결제에 필요한 6종이 올라가 있다. 여섯 번째인 회당 한도까지 배포·검증을 마쳤고,
+           정산과 거부를 짝으로 라이브 증명했다. 표준을 그대로 따르기 때문에 남은 조건들은 고쳐
+           쓸 일이 아니라 <strong>검증할 일</strong>이다. 누적 총액, 호출 횟수, 허용 함수 셀렉터,
+           결제를 목적에 묶는 주문 해시가 그 대상이다. 구독이나 법인 경비 같은 시나리오
+           프리셋으로 조합을 제품화한다.</p>
     </div>
     <div class="card key">
         <h4>기와 월렛 연동 · 도장 세분화</h4>
-        <p>ERC-7715 요청 경로는 구현되어 있어 월렛 쪽 스위치만 남았다. 그리고 거래소별·등급별
-           도장이 늘수록 걸 수 있는 조건이 <strong>코드 변경 없이</strong> 촘촘해진다 — 발급자는
-           배포 상수가 아니라 서명 안의 선택이기 때문이다.</p>
+        <p>ERC-7715 요청 경로는 이미 구현되어 있어 월렛 쪽 스위치만 남았다. 거래소별·등급별
+           도장이 늘어날수록 걸 수 있는 조건도 <strong>코드 변경 없이</strong> 촘촘해진다.
+           어느 발급자를 믿을지가 배포 시점의 상수가 아니라 서명할 때의 선택이기 때문이다.</p>
     </div>
     <div class="card">
         <h4>조회 인프라 — 가동 중</h4>
         <p>자체 인덱서가 <em>index.mapae.org</em>에서 돈다. 로그만으로 전부 재구성되는 사본이라
-           언제든 버리고 다시 만들 수 있고, 익스플로러는 2초 안에 답이 없으면 체인을 직접 읽는
-           쪽으로 넘어간다 — 인덱서가 죽어도 제품은 산다. 남은 것은 실 발급자 도장 attestation까지
-           넓히는 일이다. GIWA에 없는 오프체인 조회 계층이 그것이다.</p>
+           언제든 버리고 다시 만들 수 있다. 익스플로러는 2초 안에 답이 없으면 체인을 직접 읽는
+           쪽으로 넘어가므로 인덱서가 멈춰도 제품은 계속 동작한다. 남은 일은 실제 발급자가 찍은
+           도장 증명까지 인덱싱 범위를 넓히는 것이다. 기와에 아직 없는 오프체인 조회 계층이
+           그것이다.</p>
     </div>
     <div class="card">
         <h4>EOA 직접 위임 — EIP-7702</h4>
@@ -1215,8 +1234,8 @@ _transferFrom(spendPermission.token, spendPermission.account,
        <strong>refuse the transfer</strong>.</p>
     <p>The FSC's stated reason is a figure worth sitting with. <strong>60% of domestic
        provider-to-provider transfers, by count in the second half of 2025, were under
-       ₩1,000,000.</strong> Small and numerous is what agent traffic looks like, and small and
-       numerous is what stops being exempt this month.</p>
+       ₩1,000,000.</strong> Small and numerous is what agent traffic looks like, and it is what
+       stops being exempt on 20 August.</p>
     <p>Two things follow. The first is direction: toward every transfer carrying an identifiable
        originator, with no de-minimis floor to sit beneath.</p>
     <p>The second is quieter and worth reading twice. <strong>The remedy the rule prescribes for a

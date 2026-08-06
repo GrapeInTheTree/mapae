@@ -104,7 +104,7 @@ does not arrive, request it and **refuse the transfer**.
 
 The FSC's stated reason is a number worth sitting with: **60% of domestic VASP-to-VASP transfers,
 by count in the second half of 2025, were under ₩1,000,000.** Small and numerous is exactly what
-agent traffic looks like, and small and numerous is what stops being exempt this month.
+agent traffic looks like, and it is what stops being exempt on 20 August.
 
 Two things follow, and neither is a claim about compliance.
 
