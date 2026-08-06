@@ -223,9 +223,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         </svg>
         <span>MAPAE</span>
     </div>
-    <h1>에이전트 결제의<br>권한 레이어</h1>
-    <p class="sub">실명이 검증된 사람이 소프트웨어에 범위를 정해 지출 권한을 넘긴다.
-       범위는 결제 순간마다 컨트랙트가 강제하고, 취소는 즉시 반영되며, 사고는 실명까지 역추적된다.</p>
+    <h1>권한은 넘어가고<br>신원은 남는다</h1>
+    <p class="sub">에이전트 결제의 권한 레이어. 실명이 검증된 사람만 범위를 정해 지출 권한을 넘길 수
+       있고, 범위는 결제 순간마다 컨트랙트가 강제하며, 취소는 즉시 반영되고, 사고는 허락한 사람까지
+       역추적된다.</p>
     <div class="meta">
         <span>기술 문서 · 2026.08</span>
         <span>GIWA Sepolia · 91342</span>
@@ -242,7 +243,10 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        넘기는 방법</strong>이다. 지금 선택지는 개인키를 통째로 주거나(한도·수취인·기한을 걸 수
        없다) 수탁 서비스를 믿는 것 둘뿐이다.</p>
     <p>마패는 세 번째 길이다. 위임 메커니즘 자체는 발명하지 않았다 — ERC-7710/7715와 x402를
-       채택하고, <em>어디에도 없던 조건 하나</em>를 보탠다. <strong>위임자의 신원</strong>이다.</p>
+       채택하고, <em>어디에도 없던 조건 하나</em>를 보탠다. <strong>위임자의 신원</strong>이다.
+       배포된 위임 프레임워크들은 감사된 지출 조건을 수십 종 갖추고 있지만(MetaMask 하나만 해도
+       38종), <strong>위임을 신원에 거는 것은 그중 하나도 없다</strong> — 조건으로 걸 온체인
+       신원이 있는 체인이 없었기 때문이다. 기와에는 도장이 있다.</p>
     <div class="scroll"><table>
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
         <tr><td>테스트</td><td class="n">155</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
@@ -693,10 +697,11 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         </svg>
         <span>MAPAE</span>
     </div>
-    <h1>The authority layer<br>for agent payments</h1>
-    <p class="sub">A person with a verified real-world identity grants scoped spending authority to
-       software. The scope is enforced on-chain at every payment, revocation is immediate, and any
-       payment resolves backwards to the verified human who authorised it.</p>
+    <h1>Authority moves.<br>Identity stays.</h1>
+    <p class="sub">The authority layer for agent payments. Only a person with a verified
+       real-world identity can grant scoped spending authority to software; the scope is enforced
+       on-chain at every payment, revocation is immediate, and any payment resolves backwards to
+       the human who authorised it.</p>
     <div class="meta">
         <span>Technical document &middot; 2026.08</span>
         <span>GIWA Sepolia &middot; 91342</span>
@@ -716,7 +721,11 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        reintroduces the intermediary that on-chain payment was meant to remove.</p>
     <p>Mapae is a third option. The delegation mechanism itself is not invented here &mdash;
        ERC-7710/7715 and x402 are adopted as they stand, and the contribution is
-       <em>one condition that did not exist anywhere</em>: <strong>the identity of the delegator</strong>.</p>
+       <em>one condition that did not exist anywhere</em>: <strong>the identity of the
+       delegator</strong>. Deployed delegation frameworks already carry dozens of audited
+       spending conditions &mdash; MetaMask's alone has 38 &mdash; and <strong>not one of them
+       conditions a delegation on identity</strong>, because no chain had an on-chain identity to
+       condition on. GIWA has Dojang.</p>
     <div class="scroll"><table>
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
         <tr><td>Tests</td><td class="n">155</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
