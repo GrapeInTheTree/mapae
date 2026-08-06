@@ -96,15 +96,17 @@ person's consent written as machine-readable scope; the identity condition is wh
 to that person at the moment it settles; and a payment outside the scope does not settle at all.
 
 **Korea.** The amended Act on Reporting and Using Specified Financial Transaction Information
-takes effect on **20 August 2026**. The subordinate rules the Financial Services Commission put
-out for comment on 30 March extend the Travel Rule — today applied only to transfers of
-₩1,000,000 or more between virtual asset service providers — to transfers below that floor, and
-place an obligation on the *receiving* provider: obtain the originator information, and where it
-does not arrive, request it and **refuse the transfer**.
+takes effect on **20 August 2026**, and the subordinate rules the Financial Services Commission
+put out for comment on 30 March are phased in behind it. Two dates matter and they are not the
+same one. The Act sets the perimeter this August — who may operate as a virtual asset service
+provider at all. The floor closes later: from **1 January 2027**, the Travel Rule, applied today
+only to transfers of ₩1,000,000 or more between providers, extends below that threshold, and the
+*receiving* provider takes on an obligation of its own — obtain the originator information,
+request it where it is missing, and where it still does not arrive, **refuse the transfer**.
 
-The FSC's stated reason is a number worth sitting with: **60% of domestic VASP-to-VASP transfers,
+The FSC's stated reason is a number worth sitting with: **about 60% of domestic VASP-to-VASP transfers,
 by count in the second half of 2025, were under ₩1,000,000.** Small and numerous is exactly what
-agent traffic looks like, and it is what stops being exempt on 20 August.
+agent traffic looks like, and it is what stops being exempt on 1 January 2027.
 
 Two things follow, and neither is a claim about compliance.
 
