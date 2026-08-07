@@ -267,6 +267,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
         <tr><td>테스트</td><td class="n">177</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
         <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명. 그중 셋(신원 · 수취인 집합 · 회당)은 배포된 프레임워크가 표현하지 못하던 조건입니다</td></tr>
+        <tr><td>발급된 마패</td><td class="n">89</td><td>사람이 서명해 발급한 지출 권한</td></tr>
         <tr><td>온체인 거부</td><td class="n">112</td><td>실패한 결제가 사유와 함께 체인에 남아 있습니다. 거부는 감출 것이 아니라 이 시스템이 내놓는 결과입니다</td></tr>
     </table></div>
 </section>
@@ -914,7 +915,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
 <section id="s13">
     <h2><span class="num">13</span>검증</h2>
-    <p><strong>테스트 172개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요합니다.</p>
+    <p><strong>테스트 177개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요합니다.</p>
     <div class="scroll"><table>
         <tr><th>층</th><th>개수</th><th>증명하는 것</th></tr>
         <tr><td>포크 테스트</td><td class="n">15</td><td><strong>실제 도장 배포본</strong> 상대로 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힙니다. 이더리움 세폴리아에 배포된 <strong>MetaMask 매니저</strong> 상대로도 같은 위임이 그대로 도는지 확인합니다</td></tr>
@@ -1220,6 +1221,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
         <tr><td>Tests</td><td class="n">177</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
         <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, a payee <em>set</em>, per-payment) not expressible in a deployed framework</td></tr>
+        <tr><td>Mapae issued</td><td class="n">89</td><td>Spending authorities a person signed into existence</td></tr>
         <tr><td>Refusals on-chain</td><td class="n">112</td><td>Failed payments sit on the chain with their reasons &mdash; a refusal is this system's output, not something to hide</td></tr>
     </table></div>
 </section>
@@ -1900,7 +1902,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 
 <section id="e13">
     <h2><span class="num">13</span>Verification</h2>
-    <p><strong>172 tests</strong>, all passing. What each layer proves matters more than the count.</p>
+    <p><strong>177 tests</strong>, all passing. What each layer proves matters more than the count.</p>
     <div class="scroll"><table>
         <tr><th>Layer</th><th>Count</th><th>What it proves</th></tr>
         <tr><td>Fork tests, pinned</td><td class="n">15</td><td>Every Dojang assumption against the <strong>real deployment</strong>: a genuine KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately. The same delegation is also run against <strong>MetaMask's own manager</strong> deployed on Ethereum Sepolia</td></tr>
