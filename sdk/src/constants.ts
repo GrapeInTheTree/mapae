@@ -9,7 +9,14 @@ export const giwaSepolia = defineChain({
     nativeCurrency: {name: "Ether", symbol: "ETH", decimals: 18},
     rpcUrls: {default: {http: [process.env.GIWA_SEPOLIA_RPC_URL ?? "https://sepolia-rpc.giwa.io"]}},
     blockExplorers: {default: {name: "Blockscout", url: "https://sepolia-explorer.giwa.io"}},
-    contracts: {multicall3: {address: "0xcA11bde05977b3631167028862bE2a173976CA11", blockCreated: 0}},
+    contracts: {
+        multicall3: {address: "0xcA11bde05977b3631167028862bE2a173976CA11", blockCreated: 0},
+        // OP-stack predeploy. GIWA is an L2, so the L1 data fee - not L2 gas - is most of what a
+        // transaction costs here: measured across eight settlements it was 97% of the bill. Any
+        // estimate that leaves it out is wrong by more than an order of magnitude, so declare the
+        // oracle and let viem's op-stack actions read it. Verified live: l1BaseFee() answers.
+        gasPriceOracle: {address: "0x420000000000000000000000000000000000000F"},
+    },
 });
 
 export const addresses = {

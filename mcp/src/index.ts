@@ -37,6 +37,7 @@ import {
     createWalletClient,
     decodeAbiParameters,
     decodeErrorResult,
+    encodeFunctionData,
     getAddress,
     http,
     isAddress,
@@ -47,6 +48,7 @@ import {
     type Hex,
 } from "viem";
 import {generatePrivateKey, nonceManager, privateKeyToAccount} from "viem/accounts";
+import {publicActionsL2} from "viem/op-stack";
 import {chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {homedir} from "node:os";
 import {join} from "node:path";
@@ -106,7 +108,7 @@ function loadOrCreateKey(): Hex {
     return fresh;
 }
 const agent = privateKeyToAccount(loadOrCreateKey(), {nonceManager});
-const pub = createPublicClient({chain: giwaSepolia, transport: http()});
+const pub = createPublicClient({chain: giwaSepolia, transport: http()}).extend(publicActionsL2());
 const wallet = createWalletClient({account: agent, chain: giwaSepolia, transport: http()});
 
 const BOOK: EnforcerBook = {
@@ -290,6 +292,47 @@ async function liveState(h: Held) {
     return {disabled, available: budget, identityLive, asOfBlock};
 }
 
+/** The exact `redeemDelegations` arguments a payment sends. Shared so that what we PRICE is what
+ *  we SEND - an estimate built from a stand-in payload prices the stand-in, not the payment. */
+function redemptionArgs(h: Held, token: Address, recipient: Address, amount: bigint) {
+    const execution = encodeExecutionSingle(token, 0n, encodeErc20Transfer(recipient, amount));
+    return [[h.context], [MODE_SIMPLE_SINGLE as Hex], [execution]] as const;
+}
+
+/** What one payment must cost, in wei, on an OP-stack L2.
+ *
+ *  Two components, and the smaller one is the obvious one. L2 execution is priced at the ceiling
+ *  `pay` actually sends (gas limit x max fee), because that is the balance the node requires up
+ *  front - a transaction the account cannot fully cover is rejected before it is mined, so the
+ *  ceiling, not the eventual charge, is what decides whether another payment can be made at all.
+ *
+ *  The L1 data fee is the rest, and it is most of it: across eight measured settlements it was 97%
+ *  of the bill. It scales with how well the calldata COMPRESSES, which is why this asks the chain's
+ *  own gas oracle about the real encoded call rather than guessing from its length. A synthetic
+ *  payload of the same size but flatter bytes priced 5x low when tried. */
+async function costPerPayment(h: Held): Promise<bigint | null> {
+    const period = h.conditions.find((c) => c.kind === "period");
+    const payee = h.conditions.find((c) => c.kind === "payee");
+    if (period?.kind !== "period" || payee?.kind !== "payee") return null;
+    const data = encodeFunctionData({
+        abi: managerAbi,
+        functionName: "redeemDelegations",
+        args: redemptionArgs(h, period.token, payee.payees[0], 1n),
+    });
+    try {
+        const [l1, block] = await Promise.all([
+            pub.estimateL1Fee({to: addresses.manager, data, account: agent.address}),
+            pub.getBlock(),
+        ]);
+        return l1 + 1_500_000n * ((block.baseFeePerGas ?? 1_000_000n) * 3n);
+    } catch {
+        // A price we cannot get is reported as one we do not have. Answering with the L2 half
+        // alone would be worse than answering nothing: it reads as a real number and is 29x
+        // optimistic, which is the exact failure this function exists to remove.
+        return null;
+    }
+}
+
 /** Decoded custom error out of viem's nested cause chain - the refusal REASON is the payload
  *  the agent needs, not an exception. */
 function reasonOf(err: unknown): string {
@@ -402,12 +445,10 @@ server.tool(
     "[마패] 이 에이전트의 신원·가스 잔액·보유한 마패별 남은 여력 한눈에. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and one line of headroom per held authority (remaining budget, per-payment ceiling, usable or not). When gas runs low, hand the human this address and https://faucet.giwa.io - the faucet is a web page a person has to open, so nothing here can top the agent up on its own.",
     {},
     async () => {
-        const [balance, block] = await Promise.all([
-            pub.getBalance({address: agent.address}),
-            pub.getBlock(),
-        ]);
-        // ~1.5M gas ceiling per redemption at 3x base fee - the same posture pay uses.
-        const perPay = 1_500_000n * ((block.baseFeePerGas ?? 1_000_000n) * 3n);
+        const balance = await pub.getBalance({address: agent.address});
+        // Priced off the first held authority's real encoded call, L1 data fee included. With
+        // nothing held there is no payment to price, and a payment count would be fiction.
+        const perPay = held.length > 0 ? await costPerPayment(held[0]) : null;
         // One line per held Mapae: enough to pick a context without a second tool call.
         const authorities = await Promise.all(
             held.map(async (h, index) => {
@@ -428,7 +469,8 @@ server.tool(
         return text({
             agentAddress: agent.address,
             gasBalanceEth: Number(balance) / 1e18,
-            approxPaymentsRemaining: perPay > 0n ? Number(balance / perPay) : null,
+            approxPaymentsRemaining: perPay !== null && perPay > 0n ? Number(balance / perPay) : null,
+            costPerPaymentEth: perPay === null ? null : Number(perPay) / 1e18,
             contextsHeld: held.length,
             authorities,
             identityFile: join(PROFILE_DIR, "agent.key"),
@@ -639,12 +681,7 @@ server.tool(
             recipient = match;
         }
 
-        const execution = encodeExecutionSingle(
-            period.token,
-            0n,
-            encodeErc20Transfer(recipient, BigInt(amount)),
-        );
-        const args = [[h.context], [MODE_SIMPLE_SINGLE as Hex], [execution]] as const;
+        const args = redemptionArgs(h, period.token, recipient, BigInt(amount));
 
         // A refusal that never reaches a block costs no gas and leaves no evidence. Which of
         // those matters more is not ours to decide, so it is a declared setting rather than an

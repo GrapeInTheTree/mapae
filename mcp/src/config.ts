@@ -18,6 +18,10 @@ export const giwaSepolia = defineChain({
     blockExplorers: {default: {name: "Blockscout", url: "https://sepolia-explorer.giwa.io"}},
     contracts: {
         multicall3: {address: "0xcA11bde05977b3631167028862bE2a173976CA11", blockCreated: 0},
+        // OP-stack predeploy. GIWA is an L2, so the L1 data fee - not L2 gas - is most of what a
+        // transaction costs here: measured across eight settlements it was 97% of the bill.
+        // Declaring it is what lets viem's op-stack actions price a payment honestly.
+        gasPriceOracle: {address: "0x420000000000000000000000000000000000000F"},
     },
 });
 
