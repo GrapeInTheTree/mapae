@@ -363,7 +363,15 @@ export interface DelegationSummary {
 /// beside it is worse than a slow one.
 const LIST_PAGES = 6;
 
-export async function fetchDelegationList(): Promise<DelegationSummary[]> {
+/// `onPartial` is handed the list as it grows, one Blockscout page at a time.
+///
+/// Six pages is six sequential round trips - the cursor makes them sequential - and waiting for
+/// all of them before drawing anything is a blank screen for several seconds. The first page is
+/// the most recent activity, which is what a reader is usually looking for, so it goes up
+/// immediately and the rest fill in behind it.
+export async function fetchDelegationList(
+    onPartial?: (rows: DelegationSummary[]) => void,
+): Promise<DelegationSummary[]> {
     type Tx = {hash: Hex; status: string; timestamp: string; raw_input?: Hex};
     const txs: Tx[] = [];
     let params = "";
@@ -374,11 +382,17 @@ export async function fetchDelegationList(): Promise<DelegationSummary[]> {
         if (!res.ok) break;
         const data = await res.json();
         txs.push(...((data.items ?? []) as Tx[]).filter((t) => t.raw_input?.startsWith("0xcef6d209")));
+        onPartial?.(group(txs));
         const next = data.next_page_params as Record<string, string | number> | null | undefined;
         if (!next) break;
         params = `&${new URLSearchParams(Object.entries(next).map(([k, v]) => [k, String(v)]))}`;
     }
 
+    return group(txs);
+}
+
+/// Group manager transactions into one row per root authority.
+function group(txs: {hash: Hex; status: string; timestamp: string; raw_input?: Hex}[]): DelegationSummary[] {
     const map = new Map<string, DelegationSummary>();
     for (const t of txs) {
         let contexts: Hex[];
@@ -446,11 +460,22 @@ export async function fetchDelegationList(): Promise<DelegationSummary[]> {
         e.lastUsed = e.txs[0]?.timestamp ?? e.lastUsed;
     }
 
-    // Live state per delegation. Whether it is disabled, whether its principal's Dojang still
-    // stands, and how much of this period's budget remains are not in any transaction - they are
-    // now-questions, and only the chain can answer them.
-    await Promise.all(
-        list.map(async (e) => {
+    return list.sort((a, b) => Date.parse(b.lastUsed) - Date.parse(a.lastUsed));
+}
+
+/// Fill in the now-questions: disabled, identity still live, budget left.
+///
+/// Separated from the listing, and bounded, because it is the expensive half. Each row costs up
+/// to three chain reads, so enriching a 73-row list in one go fired ~200 concurrent calls at a
+/// rate-limited public endpoint - the reads that lost came back as nulls, and a null budget draws
+/// as "Used —" on a delegation that has plainly been used. Slow was the visible symptom; wrong
+/// was the real one. Callers enrich the rows they are about to show.
+export async function enrichDelegations(rows: DelegationSummary[]): Promise<void> {
+    const QUEUE = 6;
+    let next = 0;
+    const worker = async () => {
+        for (let i = next++; i < rows.length; i = next++) {
+            const e = rows[i];
             try {
                 e.disabled = (await client.readContract({
                     address: addresses.manager,
@@ -492,10 +517,9 @@ export async function fetchDelegationList(): Promise<DelegationSummary[]> {
                     /* meter simply not drawn */
                 }
             }
-        }),
-    );
-
-    return list.sort((a, b) => Date.parse(b.lastUsed) - Date.parse(a.lastUsed));
+        }
+    };
+    await Promise.all(Array.from({length: Math.min(QUEUE, rows.length)}, worker));
 }
 
 /* ---------------------------------- tracing ---------------------------------- */

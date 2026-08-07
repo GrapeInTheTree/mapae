@@ -126,6 +126,24 @@ export default function Permissions() {
                 chain: null,
             });
             await client.waitForTransactionReceipt({hash});
+            // The receipt is not the answer the screen shows - the switch state is read from the
+            // chain, and until it is read again the page still shows what it read on mount. That
+            // gap is why this used to need a manual refresh.
+            //
+            // GIWA's public RPC load-balances across backends at different heights, so the read
+            // right after a receipt can still answer from before it. Poll until the chain agrees
+            // with what we just did, then stop.
+            for (let i = 0; i < 10; i++) {
+                const now = (await client.readContract({
+                    address: addresses.manager,
+                    abi: managerAbi,
+                    functionName: "disabledDelegations",
+                    args: [m.hash],
+                })) as boolean;
+                if (now === disable) break;
+                await new Promise((r) => setTimeout(r, 1_500));
+            }
+            reload();
         } catch (e) {
             setError(readableError(e));
         } finally {

@@ -18,7 +18,7 @@ import {
 import {useLang} from "../i18n";
 import {addresses, short} from "../lib/config";
 import {readableError, useMapaeAccount} from "../lib/account";
-import {client, fetchDelegationList, type DelegationSummary} from "../lib/data";
+import {client, enrichDelegations, fetchDelegationList, type DelegationSummary} from "../lib/data";
 import {fmtToken, renderCondition} from "../lib/policy";
 import * as store from "../lib/store";
 import {useWallet} from "../lib/wallet";
@@ -51,8 +51,15 @@ export default function Delegation() {
         let cancelled = false;
         setList(null);
         setFailed(false);
+        // The listing is cheap; the live state is not. A detail page needs it for exactly one
+        // authority, so it enriches that one rather than all seventy-three.
         fetchDelegationList()
-            .then((l) => !cancelled && setList(l))
+            .then(async (l) => {
+                if (cancelled) return;
+                const one = l.find((x) => x.hash.toLowerCase() === (hash ?? "").toLowerCase());
+                if (one) await enrichDelegations([one]);
+                if (!cancelled) setList([...l]);
+            })
             .catch(() => !cancelled && setFailed(true));
         return () => {
             cancelled = true;

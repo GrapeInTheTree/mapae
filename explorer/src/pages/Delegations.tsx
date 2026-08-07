@@ -1,7 +1,7 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Link, useSearchParams} from "react-router-dom";
 import type {Hex} from "viem";
-import {fetchDelegationList, type DelegationSummary} from "../lib/data";
+import {enrichDelegations, fetchDelegationList, type DelegationSummary} from "../lib/data";
 import {Card, CopyButton, Mono, Pagination, Spinner, StatusPill, Tag, relTime} from "../components/ui";
 import {useLang} from "../i18n";
 import {addresses, short} from "../lib/config";
@@ -31,7 +31,8 @@ export default function Delegations() {
     const [params, setParams] = useSearchParams();
 
     useEffect(() => {
-        fetchDelegationList()
+        // Draw the first page the moment it lands; the rest fill in behind it.
+        fetchDelegationList(setList)
             .then(setList)
             .catch(() => setFailed(true));
     }, []);
@@ -54,6 +55,30 @@ export default function Delegations() {
                               c.payees.some((p) => p.toLowerCase().includes(q)),
                       ),
               );
+
+    /** Only the rows on screen pay for their live state. Enriching all of them at once is what
+     *  left the meters empty - a rate-limited endpoint drops the reads that lose, and a dropped
+     *  budget read draws as "Used —" on a Mapae that has plainly been used. */
+    const enriched = useRef(new Set<string>());
+    useEffect(() => {
+        if (!shown) return;
+        // Remember what has been ASKED, not what came back. Gating on `disabled !== null` looks
+        // equivalent and is not: a read that loses to a rate limit leaves the field null, the
+        // condition never clears, and re-rendering the list re-triggers the effect - which cost
+        // 233 RPC calls for eight visible rows before this was caught.
+        const rows = shown
+            .slice((page - 1) * PER_PAGE, page * PER_PAGE)
+            .filter((r) => !enriched.current.has(r.hash));
+        if (rows.length === 0) return;
+        rows.forEach((r) => enriched.current.add(r.hash));
+        let cancelled = false;
+        void enrichDelegations(rows).then(() => {
+            if (!cancelled) setList((l) => (l ? [...l] : l));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [shown, page]);
 
     return (
         <div className="mx-auto max-w-4xl px-6 py-10">
