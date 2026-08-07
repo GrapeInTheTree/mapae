@@ -37,7 +37,14 @@ export function Stats({stats}: {stats: StatsData | null}) {
         {
             label: t("home", "statActive"),
             value: stats?.delegations,
-            note: lang === "ko" ? "서명되어 사용된 권한" : "signed, and used at least once",
+            // Counts every link, because the manager emits RedeemedDelegation once per hop:
+            // a re-delegated child is a delegation too. The Delegations list groups by root,
+            // so it shows fewer. Both are right about different things, and saying which is
+            // cheaper than a reader discovering the gap and distrusting both.
+            note:
+                lang === "ko"
+                    ? "서명되어 사용된 권한. 재위임된 자식도 각각 하나로 셉니다"
+                    : "signed and used at least once, counting re-delegated children separately",
             icon: ScrollText,
             to: "/delegations",
         },

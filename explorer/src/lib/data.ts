@@ -354,17 +354,30 @@ export interface DelegationSummary {
  * exactly the property the product claims: the chain is the only answer to "what authority
  * exists", and here is that answer, read directly.
  */
+/// How many pages of manager transactions to walk when rebuilding the list from chain.
+///
+/// One page is not a list, it is a window on the last hour. Measured on 2026-08-07, the first page
+/// held 8 distinct authorities and five pages held 73 - a day of demo traffic against one account
+/// is enough to push every other Mapae out of view, while the counter above the list still says
+/// 84 because that number comes from the index. A list that disagrees with the number printed
+/// beside it is worse than a slow one.
+const LIST_PAGES = 6;
+
 export async function fetchDelegationList(): Promise<DelegationSummary[]> {
-    const res = await fetch(
-        `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
-    );
-    const data = await res.json();
-    const txs = ((data.items ?? []) as {
-        hash: Hex;
-        status: string;
-        timestamp: string;
-        raw_input?: Hex;
-    }[]).filter((t) => t.raw_input?.startsWith("0xcef6d209"));
+    type Tx = {hash: Hex; status: string; timestamp: string; raw_input?: Hex};
+    const txs: Tx[] = [];
+    let params = "";
+    for (let page = 0; page < LIST_PAGES; page++) {
+        const res = await fetch(
+            `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to${params}`,
+        );
+        if (!res.ok) break;
+        const data = await res.json();
+        txs.push(...((data.items ?? []) as Tx[]).filter((t) => t.raw_input?.startsWith("0xcef6d209")));
+        const next = data.next_page_params as Record<string, string | number> | null | undefined;
+        if (!next) break;
+        params = `&${new URLSearchParams(Object.entries(next).map(([k, v]) => [k, String(v)]))}`;
+    }
 
     const map = new Map<string, DelegationSummary>();
     for (const t of txs) {

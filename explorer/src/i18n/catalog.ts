@@ -296,7 +296,7 @@ export const en = {
 
     dlist: {
         title: "Delegations",
-        lede: "Every Mapae that has ever appeared on-chain. Settled, refused, disabled or expired - none of it deletable.",
+        lede: "Every root authority a person signed that has appeared on-chain, grouped by the Mapae itself rather than by transaction. Settled, refused, disabled or expired - none of it deletable. Re-delegated children live inside their root, which is why the counter above may read higher.",
         boundary: "A Mapae that was issued but never used does not exist on-chain: a grant is a free, traceless signature. This list begins the moment one is first used - and from then on, every attempt against it is permanent.",
         uses: "uses",
         settledN: "{n} settled",
@@ -702,7 +702,7 @@ export const ko: Catalog = {
 
     dlist: {
         title: "발급된 마패",
-        lede: "체인에 한 번이라도 등장한 모든 마패. 승인도 거부도 비활성도 만료도 — 무엇도 지워지지 않습니다.",
+        lede: "사람이 서명한 뿌리 권한을, 트랜잭션이 아니라 마패 단위로 묶어 보여줍니다. 승인도 거부도 비활성도 만료도 무엇 하나 지워지지 않습니다. 재위임된 자식은 각자의 뿌리 안에 들어 있어서, 위의 집계가 더 크게 나올 수 있습니다.",
         boundary: "발급만 되고 아직 쓰이지 않은 마패는 체인에 없습니다. 발급은 흔적 없는 무료 서명이기 때문입니다. 이 목록은 마패가 처음 사용되는 순간부터 시작되고, 그 뒤의 모든 시도는 영구히 남습니다.",
         uses: "회 사용",
         settledN: "승인 {n}",
