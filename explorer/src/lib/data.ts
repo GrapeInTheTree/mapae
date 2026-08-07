@@ -379,7 +379,13 @@ export async function fetchDelegationList(
         const res = await fetch(
             `${BLOCKSCOUT}/api/v2/addresses/${addresses.manager}/transactions?filter=to${params}`,
         );
-        if (!res.ok) break;
+        // A source that is down must not read as "there is nothing here". This list has no other
+        // source - the conditions it shows live in transaction calldata, which no event carries -
+        // so a failed first page has to surface as a failure, not as an empty ledger.
+        if (!res.ok) {
+            if (page === 0) throw new Error(`delegation list unavailable: Blockscout ${res.status}`);
+            break;
+        }
         const data = await res.json();
         txs.push(...((data.items ?? []) as Tx[]).filter((t) => t.raw_input?.startsWith("0xcef6d209")));
         onPartial?.(group(txs));
