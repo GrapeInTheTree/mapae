@@ -265,9 +265,9 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        도장이 있습니다.</p>
     <div class="scroll"><table>
         <tr><td>컨트랙트</td><td class="n">9</td><td>GIWA Sepolia 배포 · 전수 소스 검증</td></tr>
-        <tr><td>테스트</td><td class="n">172</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
+        <tr><td>테스트</td><td class="n">177</td><td>포크·불변식·3언어 바이트 패리티 포함, 정적 분석 심각·중대 0</td></tr>
         <tr><td>결제 조건</td><td class="n">6</td><td>전부 라이브 증명. 그중 셋(신원 · 수취인 집합 · 회당)은 배포된 프레임워크가 표현하지 못하던 조건입니다</td></tr>
-        <tr><td>온체인 거부</td><td class="n">26</td><td>실패한 결제가 사유와 함께 체인에 남아 있습니다. 거부는 감출 것이 아니라 이 시스템이 내놓는 결과입니다</td></tr>
+        <tr><td>온체인 거부</td><td class="n">112</td><td>실패한 결제가 사유와 함께 체인에 남아 있습니다. 거부는 감출 것이 아니라 이 시스템이 내놓는 결과입니다</td></tr>
     </table></div>
 </section>
 
@@ -917,12 +917,12 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p><strong>테스트 172개</strong> 전부 통과. 층위별로 무엇을 증명하는지가 개수보다 중요합니다.</p>
     <div class="scroll"><table>
         <tr><th>층</th><th>개수</th><th>증명하는 것</th></tr>
-        <tr><td>포크 테스트</td><td class="n">10</td><td><strong>실제 도장 배포본</strong> 상대로 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힙니다</td></tr>
-        <tr><td>인코딩 적합성</td><td class="n">16</td><td>타입해시, 해시 제외 필드, ERC-7579 모드워드 — 리터럴 상수로 고정, 재계산 금지</td></tr>
+        <tr><td>포크 테스트</td><td class="n">15</td><td><strong>실제 도장 배포본</strong> 상대로 — 진짜 업비트 KYC 주소가 통과하고, 발급자가 구별되고, 취소·만료가 즉시 닫힙니다. 이더리움 세폴리아에 배포된 <strong>MetaMask 매니저</strong> 상대로도 같은 위임이 그대로 도는지 확인합니다</td></tr>
+        <tr><td>인코딩 적합성</td><td class="n">17</td><td>타입해시, 해시 제외 필드, ERC-7579 모드워드 — 리터럴 상수로 고정, 재계산 금지</td></tr>
         <tr><td>위임 사슬</td><td class="n">16</td><td>자식이 부모 한도를 넓힐 수 없음, 위조 접합 거부, 뿌리 차단이 하위까지 관통</td></tr>
         <tr><td>매니저 API</td><td class="n">16</td><td>킬스위치 권한, 잘못된 배치, 훅 재진입 불가, 훅 순서 고정</td></tr>
         <tr><td>Enforcer · 계정</td><td class="n">89</td><td>위조 경로, 실행 형태 거부, 팩토리 동의 바인딩</td></tr>
-        <tr><td>통합</td><td class="n">13</td><td>전 구간 시나리오, 배치 원자성, 2×2 킬스위치 행렬</td></tr>
+        <tr><td>통합</td><td class="n">19</td><td>전 구간 시나리오, 배치 원자성, 2×2 킬스위치 행렬, 그리고 여러 단계를 한 사람이 서명할 때 예산이 실제로 어떻게 나뉘는지</td></tr>
         <tr><td>불변식</td><td class="n">5</td><td>1000회 × 256콜. 독립 유령 원장 대비 — <strong>신원이 죽으면 결제 없음</strong>, 한도 유지, 토큰 보존</td></tr>
         <tr><td>3언어 바이트 패리티</td><td class="n">37</td><td>같은 위임을 Solidity·TypeScript·Go가 각각 인코딩해 바이트 단위로 일치</td></tr>
         <tr><td>정적 분석</td><td class="n">0 / 0</td><td>Slither 심각·중대 0. 예외 5건은 전부 근거 주석과 함께</td></tr>
@@ -1218,9 +1218,9 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        condition on. GIWA has Dojang.</p>
     <div class="scroll"><table>
         <tr><td>Contracts</td><td class="n">9</td><td>Deployed to GIWA Sepolia, all source-verified</td></tr>
-        <tr><td>Tests</td><td class="n">172</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
+        <tr><td>Tests</td><td class="n">177</td><td>Fork, invariant and three-language byte parity included; 0 high / 0 medium from static analysis</td></tr>
         <tr><td>Payment conditions</td><td class="n">6</td><td>All proven live &mdash; three of them (identity, a payee <em>set</em>, per-payment) not expressible in a deployed framework</td></tr>
-        <tr><td>Refusals on-chain</td><td class="n">26</td><td>Failed payments sit on the chain with their reasons &mdash; a refusal is this system's output, not something to hide</td></tr>
+        <tr><td>Refusals on-chain</td><td class="n">112</td><td>Failed payments sit on the chain with their reasons &mdash; a refusal is this system's output, not something to hide</td></tr>
     </table></div>
 </section>
 
@@ -1903,12 +1903,12 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p><strong>172 tests</strong>, all passing. What each layer proves matters more than the count.</p>
     <div class="scroll"><table>
         <tr><th>Layer</th><th>Count</th><th>What it proves</th></tr>
-        <tr><td>Fork tests, pinned</td><td class="n">10</td><td>Every Dojang assumption against the <strong>real deployment</strong>: a genuine KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately</td></tr>
-        <tr><td>Encoding conformance</td><td class="n">16</td><td>Typehashes, hash exclusions, ERC-7579 mode word &mdash; pinned as literal constants, never recomputed</td></tr>
+        <tr><td>Fork tests, pinned</td><td class="n">15</td><td>Every Dojang assumption against the <strong>real deployment</strong>: a genuine KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately. The same delegation is also run against <strong>MetaMask's own manager</strong> deployed on Ethereum Sepolia</td></tr>
+        <tr><td>Encoding conformance</td><td class="n">17</td><td>Typehashes, hash exclusions, ERC-7579 mode word &mdash; pinned as literal constants, never recomputed</td></tr>
         <tr><td>Delegation chain</td><td class="n">16</td><td>A child cannot widen its parent's cap; forged grafts refused; disabling the root reaches the leaves</td></tr>
         <tr><td>Manager API</td><td class="n">16</td><td>Kill-switch authority, malformed batches, no hook can re-enter redemption, hook ordering pinned</td></tr>
         <tr><td>Enforcers and account</td><td class="n">89</td><td>Forgery paths, execution-shape refusals, factory consent binding</td></tr>
-        <tr><td>Integration</td><td class="n">13</td><td>The full scenario end to end, batch atomicity, the 2&times;2 matrix</td></tr>
+        <tr><td>Integration</td><td class="n">19</td><td>The full scenario end to end, batch atomicity, the 2&times;2 matrix, and how a budget really divides when one person signs several rungs</td></tr>
         <tr><td>Invariants</td><td class="n">5</td><td>1000 runs &times; 256 calls against an independent ghost ledger: the cap holds, <strong>no payment while identity is dead</strong>, tokens conserved</td></tr>
         <tr><td>Cross-language byte parity</td><td class="n">37</td><td>The same delegation encoded by Solidity, TypeScript and Go, byte-identical</td></tr>
         <tr><td>Static analysis</td><td class="n">0 / 0</td><td>Slither high and medium. Five findings triaged and disabled inline with rationale</td></tr>

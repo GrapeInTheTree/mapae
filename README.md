@@ -25,7 +25,7 @@ AI에게 지갑을 주지 마세요. 범위를 정한 권한만 주세요.
 <sub>
   <img alt="GIWA Sepolia" src="https://img.shields.io/badge/GIWA_Sepolia-91342-8A5A35?style=flat-square&labelColor=11100E">
   <img alt="Solidity" src="https://img.shields.io/badge/Solidity-0.8.29-8A5A35?style=flat-square&labelColor=11100E">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-172_passing-1D7A5F?style=flat-square&labelColor=11100E">
+  <img alt="Tests" src="https://img.shields.io/badge/tests-177_passing-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="Slither" src="https://img.shields.io/badge/Slither-0_high_·_0_medium-1D7A5F?style=flat-square&labelColor=11100E">
   <img alt="License" src="https://img.shields.io/badge/license-MIT-8A5A35?style=flat-square&labelColor=11100E">
 </sub>
@@ -398,7 +398,7 @@ gas at all:
 ## Verification
 
 The demo is asserted, not screenshotted; every claim above has either a transaction hash or a
-test behind it. **172 tests**, all passing.
+test behind it. **177 tests**, all passing.
 
 | Layer | Count | What it proves |
 |---|---|---|

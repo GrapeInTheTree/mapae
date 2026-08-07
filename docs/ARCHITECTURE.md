@@ -213,12 +213,12 @@ made shows both facts — proven valid then by the gate event, revoked now by th
 
 | Layer | Count | What it proves |
 |---|---|---|
-| Fork tests, pinned at block 31,909,542 | 10 | Every Dojang assumption against the **real deployment**: a genuine Upbit-KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately |
-| Encoding conformance | 16 | Typehashes, hash exclusions, ERC-7579 mode word — pinned as literal constants, never recomputed |
+| Fork tests, pinned at block 31,909,542 | 15 | Every Dojang assumption against the **real deployment**: a genuine Upbit-KYC'd address passes, issuers discriminate, revocation and expiry close the gate immediately. The same delegation is also run against **MetaMask's own manager** on Ethereum Sepolia |
+| Encoding conformance | 17 | Typehashes, hash exclusions, ERC-7579 mode word — pinned as literal constants, never recomputed |
 | Delegation chain | 16 | A child cannot widen its parent's cap; broken authority links and forged grafts are refused; disabling the root kills a sub-agent |
 | Manager API | 16 | Kill-switch authority, malformed batches, no hook can re-enter redemption, hook ordering pinned |
 | Enforcers and account | 89 | Forgery paths, execution-shape refusals, factory consent binding |
-| Integration | 13 | The full scenario end to end, batch atomicity, the 2×2 matrix |
+| Integration | 19 | The full scenario end to end, batch atomicity, the 2×2 matrix, and how a budget really divides when one person signs several rungs |
 | Invariants, 1000 runs × 256 calls | 5 | Against an independent ghost ledger: the cap holds, **no payment while identity is dead**, none while disabled, tokens conserved |
 | Cross-language byte parity | 37 | The same delegation encoded by Solidity, TypeScript and Go, byte-identical |
 | Slither | 0 high, 0 medium | Five findings triaged and disabled inline with rationale |
