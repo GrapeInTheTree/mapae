@@ -7,10 +7,18 @@
  * what a delegate can do on-chain:
  *
  *   request_permission  compose a policy and hand the human a link to review and sign
+ *   load_context        take an authority the human granted, mid-conversation
  *   list_permissions    what authorities this agent holds, with live on-chain state
+ *   agent_status        this agent's own address, gas, and headroom per authority
  *   check_budget        what remains of this period's cap, read from the enforcer
+ *   simulate_payment    would this settle? names what binds, broadcasts nothing
  *   pay                 spend within the signed policy (payee and token come FROM the policy)
  *   redelegate          sign a narrower child of a held authority to another agent
+ *
+ * Amounts are exchanged as JSON numbers, which is exact for a token with 0 decimals like the
+ * testnet mKRW and stays exact to 2^53. A policy denominated in an 18-decimal asset would need
+ * these to become strings before the SDK sees them; the token comes from the signed policy, not
+ * from an argument, so that change belongs here rather than in the caveats.
  *
  * The server talks to nothing but GIWA's public RPC. There is no Mapae backend to reach, and the
  * static site is only ever a link handed to a human - if it vanished, every tool here would keep
@@ -36,7 +44,7 @@ import {
     type Address,
     type Hex,
 } from "viem";
-import {generatePrivateKey, privateKeyToAccount} from "viem/accounts";
+import {generatePrivateKey, nonceManager, privateKeyToAccount} from "viem/accounts";
 import {chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync} from "node:fs";
 import {homedir} from "node:os";
 import {join} from "node:path";
@@ -95,7 +103,7 @@ function loadOrCreateKey(): Hex {
     console.error(`mapae-mcp: generated a new agent identity -> ${file} (chmod 600)`);
     return fresh;
 }
-const agent = privateKeyToAccount(loadOrCreateKey());
+const agent = privateKeyToAccount(loadOrCreateKey(), {nonceManager});
 const pub = createPublicClient({chain: giwaSepolia, transport: http()});
 const wallet = createWalletClient({account: agent, chain: giwaSepolia, transport: http()});
 
@@ -164,6 +172,15 @@ function decodeHeld(context: Hex): Held {
  * it names, and this machine IS that delegate.
  */
 const CONTEXTS_FILE = join(PROFILE_DIR, "contexts.json");
+
+/// How long to wait for a receipt before answering UNKNOWN. Overridable so the unknown path
+/// can actually be exercised - a branch that only runs when the network misbehaves is a branch
+/// nobody has ever seen work.
+const RECEIPT_TIMEOUT_MS = Number(process.env.MAPAE_RECEIPT_TIMEOUT_MS ?? 90_000);
+
+const PKG_VERSION: string = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+).version;
 
 function persistedContexts(): Hex[] {
     try {
@@ -316,7 +333,9 @@ const bigintSafe = (_: string, v: unknown) => (typeof v === "bigint" ? v.toStrin
 /* ---------------------------------- tools ---------------------------------- */
 
 const server = new McpServer(
-    {name: "mapae", version: "0.6.0"},
+    // Read from package.json rather than typed here: the last one said 0.6.0 while the
+    // registry served 0.7.0, and a version a client cannot trust is worse than none.
+    {name: "mapae", version: PKG_VERSION},
     {
         /** Read by the client's model at session start - this is where the server earns its
          *  Korean name, and where the kill-switch boundary is stated so no model ever promises
@@ -647,8 +666,15 @@ server.tool(
         // Fee headroom: GIWA's shared mempool evicts market-priced transactions under load.
         const base = (await pub.getBlock()).baseFeePerGas ?? 1_000_000n;
 
+        // Broadcasting and waiting are separate failures and must be reported separately.
+        //
+        // A transaction that reached the mempool stays live whether or not anyone is still
+        // waiting for it. If the wait times out and we answer REFUSED, an agent that retries pays
+        // twice - and without the hash it cannot even reconcile. The facilitator already draws
+        // this line (`settlement_unknown`); this is the same line, drawn here.
+        let hash: Hex;
         try {
-            const hash = await wallet.writeContract({
+            hash = await wallet.writeContract({
                 address: addresses.manager,
                 abi: managerAbi,
                 functionName: "redeemDelegations",
@@ -657,7 +683,13 @@ server.tool(
                 maxFeePerGas: base * 3n,
                 maxPriorityFeePerGas: base,
             });
-            const receipt = await pub.waitForTransactionReceipt({hash, timeout: 90_000});
+        } catch (e) {
+            // Nothing was broadcast: refused before a transaction existed, or the send failed.
+            return text({status: "REFUSED", reason: reasonOf(e), tx: null, trace: null});
+        }
+
+        try {
+            const receipt = await pub.waitForTransactionReceipt({hash, timeout: RECEIPT_TIMEOUT_MS});
             const ok = receipt.status === "success";
             // The receipt is the authoritative budget source: GIWA's load-balanced RPC can serve
             // a stale read for a few blocks, but the enforcer's own event cannot be stale.
@@ -710,7 +742,20 @@ server.tool(
                 trace: `${APP_URL}/tx/${hash}`,
             });
         } catch (e) {
-            return text({status: "REFUSED", reason: reasonOf(e), trace: null});
+            // The transaction is out there. We do not know its outcome, and saying "refused" here
+            // is how one payment becomes two.
+            return text({
+                status: "UNKNOWN",
+                amount: fmtWon(BigInt(amount)),
+                payee: recipient,
+                reason: reasonOf(e),
+                tx: hash,
+                trace: `${APP_URL}/tx/${hash}`,
+                note:
+                    "Broadcast, but no receipt arrived inside the window. This is NOT a refusal - " +
+                    "the transaction may still settle. Do not retry; open the trace, or call " +
+                    "check_budget once it lands.",
+            });
         }
     },
 );

@@ -46,7 +46,7 @@ nothing to refuse.
 | `agent_status` | nothing | The agent's identity, gas tank, and one line of headroom per held authority |
 | `check_budget` | nothing | Remaining period cap read from the enforcer, the per-payment ceiling, and the largest single payment both allow right now |
 | `simulate_payment` | nothing | Asks whether an amount **would** settle, without broadcasting: names the condition that refuses it and the largest amount that would go through right now |
-| `pay` | agent key | Spends within the signed policy — **the allowed payees and the token come from the policy**; when several payees are allowed, `payee` picks which one, and an address outside the signed list is rejected before any transaction |
+| `pay` | agent key | Spends within the signed policy — **the allowed payees and the token come from the policy**; when several payees are allowed, `payee` picks which one, and an address outside the signed list is rejected before any transaction. A broadcast whose receipt does not arrive in the window answers **UNKNOWN with its hash**, never REFUSED — the transaction may still settle, and calling that a refusal is how one payment becomes two |
 | `redelegate` | agent key | Signs a *narrower* child authority to a sub-agent — tighter period cap and/or per-payment ceiling — no transaction |
 
 The human's whole job is: click the link the agent composed, read the policy as a sentence, sign

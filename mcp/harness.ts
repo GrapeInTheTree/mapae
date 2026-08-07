@@ -54,20 +54,41 @@ const DELEGATION_PARAMS = [
 ] as const;
 
 /** The fleet's paying account, recovered from the chain the way the explorer does it. */
+/// Recover the fleet account from live chain calldata rather than from a file, so the harness
+/// cannot drift from what is actually deployed.
+///
+/// It pages, because one page is not enough: any busy day - the tier and depth demos each mine
+/// ten transactions against a different account - pushes the one we are looking for off the front.
+/// A helper that works only when nothing else has happened recently is a helper that fails on the
+/// days it matters.
 async function fleetAccount(): Promise<Address> {
-    const res = await fetch(
-        `https://sepolia-explorer.giwa.io/api/v2/addresses/${addresses.manager}/transactions?filter=to`,
-    );
-    const data = (await res.json()) as {items?: {raw_input?: Hex}[]};
-    for (const t of data.items ?? []) {
-        if (!t.raw_input?.startsWith("0xcef6d209")) continue;
-        const {args} = decodeFunctionData({abi: managerAbi, data: t.raw_input});
-        const [contexts] = args as [Hex[], Hex[], Hex[]];
-        const [chain] = decodeAbiParameters(DELEGATION_PARAMS, contexts[0]) as unknown as [Delegation[]];
-        const root = chain[chain.length - 1];
-        if (root.delegator.toLowerCase().startsWith("0x4b6b")) return root.delegator;
+    let params = "";
+    for (let page = 0; page < 8; page++) {
+        const res = await fetch(
+            `https://sepolia-explorer.giwa.io/api/v2/addresses/${addresses.manager}/transactions?filter=to${params}`,
+        );
+        const data = (await res.json()) as {
+            items?: {raw_input?: Hex}[];
+            next_page_params?: Record<string, string | number> | null;
+        };
+        for (const t of data.items ?? []) {
+            if (!t.raw_input?.startsWith("0xcef6d209")) continue;
+            try {
+                const {args} = decodeFunctionData({abi: managerAbi, data: t.raw_input});
+                const [contexts] = args as [Hex[], Hex[], Hex[]];
+                const [chain] = decodeAbiParameters(DELEGATION_PARAMS, contexts[0]) as unknown as [Delegation[]];
+                const root = chain[chain.length - 1];
+                if (root.delegator.toLowerCase().startsWith("0x4b6b")) return root.delegator;
+            } catch {
+                /* a redemption we cannot decode is not the one we are looking for */
+            }
+        }
+        if (!data.next_page_params) break;
+        params = `&${new URLSearchParams(
+            Object.entries(data.next_page_params).map(([k, v]) => [k, String(v)]),
+        )}`;
     }
-    throw new Error("fleet account not found in recent manager txs");
+    throw new Error("fleet account not found in the last 8 pages of manager txs");
 }
 
 /** Spawn the built server over stdio and complete the MCP handshake. Returns a client bound to
@@ -314,6 +335,20 @@ async function main() {
     const dryBack = await settlesWhen(true);
     if (!dryBack.includes('"wouldSettle": true')) throw new Error(`re-enabling did not restore the tier: ${dryBack}`);
     console.log(`\nkill switch reached the dry run: disabled -> ₩0 headroom, re-enabled -> settles again`);
+
+    // The unknown path, forced. A broadcast whose receipt does not arrive inside the window must
+    // come back as UNKNOWN carrying its hash - never as REFUSED, which is how an agent that
+    // retries pays twice. Squeezing the window to 1ms makes the branch reachable on demand.
+    const slow = await connect({
+        MAPAE_PROFILE: "harness",
+        MAPAE_PERMISSION_CONTEXT: context,
+        MAPAE_RECEIPT_TIMEOUT_MS: "1",
+    });
+    const unknown = await slow.call("pay", {amount: 100});
+    slow.child.kill();
+    if (!unknown.includes('"UNKNOWN"')) throw new Error(`a timed-out receipt was not UNKNOWN: ${unknown}`);
+    if (!/"tx": "0x[0-9a-f]{64}"/.test(unknown)) throw new Error(`UNKNOWN must carry its hash: ${unknown}`);
+    if (unknown.includes("REFUSED")) throw new Error(`a broadcast payment was called refused: ${unknown}`);
 
     const redel = await call("redelegate", {to: merchant, capAmount: 500, maxPerPayment: 200});
     const ctx2 = JSON.parse(redel).permissionContext as Hex;
