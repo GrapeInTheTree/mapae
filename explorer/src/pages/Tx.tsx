@@ -1,10 +1,10 @@
 import {useEffect, useState, type ReactNode} from "react";
-import {useParams} from "react-router-dom";
+import {Link as RouterLink, Navigate, useParams} from "react-router-dom";
 import type {Hex} from "viem";
-import {traceTx, type DecodedDelegation, type Trace} from "../lib/data";
+import {identifyHash, isAbsent, traceTx, type DecodedDelegation, type HashKind, type Trace} from "../lib/data";
 import {Card, Check, CopyButton, ExtLink, Mono, Spinner, StatusPill, Tag} from "../components/ui";
 import {useLang} from "../i18n";
-import {BLOCKSCOUT, short} from "../lib/config";
+import {addresses, BLOCKSCOUT, short} from "../lib/config";
 import {fmtToken, issuerIsReal, issuerName, renderCondition, tokenSymbol} from "../lib/policy";
 
 /**
@@ -49,13 +49,33 @@ export default function Tx() {
     const {t, lang} = useLang();
     const [trace, setTrace] = useState<Trace | null>(null);
     const [error, setError] = useState(false);
+    /** What the hash turned out to be, once the chain said it is not a transaction. */
+    const [other, setOther] = useState<HashKind | null>(null);
 
     const [attempt, setAttempt] = useState(0);
     useEffect(() => {
         setTrace(null);
         setError(false);
-        if (hash) traceTx(hash).then(setTrace).catch(() => setError(true));
+        setOther(null);
+        if (!hash) return;
+        let live = true;
+        traceTx(hash)
+            .then((t) => live && setTrace(t))
+            .catch(async (e) => {
+                if (!live) return;
+                // A read the node shed is retryable and says so. A hash the node looked for and
+                // did not find is a different sentence, and usually a different page: this field
+                // takes payments, Mapae and attestations, and they are all 32 bytes.
+                if (!isAbsent(e)) return setError(true);
+                setOther(await identifyHash(hash));
+            });
+        return () => {
+            live = false;
+        };
     }, [hash, attempt]);
+
+    // A Mapae has its own page, so send the reader there rather than explaining the mistake.
+    if (other?.kind === "delegation") return <Navigate to={`/delegation/${hash}`} replace />;
 
     // Two different failures, two different sentences. A read the RPC shed is retryable and says
     // so; only a transaction that LOADED and does not decode as a redemption earns that claim.
@@ -72,6 +92,65 @@ export default function Tx() {
                 </button>
             </div>
         );
+    // A Dojang attestation is a first-class object here even without a page of its own: it is the
+    // identity a Mapae is conditioned on, so say what it is and where its authorities are, rather
+    // than reporting the search as a failure.
+    if (other?.kind === "attestation")
+        return (
+            <div className="mx-auto max-w-2xl px-6 py-20">
+                <p className="text-[16px] text-ink">{t("tx", "attestTitle")}</p>
+                <p className="mt-3 text-[14.5px] leading-relaxed text-ink-2">
+                    {t("tx", "attestBody")}
+                </p>
+                <p className="mt-5 font-mono text-[12px] break-all text-mute">{hash}</p>
+                <div className="mt-6 space-y-2.5 border-t border-line pt-5 text-[13.5px]">
+                    <div className="flex items-baseline gap-3">
+                        <span className="w-24 shrink-0 text-mute">{t("tx", "attestHolder")}</span>
+                        <RouterLink
+                            to={`/delegations?q=${other.recipient}`}
+                            className="text-ink-2 underline decoration-line-strong underline-offset-4 hover:text-ink"
+                        >
+                            <Mono>{short(other.recipient, 10)}</Mono>
+                        </RouterLink>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                        <span className="w-24 shrink-0 text-mute">{t("tx", "attestIssuer")}</span>
+                        <Mono>{short(other.attester, 10)}</Mono>
+                    </div>
+                    <div className="flex items-baseline gap-3">
+                        <span className="w-24 shrink-0 text-mute">&nbsp;</span>
+                        <Tag tone={other.revoked ? "bronze" : "mute"}>
+                            {other.revoked ? t("tx", "attestRevoked") : t("tx", "attestLive")}
+                        </Tag>
+                    </div>
+                </div>
+                <div className="mt-7 flex flex-wrap gap-3">
+                    <RouterLink
+                        to={`/delegations?q=${other.recipient}`}
+                        className="rounded-lg border border-line px-4 py-2 text-[13px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+                    >
+                        {t("tx", "attestSeeMapae")} →
+                    </RouterLink>
+                    <ExtLink path={`/address/${addresses.eas}`}>
+                        <span className="inline-block rounded-lg border border-line px-4 py-2 text-[13px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink">
+                            EAS ↗
+                        </span>
+                    </ExtLink>
+                </div>
+            </div>
+        );
+
+    // Looked for, and not there. Distinct from a read that failed - so no retry button, because
+    // there is nothing a second attempt could change.
+    if (other?.kind === "unknown")
+        return (
+            <div className="mx-auto max-w-2xl px-6 py-24 text-center">
+                <p className="text-[15px] text-ink">{t("tx", "absentTitle")}</p>
+                <p className="mt-3 text-[14px] leading-relaxed text-ink-2">{t("tx", "absentBody")}</p>
+                <p className="mt-5 font-mono text-[12px] break-all text-mute">{hash}</p>
+            </div>
+        );
+
     if (!trace) return <Spinner />;
     if (trace.chain.length === 0)
         return (

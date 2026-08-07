@@ -76,3 +76,25 @@ export const indexedStats = () => ask<IndexedStats>("/api/stats");
 /** Every redemption attempt, refusals included, newest first. */
 export const indexedActivity = (limit = 100) =>
     ask<{items: IndexedAttempt[]; historyComplete: boolean}>(`/api/activity?limit=${limit}`);
+
+/** Whether a hash names a Mapae the chain has seen.
+ *
+ *  Three answers, and the third one matters: true, false, and null for "the index could not say".
+ *  A caller that flattened null to false would tell a person their Mapae does not exist because a
+ *  machine of ours was briefly unreachable. The index only ever sees a Mapae from its first use -
+ *  issuing one is a signature and leaves no trace - so false here means the same thing the
+ *  delegation page means by it. */
+export async function indexedDelegationExists(hash: Hex): Promise<boolean | null> {
+    if (!indexerLikely()) return null;
+    try {
+        const res = await fetch(`${BASE}/api/delegation/${hash}`, {
+            signal: AbortSignal.timeout(DEADLINE_MS),
+        });
+        if (res.status === 404) return false;
+        if (!res.ok) throw new Error(String(res.status));
+        return true;
+    } catch {
+        unreachableUntil = Date.now() + SULK_MS;
+        return null;
+    }
+}

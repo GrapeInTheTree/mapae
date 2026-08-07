@@ -24,7 +24,7 @@ import {delegationHash, type Delegation} from "@mapae/sdk";
 import {addresses, giwaSepolia, BLOCKSCOUT} from "./config";
 import {decodeConditions, type Condition} from "./policy";
 import snapshot from "../data/snapshot.json";
-import {indexedActivity, indexedStats} from "./indexer";
+import {indexedActivity, indexedDelegationExists, indexedStats} from "./indexer";
 
 export const client = createPublicClient({chain: giwaSepolia, transport: http()});
 
@@ -604,22 +604,94 @@ const transferEventAbi = parseAbi([
  *  that one backend answers, another 404s a second later. Retried with backoff because the
  *  alternative was worse than an error: a transient miss rendered as the confident, false claim
  *  that the transaction is not a Mapae redemption. */
-async function withRetry<T>(fn: () => Promise<T>, attempts = 5, delayMs = 900): Promise<T> {
+/** An answer, not a failure: the node looked and the thing is not there.
+ *
+ *  Retrying this is the difference between a page that says "not found" in a moment and one that
+ *  appears to hang. The retry ladder below sleeps 900 + 1800 + 2700 + 3600 ms before giving up,
+ *  and at the end of it the hash is still not a transaction - which is exactly what a person sees
+ *  when they paste a delegation hash into a field that offers to search delegations. */
+export function isAbsent(e: unknown): boolean {
+    const err = e as {name?: string; message?: string; cause?: unknown};
+    const name = err?.name ?? "";
+    if (name === "TransactionNotFoundError" || name === "TransactionReceiptNotFoundError") return true;
+    if (/could not be found|not be found|not found/i.test(err?.message ?? "")) return true;
+    return err?.cause ? isAbsent(err.cause) : false;
+}
+
+async function withRetry<T>(
+    fn: () => Promise<T>,
+    attempts = 5,
+    delayMs = 900,
+    fatal: (e: unknown) => boolean = () => false,
+): Promise<T> {
     let last: unknown;
     for (let i = 0; i < attempts; i++) {
         try {
             return await fn();
         } catch (e) {
             last = e;
+            if (fatal(e)) throw e;
             if (i < attempts - 1) await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
         }
     }
     throw last;
 }
 
+/** What a 32-byte hash turns out to be, once it is not a transaction.
+ *
+ *  The search field accepts one shape for several kinds of thing - a payment, a Mapae, a Dojang
+ *  attestation are all 32 bytes - so the page a hash lands on has to be able to say which one it
+ *  is holding. The index answers the delegation question in a heartbeat and the chain answers the
+ *  attestation one; neither is load-bearing, because a hash we cannot classify still gets an
+ *  honest "nothing here" rather than a retry button that can never succeed. */
+export type HashKind =
+    | {kind: "delegation"}
+    | {kind: "attestation"; recipient: Address; attester: Address; revoked: boolean}
+    | {kind: "unknown"};
+
+export async function identifyHash(hash: Hex): Promise<HashKind> {
+    // The index answers this in a heartbeat, but it is an accelerator: when it cannot say, the
+    // question is put to the same source the delegation page itself reads, so a Mapae stays
+    // findable while our own machine is down.
+    let isDelegation = await indexedDelegationExists(hash);
+    if (isDelegation === null) {
+        try {
+            const rows = await fetchDelegationList();
+            isDelegation = rows.some((r) => r.hash.toLowerCase() === hash.toLowerCase());
+        } catch {
+            isDelegation = false;
+        }
+    }
+    if (isDelegation) return {kind: "delegation"};
+
+    try {
+        const a = (await client.readContract({
+            address: addresses.eas,
+            abi: easAbi,
+            functionName: "getAttestation",
+            args: [hash],
+        })) as {recipient: Address; attester: Address; revocationTime: bigint; time: bigint};
+        // EAS answers for an unknown uid with a zeroed struct rather than a revert, so the issue
+        // time is what separates "an attestation" from "nothing".
+        if (a && a.time > 0n)
+            return {
+                kind: "attestation",
+                recipient: a.recipient,
+                attester: a.attester,
+                revoked: a.revocationTime > 0n,
+            };
+    } catch {
+        /* fall through - an unclassified hash is reported as unknown, never as an error */
+    }
+    return {kind: "unknown"};
+}
+
 export async function traceTx(hash: Hex): Promise<Trace> {
-    const [receipt, tx] = await withRetry(() =>
-        Promise.all([client.getTransactionReceipt({hash}), client.getTransaction({hash})]),
+    const [receipt, tx] = await withRetry(
+        () => Promise.all([client.getTransactionReceipt({hash}), client.getTransaction({hash})]),
+        5,
+        900,
+        isAbsent,
     );
     const ok = receipt.status === "success";
 

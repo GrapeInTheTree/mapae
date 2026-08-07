@@ -111,8 +111,8 @@ export default function Home() {
                 {searchMiss && (
                     <p className="mt-2.5 text-[12.5px] text-reject">
                         {lang === "ko"
-                            ? "트랜잭션 해시(66자) 또는 주소(42자)를 붙여넣으세요"
-                            : "Paste a transaction hash (66 chars) or an address (42 chars)"}
+                            ? "결제·마패·도장 해시(66자) 또는 주소(42자)를 붙여넣으세요"
+                            : "Paste a payment, Mapae or attestation hash (66 chars), or an address (42 chars)"}
                     </p>
                 )}
 
