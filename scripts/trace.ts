@@ -33,6 +33,16 @@ if (!txHash?.startsWith("0x")) {
     console.error("usage: pnpm trace <txHash>");
     process.exit(1);
 }
+// A hash shortened by an explorer column or a copy that clipped is the likely mistake here, and
+// the RPC answers it with a -32602 stack trace that names viem rather than the input. Say what
+// is wrong instead.
+if (txHash.length !== 66) {
+    console.error(
+        `not a transaction hash: ${txHash.length - 2} hex characters, expected 64.\n` +
+            "Explorer tables often show a shortened hash - copy the full one from the transaction page.",
+    );
+    process.exit(1);
+}
 
 const pub = createPublicClient({
     chain: giwaSepolia,

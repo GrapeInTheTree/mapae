@@ -975,6 +975,9 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
             코드를 되읽어 발견했습니다.</li>
         <li>계정 생성 서명이 잘 만들어졌는데 온체인에서 거부됐습니다. 팩토리의 EIP-712 다이제스트가
             아니라 EIP-191로 서명하고 있었습니다.</li>
+        <li>에이전트에게 남은 결제 횟수를 29배 부풀려 알려주고 있었습니다. 기와는 L2라
+            트랜잭션 비용의 97%가 L1 데이터 수수료인데, 계산이 L2 가스만 세고 있었습니다.
+            실제 정산 여덟 건의 청구액을 대조해 발견했습니다.</li>
     </ul>
 </section>
 
@@ -1964,6 +1967,9 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
             reading code back from the chain.</li>
         <li>An account-creation signature was well-formed yet rejected on-chain, because it was
             signed as EIP-191 rather than the factory's EIP-712 digest.</li>
+        <li>The agent was told its gas covered 29x more payments than it did. GIWA is an L2, so
+            97% of a transaction's cost is the L1 data fee, and the estimate counted only L2 gas.
+            Caught by pricing it against what eight real settlements were actually billed.</li>
     </ul>
 </section>
 

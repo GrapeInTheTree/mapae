@@ -43,6 +43,24 @@ simulation had accepted. Under heavy filtered log queries the endpoint also retu
 tracking, fixed gas limits, and visibility polling after every state transition; there is no
 commercial RPC alternative for GIWA yet to escalate to.
 
+**Almost the entire cost of a transaction is the L1 data fee, and nothing surfaces it.** GIWA is
+an OP-stack L2, so a transaction is billed twice: L2 execution, and the cost of publishing its
+calldata to Ethereum. Across eight of our settlements the split was consistent — L2 execution
+between 0.13 and 1.0 Gwei-worth, the L1 data fee around 39 Gwei-worth, so **97% of the bill sat
+on the side that `gasUsed x effectiveGasPrice` does not include**. Any cost estimate built the
+way it would be built on L1 is wrong by more than an order of magnitude, and wrong in the
+optimistic direction. We had exactly that defect: our agent was told its gas covered 29x more
+payments than it did.
+
+Two things make it easy to miss. Blockscout's address-transactions list returns `l1_fee: 0` for
+every row while the single-transaction endpoint returns the real value, so a survey built on the
+list endpoint concludes the fee does not exist. And the L1 fee scales with how well the calldata
+*compresses*, not with its length — pricing a stand-in payload of identical size but flatter
+bytes came out 5x low against the same oracle. The fix is to declare the `GasPriceOracle`
+predeploy at `0x420000000000000000000000000000000000000F` (live, `l1BaseFee()` answers) and price
+the real encoded call. Doing that, our estimate landed at 0.0000000390 ETH against an actual bill
+of 0.00000003889 ETH.
+
 **Account abstraction is half-present.** ERC-4337 EntryPoints v0.6 and v0.7 are deployed and
 documented (an undocumented v0.8 is also live), but there is no bundler endpoint — the RPC
 rejects `eth_sendUserOperation` — and no paymaster. The documented Stable Paymaster is
@@ -148,3 +166,10 @@ deployments JSON, so the failure looks like success. Verify with explicit
 `--verifier blockscout --verifier-url https://sepolia-explorer.giwa.io/api/` flags instead, and
 read the deployed code back from the chain before trusting any address file. Blockscout
 verification works cleanly with solc 0.8.29 and the optimizer on; `via_ir` breaks it.
+
+The testnet faucet at `faucet.giwa.io` pays GIWA Sepolia ETH **directly** — there is no bridging
+step from Ethereum Sepolia, which is the wrong assumption to carry over from other L2s. It grants
+up to 0.005 ETH per address per 24 hours, which at the settlement cost measured above is on the
+order of a hundred thousand payments. It is a proof-of-work page behind a bot check, so it cannot
+be scripted and a person has to open it; anything automated should surface the address and the
+link rather than try.

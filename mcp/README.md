@@ -11,7 +11,15 @@ That is the whole install. On first boot the server **generates the agent's own 
 persists it to `~/.mapae/agent.key` (chmod 600, never returned by any tool). The agent's key is
 not the human's wallet — it is born with zero authority and holds only what a human later signs
 to it, so generating it on the machine it will live on is strictly safer than pasting one in.
-Fund the agent's address (shown by `list_permissions`) with a little GIWA Sepolia ETH for gas.
+The agent pays its own gas. Open [faucet.giwa.io](https://faucet.giwa.io), paste the address
+`agent_status` reports, and claim: it pays GIWA Sepolia ETH directly — no bridging from Ethereum
+Sepolia — up to 0.005 ETH per address every 24 hours, which is tens of thousands of payments. It
+is a proof-of-work page behind a bot check, so a person has to open it; no tool here can.
+
+`agent_status` also reports `costPerPaymentEth`, and it is priced the way an L2 actually bills:
+the L1 data fee is roughly 97% of what a payment costs on GIWA, so an estimate that counts only
+L2 gas — the intuitive one — comes out about 29x optimistic. This one asks the chain's gas oracle
+about the exact call `pay` would send.
 
 Optional env: `MAPAE_AGENT_PRIVATE_KEY` overrides the stored key;
 `MAPAE_PERMISSION_CONTEXT` preloads contexts (comma-separated) instead of `load_context`;
