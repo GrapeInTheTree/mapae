@@ -57,10 +57,10 @@ what account architectures are possible.
 **No EIP-3009 token was deployed when we looked, in July 2026.** The playground token and every
 third-party "KRW"/"USDC" token we probed reverted on `DOMAIN_SEPARATOR()` and
 `authorizationState()`, so x402's default `eip3009` method had nothing on this chain to settle
-against and we built the `erc7710` path instead.
+against. That decided the order of the work. What holds up the choice is something else.
 
-**And an EIP-3009 authorisation has nowhere to put a policy.** Its signed message is six fields,
-and the typehash pins them:
+**An EIP-3009 authorisation has nowhere to put a policy.** Its signed message is six fields, and
+the typehash pins them:
 
 ```
 TransferWithAuthorization(address from,address to,uint256 value,
@@ -83,14 +83,11 @@ I am still verified".
 attached; the agent signs each redemption inside it. The conditions are contracts, which is the
 only reason a condition like identity can exist at all.
 
-Nothing prevents anyone from deploying a compliant token, and by the time you read this someone
-may have. It would not touch any of the above — a token written for EIP-3009 still has six fields
-to sign. That does not undo the reason for the choice, because the constraint is not scarcity —
-it is that **you have to issue the asset first.** `eip3009` settles only against a token written
-for it; `erc7710` rides on whatever is already circulating, because the authorisation lives in a
-delegation rather than in the token. A chain with one compliant stablecoin can use `eip3009` for
-that one stablecoin. `erc7710` works the day a new asset appears, without asking its issuer for
-anything.
+Separately, `eip3009` settles only against **a token written for it**, while `erc7710` rides on
+any ERC-20 already circulating, because the authorisation lives in a delegation rather than in the
+token. A chain with one compliant stablecoin can use `eip3009` for that one stablecoin; `erc7710`
+works the day a new asset appears, without asking its issuer for anything. Someone deploying a
+compliant token today changes none of the above — there would still be six fields to sign.
 
 **A read taken right after a receipt can answer from before it.** The public RPC load-balances
 across backends at different heights, so a state change is not immediately visible to every
