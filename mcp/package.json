@@ -1,6 +1,6 @@
 {
   "name": "mapae-mcp",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "MCP server for Mapae - scoped, identity-bound spending authority on GIWA. The agent gets use of an authority, never the wallet.",
   "license": "MIT",
   "type": "module",
