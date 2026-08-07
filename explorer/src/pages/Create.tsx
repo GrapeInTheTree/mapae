@@ -1,6 +1,6 @@
 import {useMemo, useState} from "react";
 import {Link, useNavigate, useSearchParams} from "react-router-dom";
-import {getAddress, isAddress, type Address, type Hex} from "viem";
+import {getAddress, isAddress, keccak256, toHex, type Address, type Hex} from "viem";
 import {
     DELEGATION_TYPES,
     delegationDomain,
@@ -71,27 +71,41 @@ const MAX_PAYEES = 10;
  * wild) sends `merchant`/`merchantName` for a single payee, while `merchants` carries a
  * comma-separated list. Returns null when neither is present, so the caller keeps its default.
  */
-function prefillPayees(params: URLSearchParams): {address: Address | ""; name: string}[] | null {
+function prefillPayees(params: URLSearchParams): {
+    rows: {address: Address | ""; name: string}[] | null;
+    dropped: string[];
+} {
+    const dropped: string[] = [];
     const many = params.get("merchants");
     if (many) {
         // Names ride alongside positionally. A short list is missing names, not misaligned.
         const names = (params.get("merchantNames") ?? "").split(",").map((x) => x.trim());
-        const rows = many
-            .split(",")
-            .map((x) => x.trim())
-            .filter((x) => isAddress(x, {strict: false}))
+        const given = many.split(",").map((x) => x.trim()).filter(Boolean);
+        const rows = given
+            .filter((x) => {
+                if (isAddress(x, {strict: false})) return true;
+                dropped.push(x);
+                return false;
+            })
             .slice(0, MAX_PAYEES)
             .map((address, i) => ({
                 address: address as Address,
                 name: (names[i] ?? "").slice(0, 40),
             }));
-        if (rows.length > 0) return rows;
+        if (rows.length > 0) return {rows, dropped};
+        if (dropped.length > 0) return {rows: null, dropped};
     }
     const one = params.get("merchant");
-    if (one && isAddress(one, {strict: false})) {
-        return [{address: one as Address, name: params.get("merchantName")?.slice(0, 40) ?? ""}];
+    if (one) {
+        if (isAddress(one, {strict: false})) {
+            return {
+                rows: [{address: one as Address, name: params.get("merchantName")?.slice(0, 40) ?? ""}],
+                dropped,
+            };
+        }
+        dropped.push(one);
     }
-    return null;
+    return {rows: null, dropped};
 }
 
 /**
@@ -552,6 +566,29 @@ export default function Create() {
      * are validated the same way typed input is, and anything malformed falls back silently.
      */
     const [params] = useSearchParams();
+    /// Prefill values that arrived and could not be read.
+    ///
+    /// A request link is long, terminals wrap long lines, and a wrapped line copies broken. When
+    /// that happens the truncated field silently becomes a default - which is how a request for
+    /// "₩1,000 a day to one merchant" became a signature for "₩50,000 a day to nobody". Dropping
+    /// a value the sender clearly meant is not a thing to do quietly.
+    const droppedFromLink = useMemo(() => prefillPayees(params).dropped, [params]);
+
+    /// Whether a request link that carries an integrity mark still matches its own policy.
+    ///
+    /// Truncation does not fail safe on this page: lose `perTx` or `validDays` off the end of a
+    /// wrapped link and the form fills in looser defaults, so a request for ₩1,000 for one day
+    /// reads as ₩50,000 for thirty and nothing looks wrong. An unreadable address is visible; a
+    /// missing ceiling is not. The mark covers every policy field, so either kind shows up here.
+    const linkTampered = useMemo(() => {
+        const k = params.get("k");
+        if (!k) return false;
+        const canon = ["agent", "amount", "period", "merchants", "validDays", "perTx"]
+            .map((key) => `${key}=${params.get(key) ?? ""}`)
+            .join("&");
+        return keccak256(toHex(canon)).slice(2, 10) !== k;
+    }, [params]);
+
     const [form, setForm] = useState<PresetForm>(() => {
         const base: PresetForm = {
             agentName: "",
@@ -574,7 +611,7 @@ export default function Create() {
             agent: addr("agent") ?? base.agent,
             // `merchant`/`merchantName` are the single-payee form the MCP server and older links
             // send; `merchants` carries a comma-separated list. Either fills the same list.
-            payees: prefillPayees(params) ?? base.payees,
+            payees: prefillPayees(params).rows ?? base.payees,
             amount: num("amount") ?? base.amount,
             period: num("period") ?? base.period,
             validDays: num("validDays") ? Number(num("validDays")) : base.validDays,
@@ -807,6 +844,23 @@ export default function Create() {
             <header className="mb-8 flex flex-wrap items-end justify-between gap-6">
                 <div>
                     <h1 className="display text-[38px] text-ink">{t("create", "title")}</h1>
+                    {(droppedFromLink.length > 0 || linkTampered) && (
+                        <div className="mt-4 rounded-xl border border-warn/50 bg-warn/10 px-4 py-3">
+                            <p className="text-[13px] font-medium text-ink">
+                                {t("create", linkTampered ? "linkMarkTitle" : "linkBrokenTitle")}
+                            </p>
+                            <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">
+                                {t("create", linkTampered ? "linkMarkBody" : "linkBrokenBody")}
+                            </p>
+                            <ul className="mt-2 space-y-0.5">
+                                {droppedFromLink.map((d, i) => (
+                                    <li key={i} className="mono break-all text-[11.5px] text-mute">
+                                        {d}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                     <p className="mt-2 max-w-xl text-[14.5px] leading-relaxed text-mute">
                         {t("create", "lede")}
                     </p>

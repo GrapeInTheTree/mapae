@@ -40,7 +40,9 @@ import {
     getAddress,
     http,
     isAddress,
+    keccak256,
     parseEventLogs,
+    toHex,
     type Address,
     type Hex,
 } from "viem";
@@ -760,6 +762,18 @@ server.tool(
     },
 );
 
+/// A short mark over the policy fields a request link carries.
+///
+/// Ordered explicitly rather than taken from the query string, so both sides compute the same
+/// thing regardless of parameter order, and only the fields that decide the policy are covered -
+/// a renamed agent does not invalidate a link.
+function policyMark(q: URLSearchParams): string {
+    const canon = ["agent", "amount", "period", "merchants", "validDays", "perTx"]
+        .map((k) => `${k}=${q.get(k) ?? ""}`)
+        .join("&");
+    return keccak256(toHex(canon)).slice(2, 10);
+}
+
 server.tool(
     "request_permission",
     "[마패] 사람에게 마패 발급을 요청한다(서명 링크 생성). Compose a permission REQUEST for the human to review and sign in their own wallet. This server cannot issue: issuance is the principal's signature, and holding that key would hand the agent the wallet. Returns a prefilled link - send it to the human.",
@@ -814,9 +828,33 @@ server.tool(
         if (merchantNames?.some((n) => n.trim())) {
             q.set("merchantNames", merchantNames.map((n) => n.trim()).join(","));
         }
+
+        // An integrity mark over the policy fields, so damage to the link is caught before a
+        // signature rather than after one.
+        //
+        // This is not security - anyone can recompute it. It is for the failure that actually
+        // happened: a request link is long, terminals and chat windows wrap long lines, and a
+        // wrapped line copies broken. Truncation does not fail safe here, because the fields that
+        // fall off the end are the tightening ones - lose `perTx` and `validDays` and the page
+        // fills in its own looser defaults. A request for ₩1,000 a day for one day became a
+        // signature for ₩50,000 a day for thirty exactly that way.
+        q.set("k", policyMark(q));
+
         return text({
             askTheHuman: `${APP_URL}/create?${q.toString()}`,
+            // Repeated as data so the human has something to compare the signing screen against,
+            // and something to repair the link from if it arrives damaged.
+            youAreAskingFor: {
+                agent: agent.address,
+                perPeriod: fmtWon(amountPerPeriod),
+                period,
+                perPayment: maxPerPayment === undefined ? "no ceiling" : fmtWon(BigInt(maxPerPayment)),
+                payees: canonical,
+                validForDays: validDays,
+            },
             note: "The human reviews the policy as a sentence and signs in their own wallet; nothing is issued until they do. Once issued, they hand back the permission context.",
+            beforeYouSend:
+                "Give the human the link on a line of its own. If it wraps where they read it, the copy will lose fields - the signing screen checks the mark and says so, but a link that arrives whole is better than one caught after.",
         });
     },
 );

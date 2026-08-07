@@ -129,6 +129,12 @@ export const en = {
         gettingKRW: "Minting…",
         fundNote: "This account holds no test funds yet - a Mapae pays from here. One press mints ₩100,000 of mKRW (gas only; the mint is permissionless by design).",
         getDojang: "Get a testnet Dojang",
+        linkBrokenTitle: "Part of this request link did not survive the copy",
+        linkMarkTitle: "This request link does not match the policy it was created with",
+        linkMarkBody:
+            "The link carries a mark over its own policy fields, and the mark disagrees with what arrived - so a value changed on the way here. Most often that is a long link wrapping and copying broken, and the fields that fall off the end are the tightening ones: a lost per-payment ceiling or a shortened window is invisible in a form that fills its own defaults. Check every field against what you were asked to approve, or ask for the link again.",
+        linkBrokenBody:
+            "One value arrived unreadable and was left out rather than guessed. Long links wrap in terminals and chat windows, and a wrapped line copies broken - so check every field below against what you were asked to approve before signing, not just this one.",
         getDojangHint: "Self-service - your wallet shows the issuance fee before you confirm",
         gettingDojang: "Issuing your Dojang…",
         identityFirst: "Identity comes first",
@@ -535,6 +541,12 @@ export const ko: Catalog = {
         gettingKRW: "충전하는 중…",
         fundNote: "계정에 테스트 자금이 없습니다 — 마패는 이 계정에서 지불합니다. 버튼 한 번으로 ₩100,000을 충전하세요 (가스만 들며, mint는 설계상 퍼미션리스입니다).",
         getDojang: "테스트넷 도장 받기",
+        linkBrokenTitle: "이 요청 링크의 일부가 복사되며 깨졌습니다",
+        linkMarkTitle: "이 요청 링크가 처음 만들어질 때의 정책과 다릅니다",
+        linkMarkBody:
+            "링크에는 자기 정책 값들에 대한 표식이 들어 있는데, 도착한 값과 표식이 어긋납니다. 오는 도중에 값이 바뀌었다는 뜻입니다. 대개는 긴 링크가 줄바꿈되며 깨진 경우이고, 이때 끝에서 떨어져 나가는 것은 조건을 좁히는 값들입니다. 회당 한도가 사라지거나 기한이 짧아진 것은 기본값을 채우는 폼에서 눈에 띄지 않습니다. 요청받은 내용과 아래 항목을 하나씩 대조하거나, 링크를 다시 받으세요.",
+        linkBrokenBody:
+            "읽을 수 없는 값이 하나 들어와서, 추측하지 않고 비워 두었습니다. 긴 링크는 터미널이나 채팅창에서 줄바꿈되고, 줄바꿈된 링크는 깨진 채로 복사됩니다. 서명하기 전에 아래 항목 전부를 요청받은 내용과 대조하세요 — 이 항목만이 아닙니다.",
         getDojangHint: "셀프서비스 — 발급 수수료는 확인 전에 지갑에 표시됩니다",
         gettingDojang: "도장을 발급하는 중…",
         identityFirst: "도장이 먼저입니다",
