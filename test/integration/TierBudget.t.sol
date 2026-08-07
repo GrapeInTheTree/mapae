@@ -12,6 +12,7 @@ import {DojangVerifiedEnforcer, IMapaeAccountRegistry} from "../../src/enforcers
 import {AllowedPayeeEnforcer} from "../../src/enforcers/AllowedPayeeEnforcer.sol";
 import {ERC20PeriodTransferEnforcer} from "../../src/enforcers/ERC20PeriodTransferEnforcer.sol";
 import {PerPaymentLimitEnforcer} from "../../src/enforcers/PerPaymentLimitEnforcer.sol";
+import {VerifiedCodeEnforcer} from "../../src/enforcers/VerifiedCodeEnforcer.sol";
 import {MockDojangScroll} from "../../src/mocks/MockDojangScroll.sol";
 import {MockKRW} from "../../src/mocks/MockKRW.sol";
 import {IDojangScroll} from "../../src/interfaces/IDojangScroll.sol";
@@ -47,6 +48,7 @@ contract TierBudgetTest is Test {
     AllowedPayeeEnforcer internal payee;
     ERC20PeriodTransferEnforcer internal period;
     PerPaymentLimitEnforcer internal perPayment;
+    VerifiedCodeEnforcer internal verifiedCode;
     MockDojangScroll internal scroll;
     MockKRW internal krw;
 
@@ -71,6 +73,7 @@ contract TierBudgetTest is Test {
         payee = new AllowedPayeeEnforcer();
         period = new ERC20PeriodTransferEnforcer();
         perPayment = new PerPaymentLimitEnforcer();
+        verifiedCode = new VerifiedCodeEnforcer(IDojangScroll(address(scroll)));
         krw = new MockKRW();
 
         alice = vm.createWallet("alice");
@@ -126,6 +129,53 @@ contract TierBudgetTest is Test {
         assertEq(krw.balanceOf(merchant), DAY_CAP, "the two tiers spent more than one day's budget");
     }
 
+    /// @notice Who signs a tier decides whether its human gate is a promise or a preference.
+    ///
+    /// @dev Fixing the shared budget means hanging tiers off one root, and the obvious way to do
+    ///      that is to let the agent redelegate to itself. Sharing works. The gate does not.
+    ///
+    ///      A caveat can only be added going down a chain, never removed - so a gate on the ROOT
+    ///      binds everyone beneath it. A gate on a tier the AGENT signed binds nobody, because the
+    ///      agent can sign a second tier without it and redeem through that instead. The authority
+    ///      is identical; the condition the person cared about is simply absent.
+    ///
+    ///      Putting the gate on the root is not the answer either: then every ₩1,000 payment needs
+    ///      a human, and the ladder has no rungs.
+    ///
+    ///      What works is the signer. Root delegates to the PERSON, the person signs each tier to
+    ///      the agent, and the agent - not being the person - cannot mint a tier of its own.
+    function test_AgentSignedTiers_LetTheAgentSkipItsOwnGate() public {
+        Delegation memory root = _signed(_root(_caveats(100_000), 7));
+
+        // The tier the person intended: larger payments, but only with a live confirmation.
+        Delegation memory gated = _childBy(agent, root, 100_000, true);
+        vm.expectRevert(); // nothing has issued a Verified Code to this agent
+        _redeem(_chain(gated, root), 50_000);
+
+        // The tier the agent can write for itself: same ceiling, no gate, same root authority.
+        Delegation memory ungated = _childBy(agent, root, 100_000, false);
+        _redeem(_chain(ungated, root), 50_000);
+
+        assertEq(krw.balanceOf(merchant), 50_000, "the agent could not route around its own gate");
+    }
+
+    /// @notice Tiers signed by the person cannot be reissued by the agent.
+    function test_HumanSignedTiers_KeepTheGate() public {
+        // The root now delegates to the PERSON, who hands out the tiers.
+        Delegation memory root = _signed(_rootTo(alice.addr, _caveats(100_000), 8));
+        Delegation memory gated = _childBy(alice, root, 100_000, true);
+
+        vm.expectRevert();
+        _redeem(_chain(gated, root), 50_000);
+
+        // The agent is not the root's delegate, so a tier it signs is not part of this authority.
+        Delegation memory forged = _childBy(agent, root, 100_000, false);
+        vm.expectRevert();
+        _redeem(_chain(forged, root), 50_000);
+
+        assertEq(krw.balanceOf(merchant), 0, "a gate the person signed was routed around");
+    }
+
     /* ------------------------------------ helpers ----------------------------------- */
 
     function _periodTerms() internal view returns (bytes memory) {
@@ -149,6 +199,49 @@ contract TierBudgetTest is Test {
             salt: salt,
             signature: ""
         });
+    }
+
+    function _rootTo(address delegate, Caveat[] memory caveats, uint256 salt)
+        internal
+        view
+        returns (Delegation memory)
+    {
+        return Delegation({
+            delegate: delegate,
+            delegator: address(account),
+            authority: ROOT_AUTHORITY,
+            caveats: caveats,
+            salt: salt,
+            signature: ""
+        });
+    }
+
+    /// A tier signed by `who`, optionally carrying the human-confirmation gate.
+    function _childBy(Vm.Wallet memory who, Delegation memory parent, uint256 ceiling, bool gate)
+        internal
+        returns (Delegation memory)
+    {
+        Caveat[] memory c = new Caveat[](gate ? 2 : 1);
+        c[0] = Caveat({enforcer: address(perPayment), terms: abi.encode(ceiling), args: ""});
+        if (gate) {
+            c[1] = Caveat({
+                enforcer: address(verifiedCode),
+                terms: abi.encodePacked(FAUCET_ID, "mapae.tier.gate"),
+                args: abi.encode(keccak256("nobody-confirmed-this"))
+            });
+        }
+        Delegation memory d = Delegation({
+            delegate: agent.addr,
+            delegator: who.addr,
+            authority: EncoderLib._getDelegationHash(parent),
+            caveats: c,
+            salt: ceiling + (gate ? 1 : 0),
+            signature: ""
+        });
+        bytes32 typed = MessageHashUtils.toTypedDataHash(domainHash, EncoderLib._getDelegationHash(d));
+        (uint8 v, bytes32 r, bytes32 s2) = vm.sign(who.privateKey, typed);
+        d.signature = abi.encodePacked(r, s2, v);
+        return d;
     }
 
     /// A tier: narrows the per-payment ceiling, inherits everything above it.

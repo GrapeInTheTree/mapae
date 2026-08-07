@@ -692,6 +692,25 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        있습니다. 세 단계 아래에서 이뤄진 결제, 부모의 한도를 넘으려다 거부된 자식, 신원 취소 하나로
        끝과 뿌리가 함께 멈추는 장면, 그리고 재발급 후 사람이 이름조차 댈 수 없는 부분까지
        되살아나는 장면이 차례로 기록되어 있습니다.</p>
+    <h3>형제가 아니라 자식이어야 하는 이유</h3>
+    <p>사다리를 만들 때 가장 자연스러운 방법은 사람이 위임을 여러 개 서명하는 것입니다. 그런데
+       <code>ERC20PeriodTransferEnforcer</code>는 장부를 <strong>위임 해시별</strong>로 둡니다.
+       "하루 ₩50,000"을 두 번 서명하면 장부가 둘이고, 에이전트가 하루에 ₩100,000을 씁니다.
+       아무것도 revert하지 않습니다 — 체인은 서명된 그대로 합니다. 어긋난 것은 서명된 것과
+       사람이 서명했다고 믿는 것 사이입니다.</p>
+    <p>사슬로 만들면 그 문제가 없습니다. 매니저가 각 위임의 조건에 <strong>그 위임 자신의
+       해시</strong>를 넘기므로, 기간 조건을 뿌리에 두면 어느 단으로 들어오든 뿌리의 장부 하나를
+       씁니다. 새 컨트랙트가 필요 없고, 조건이 한 층 위에 있으면 됩니다.</p>
+    <div class="note">
+        <strong>그리고 누가 그 단을 서명하느냐가 게이트의 값을 정합니다.</strong> 조건은 사슬을
+        내려가며 더해질 수만 있고 제거될 수 없습니다. 그래서 <em>에이전트가</em> 서명한 단의
+        사람-확인 게이트는 아무도 묶지 못합니다 — 게이트 없는 단을 하나 더 서명해 그쪽으로 상환하면
+        그만이기 때문입니다. 게이트를 뿌리로 올리면 강제되지만 ₩1,000 결제까지 사람을 부르게 되어
+        사다리에 단이 없어집니다.<br><br>
+        답은 서명자입니다. 뿌리가 <strong>사람</strong>에게 위임하고 사람이 각 단을 서명하면,
+        에이전트는 사람이 아니므로 단을 만들 수 없습니다. 위험한 배치와 올바른 배치가 각각
+        <code>test/integration/TierBudget.t.sol</code>에 고정되어 있습니다.
+    </div>
 </section>
 
 <section id="s10">
@@ -1638,6 +1657,27 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        a payment three hops down, a child refused for reaching past its parent, the leaf and the
        root stopping together on one revocation, and a re-issue bringing back even the part the
        person could not have named.</p>
+    <h3>Why rungs are children and not siblings</h3>
+    <p>The natural way to build a ladder is to have the person sign several delegations. But
+       <code>ERC20PeriodTransferEnforcer</code> keys its ledger <strong>per delegation hash</strong>.
+       Sign "₩50,000 a day" twice and there are two ledgers, so the agent may spend ₩100,000 a day.
+       Nothing reverts &mdash; the chain does exactly what was signed. The gap is between what was
+       signed and what the person believes they signed.</p>
+    <p>A chain does not have that problem. The manager hands each delegation's caveats
+       <strong>that delegation's own hash</strong>, so a period cap on the root is charged against
+       the root's ledger no matter which rung the redemption came through. It needs no new
+       contract, only the condition one level up.</p>
+    <div class="note">
+        <strong>And who signs a rung decides what its gate is worth.</strong> Conditions can only be
+        added going down a chain, never removed. A human-confirmation gate on a rung the
+        <em>agent</em> signed therefore binds nobody: the agent signs a second rung without it and
+        redeems through that. Moving the gate to the root does bind everyone, but then a ₩1,000
+        payment needs a human too, and the ladder has no rungs.<br><br>
+        The answer is the signer. The root delegates to the <strong>person</strong>, the person
+        signs each rung, and the agent &mdash; not being the person &mdash; cannot mint one. The
+        hazardous arrangement and the correct one are both pinned in
+        <code>test/integration/TierBudget.t.sol</code>.
+    </div>
 </section>
 
 <section id="e10">

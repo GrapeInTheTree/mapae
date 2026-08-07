@@ -77,8 +77,15 @@ const now = () => BigInt(Math.floor(Date.now() / 1000));
 
 /* --------------------------------- authorities -------------------------------- */
 
-function sign(caveats: Caveat[], salt: bigint): Promise<Delegation> {
-    const unsigned = rootDelegation({delegate: agent.address, delegator: ACCOUNT, caveats, salt});
+/// The root: the account authorises the PERSON, carrying every condition the tiers inherit.
+///
+/// The person is the delegate here rather than the agent, and that placement is the difference
+/// between a ladder and a suggestion. Caveats can only be added going down a chain, never removed,
+/// so a tier the AGENT signs binds nobody - it would simply sign a second tier without the human
+/// gate and redeem through that. Delegating the root to the person means the agent cannot mint a
+/// tier at all, because it is not the person. Proven both ways in test/integration/TierBudget.t.sol.
+function signRoot(caveats: Caveat[], salt: bigint): Promise<Delegation> {
+    const unsigned = rootDelegation({delegate: principal.address, delegator: ACCOUNT, caveats, salt});
     return principal
         .signTypedData({
             domain: delegationDomain(giwaSepolia.id, addresses.manager),
@@ -102,12 +109,49 @@ function common(): Caveat[] {
         {enforcer: addresses.dojangEnforcer, terms: dojangTerms(TESTNET_FAUCET_ID, principal.address), args: "0x"},
         {
             enforcer: addresses.periodEnforcer,
-            terms: periodTerms(addresses.mockKRW, 200_000n, 86_400n, now() - 60n),
+            terms: periodTerms(addresses.mockKRW, 50_000n, 86_400n, now() - 60n),
             args: "0x",
         },
         {enforcer: addresses.payeeEnforcer, terms: payeeTerms([merchant]), args: "0x"},
         {enforcer: addresses.timestampEnforcer, terms: timestampTerms(0n, now() + 7n * 86_400n), args: "0x"},
     ];
+}
+
+/// A rung: narrows the per-payment ceiling, and optionally demands a live human confirmation.
+/// Signed by the person, hung off the root, so every rung spends the same day budget.
+function signTier(ceiling: bigint, gated: boolean, salt: bigint, root: Delegation): Promise<Delegation> {
+    const caveats: Caveat[] = [
+        {enforcer: addresses.perPaymentEnforcer, terms: perPaymentTerms(ceiling), args: "0x"},
+    ];
+    if (gated) {
+        caveats.push({
+            enforcer: addresses.verifiedCodeEnforcer,
+            terms: `0x${TESTNET_FAUCET_ID.slice(2)}${Buffer.from(CONFIRM_DOMAIN).toString("hex")}` as Hex,
+            args: "0x",
+        });
+    }
+    const unsigned: Delegation = {
+        delegate: agent.address,
+        delegator: principal.address,
+        authority: delegationHash(root),
+        caveats,
+        salt,
+        signature: "0x",
+    };
+    return principal
+        .signTypedData({
+            domain: delegationDomain(giwaSepolia.id, addresses.manager),
+            types: DELEGATION_TYPES,
+            primaryType: "Delegation",
+            message: {
+                delegate: unsigned.delegate,
+                delegator: unsigned.delegator,
+                authority: unsigned.authority,
+                caveats: unsigned.caveats.map((c) => ({enforcer: c.enforcer, terms: c.terms})),
+                salt: unsigned.salt,
+            },
+        })
+        .then((signature) => ({...unsigned, signature}));
 }
 
 /* ----------------------------------- attempts ---------------------------------- */
@@ -149,17 +193,17 @@ function decode(err: unknown): string {
  * is a claim, not evidence.
  */
 async function attempt(
-    scene: string, d: Delegation, to: Address, amount: bigint, caveatArgs?: Hex,
+    scene: string, chain: Delegation[], to: Address, amount: bigint, caveatArgs?: Hex,
 ) {
     // Caveat args are supplied at redemption, never signed - so presenting one here changes what
     // the enforcers see without touching the delegation hash the principal put their name to.
-    const presented: Delegation = caveatArgs
-        ? {...d, caveats: d.caveats.map((c) =>
+    const presented: Delegation[] = caveatArgs
+        ? chain.map((d) => ({...d, caveats: d.caveats.map((c) =>
             c.enforcer.toLowerCase() === addresses.verifiedCodeEnforcer.toLowerCase()
-                ? {...c, args: caveatArgs} : c)}
-        : d;
+                ? {...c, args: caveatArgs} : c)}))
+        : chain;
     const args = [
-        [encodePermissionContext([presented])],
+        [encodePermissionContext(presented)],
         [MODE_SIMPLE_SINGLE as Hex],
         [encodeExecutionSingle(addresses.mockKRW, 0n, encodeErc20Transfer(to, amount))],
     ] as const;
@@ -218,7 +262,7 @@ async function attempt(
 /// precondition and every later run would fail at the first line for a reason that has nothing
 /// to do with what it is demonstrating. Called before the first scene and again on the way out,
 /// success or not.
-async function ensureVerified(): Promise<void> {
+async function ensureVerified(): Promise<Hex | null> {
     const live = (await pub.readContract({
         address: addresses.dojangScroll,
         abi: [{type: "function", name: "isVerified", inputs: [{type: "address"}, {type: "bytes32"}],
@@ -226,7 +270,7 @@ async function ensureVerified(): Promise<void> {
         functionName: "isVerified",
         args: [principal.address, TESTNET_FAUCET_ID],
     })) as boolean;
-    if (live) return;
+    if (live) return null;
 
     const fee = (await pub.readContract({
         address: addresses.giwaFaucetExtension,
@@ -240,8 +284,40 @@ async function ensureVerified(): Promise<void> {
             functionName: "payAndIssueEAS",
             value: fee,
         });
-    await pub.waitForTransactionReceipt({hash: tx, timeout: 120_000});
-    console.log(`  identity restored  ${EXPLORER}${tx}`);
+    const r = await pub.waitForTransactionReceipt({hash: tx, timeout: 120_000});
+    if (r.status !== "success") throw new Error(`re-issuing the identity reverted: ${tx}`);
+    return tx;
+}
+
+/// Revoke the principal's attestation. One transaction, to an attestation registry, naming no
+/// delegation and touching no Mapae contract.
+async function revokeIdentity(): Promise<Hex> {
+    const tx = await createWalletClient({account: principal, chain: giwaSepolia, transport: http()})
+        .writeContract({
+            address: addresses.giwaFaucetExtension,
+            abi: [{type: "function", name: "revokeEAS", inputs: [], outputs: [], stateMutability: "nonpayable"}] as const,
+            functionName: "revokeEAS",
+        });
+    const r = await pub.waitForTransactionReceipt({hash: tx, timeout: 120_000});
+    if (r.status !== "success") throw new Error(`revoking the identity reverted: ${tx}`);
+    return tx;
+}
+
+/// GIWA's public RPC load-balances across backends at different heights, so a read taken right
+/// after a receipt can still answer from before it. Poll for the state we just wrote.
+async function waitForIdentity(live: boolean): Promise<void> {
+    for (let i = 0; i < 12; i++) {
+        const now_ = (await pub.readContract({
+            address: addresses.dojangScroll,
+            abi: [{type: "function", name: "isVerified", inputs: [{type: "address"}, {type: "bytes32"}],
+                   outputs: [{type: "bool"}], stateMutability: "view"}] as const,
+            functionName: "isVerified",
+            args: [principal.address, TESTNET_FAUCET_ID],
+        })) as boolean;
+        if (now_ === live) return;
+        await new Promise((r) => setTimeout(r, 3_000));
+    }
+    throw new Error(`the chain never reported identityLive=${live}`);
 }
 
 async function main() {
@@ -249,80 +325,80 @@ async function main() {
     await ensureVerified();
 
     const salt = BigInt(Date.now());
-    const tier1 = await sign([...common(), {
-        enforcer: addresses.perPaymentEnforcer, terms: perPaymentTerms(10_000n), args: "0x",
-    }], salt);
-    const tier2 = await sign([...common(),
-        {enforcer: addresses.perPaymentEnforcer, terms: perPaymentTerms(100_000n), args: "0x"},
-        {
-            enforcer: addresses.verifiedCodeEnforcer,
-            terms: `0x${TESTNET_FAUCET_ID.slice(2)}${Buffer.from(CONFIRM_DOMAIN).toString("hex")}` as Hex,
-            args: "0x",
-        },
-    ], salt + 1n);
+    const root = await signRoot(common(), salt);
+    const tier1 = await signTier(10_000n, false, salt + 1n, root);
+    const tier2 = await signTier(30_000n, false, salt + 2n, root);
+    const tier3 = await signTier(200_000n, true, salt + 3n, root);
+    const t1 = [tier1, root], t2 = [tier2, root], t3 = [tier3, root];
+
     // The confirmation code is `args`, not `terms`: it is what the REDEEMER presents at payment
     // time, which is the whole shape of a human-in-the-loop gate. A code nobody issued is what an
     // agent holds when nobody confirmed - so this is the honest stand-in, and the chain refuses it
     // with the enforcer's own CodeNotVerified rather than a malformed-caveat error.
     const unconfirmedCode = keccak256(toHex("nobody-confirmed-this-payment"));
 
-    console.log(`tier 1  ${delegationHash(tier1)}  — up to ${won(10_000n)} per payment, unattended`);
-    console.log(`tier 2  ${delegationHash(tier2)}  — up to ${won(100_000n)} per payment, human confirmation required\n`);
+    console.log(`root    ${delegationHash(root)}  — ${won(50_000n)} a day, one merchant, seven days`);
+    console.log(`  rung 1  ≤ ${won(10_000n)} per payment, unattended`);
+    console.log(`  rung 2  ≤ ${won(30_000n)} per payment, unattended`);
+    console.log(`  rung 3  ≤ ${won(200_000n)} per payment, human confirmation required\n`);
 
-    console.log(`1. ${won(10_000n)} on tier 1 — inside what the agent may decide alone`);
-    const a = await attempt("₩10,000 within the unattended tier", tier1, merchant, 10_000n);
-    assert(a.settled, "tier 1 payment should settle");
+    console.log(`1. ${won(10_000n)} on rung 1 — inside what the agent may decide alone`);
+    const a = await attempt("₩10,000 on rung 1", t1, merchant, 10_000n);
+    assert(a.settled, "rung 1 payment should settle");
 
-    console.log(`\n2. ${won(30_000n)} on tier 1 — above what it may decide alone`);
-    const b = await attempt("₩30,000 above the unattended tier", tier1, merchant, 30_000n);
+    console.log(`\n2. ${won(30_000n)} on rung 1 — above that rung's ceiling`);
+    const b = await attempt("₩30,000 on rung 1, above its ₩10,000 ceiling", t1, merchant, 30_000n);
     assert(!b.settled && b.reason?.includes("PerPaymentCapExceeded"), `expected the ceiling to refuse, got ${b.reason}`);
 
-    console.log(`\n3. ${won(30_000n)} on tier 2 — allowed by amount, but needs a person`);
-    const c = await attempt(
-        "₩30,000 on the human-confirmation tier, presenting a code nobody confirmed", tier2, merchant, 30_000n, unconfirmedCode,
+    console.log(`\n3. ${won(5_000n)} to a merchant nobody allowed`);
+    const c = await attempt("₩5,000 to an unlisted payee", t1, unlisted, 5_000n);
+    assert(!c.settled && c.reason?.includes("PayeeNotAllowed"), `expected the payee list to refuse, got ${c.reason}`);
+
+    console.log(`\n4. ${won(150_000n)} on rung 3 — allowed by amount, but needs a person`);
+    const d = await attempt(
+        "₩150,000 on rung 3, presenting a code nobody confirmed", t3, merchant, 150_000n, unconfirmedCode,
     );
     assert(
-        !c.settled && c.reason?.includes("CodeNotVerified"),
-        `the human tier must refuse for want of a confirmation, got ${c.reason}`,
+        !d.settled && d.reason?.includes("CodeNotVerified"),
+        `the human rung must refuse for want of a confirmation, got ${d.reason}`,
     );
 
-    console.log(`\n4. ${won(5_000n)} to a merchant nobody allowed`);
-    const d = await attempt("₩5,000 to an unlisted payee", tier1, unlisted, 5_000n);
-    assert(!d.settled && d.reason?.includes("PayeeNotAllowed"), `expected the payee list to refuse, got ${d.reason}`);
-
-    console.log(`\n5. the principal revokes their identity, then ${won(5_000n)} on tier 1 again`);
-    const revoke = await createWalletClient({
-        account: principal, chain: giwaSepolia, transport: http(),
-    }).writeContract({
-        address: addresses.giwaFaucetExtension,
-        abi: [{type: "function", name: "revokeEAS", inputs: [], outputs: [], stateMutability: "nonpayable"}] as const,
-        functionName: "revokeEAS",
-    });
-    await pub.waitForTransactionReceipt({hash: revoke, timeout: 120_000});
-    console.log(`  revoked  ${EXPLORER}${revoke}`);
-
-    const e = await attempt("₩5,000 after the identity was revoked", tier1, merchant, 5_000n);
+    console.log(`\n5. the principal revokes their identity, then ${won(5_000n)} on rung 1`);
+    const revokeTx = await revokeIdentity();
+    console.log(`  revoked  ${EXPLORER}${revokeTx}`);
+    await waitForIdentity(false);
+    const e = await attempt("₩5,000 after the identity was revoked", t1, merchant, 5_000n);
     assert(!e.settled && e.reason?.includes("NotDojangVerified"), `expected identity to refuse, got ${e.reason}`);
 
-    console.log(`\n6. the principal re-issues it — tiers resume`);
-    const fee = (await pub.readContract({
-        address: addresses.giwaFaucetExtension,
-        abi: [{type: "function", name: "fee", inputs: [], outputs: [{type: "uint256"}], stateMutability: "view"}] as const,
-        functionName: "fee",
-    })) as bigint;
-    const reissue = await createWalletClient({
-        account: principal, chain: giwaSepolia, transport: http(),
-    }).writeContract({
-        address: addresses.giwaFaucetExtension,
-        abi: [{type: "function", name: "payAndIssueEAS", inputs: [], outputs: [{type: "bytes32"}], stateMutability: "payable"}] as const,
-        functionName: "payAndIssueEAS",
-        value: fee,
-    });
-    await pub.waitForTransactionReceipt({hash: reissue, timeout: 120_000});
-    console.log(`  re-issued  ${EXPLORER}${reissue}`);
+    console.log(`\n6. the principal re-issues it — the rungs resume`);
+    const reissueTx = await ensureVerified();
+    console.log(`  re-issued  ${EXPLORER}${reissueTx}`);
+    await waitForIdentity(true);
+    const g = await attempt("₩5,000 after the identity was restored", t1, merchant, 5_000n);
+    assert(g.settled, "the rungs should resume once the identity is live again");
 
-    const f = await attempt("₩5,000 after the identity was restored", tier1, merchant, 5_000n);
-    assert(f.settled, "the tier should resume once the identity is live again");
+    console.log(`\n7. ${won(30_000n)} on rung 2 — the payment rung 1 refused, one rung up`);
+    const h = await attempt("₩30,000 on rung 2", t2, merchant, 30_000n);
+    assert(h.settled, "rung 2 should allow what rung 1 refused");
+
+    // ₩45,000 of the day is gone, so ₩5,000 remains. Rung 2 still allows ₩30,000 per payment and
+    // ₩20,000 is well inside that - what refuses is the budget underneath it.
+    console.log(`\n8. ${won(20_000n)} on rung 2 — inside its ceiling, past what the day has left`);
+    const i = await attempt("₩20,000 on rung 2, inside its ceiling but past the shared budget", t2, merchant, 20_000n);
+    assert(!i.settled && i.reason?.includes("transfer-amount-exceeded"),
+        `expected the shared budget to refuse, got ${i.reason}`);
+
+    console.log(`\n9. ${won(5_000n)} on rung 2 — exactly what is left`);
+    const j = await attempt("₩5,000 on rung 2, exactly the remaining budget", t2, merchant, 5_000n);
+    assert(j.settled, "the last of the day's budget should settle");
+
+    // Rung 1 has spent ₩15,000 all day, inside its own ₩10,000-per-payment ceiling every time. It
+    // is refused anyway, because the day belongs to the root and rung 2 spent it. This is the row
+    // that separates a ladder from two separate grants: a rung cannot be read on its own.
+    console.log(`\n10. ${won(5_000n)} on rung 1 — a rung that never overspent, stopped by another`);
+    const k = await attempt("₩5,000 on rung 1, after rung 2 spent the day", t1, merchant, 5_000n);
+    assert(!k.settled && k.reason?.includes("transfer-amount-exceeded"),
+        `the budget is shared across rungs, got ${k.reason}`);
 
     const settlements = ledger.filter((l) => l.settled);
     const total = settlements.reduce((sum, l) => sum + l.amount, 0n);
@@ -338,15 +414,27 @@ async function main() {
     appendFileSync(
         "docs/DEMO.md",
         `\n## Graduated autonomy - how much may the agent decide alone?\n\n` +
-            `Two authorities the same person signed, differing only in what they let the agent do without\n` +
-            `asking. Both carry the same identity, the same ${won(200_000n)} day budget, the same single\n` +
-            `merchant and the same seven-day window.\n\n` +
-            `| | Per payment | Human in the loop |\n|---|---|---|\n` +
-            `| Tier 1 | ${won(10_000n)} | no |\n| Tier 2 | ${won(100_000n)} | yes |\n\n` +
-            `Nothing above tier 2 exists, so a larger payment is refused by having no authority to\n` +
-            `redeem rather than by a rule - which is the honest shape of *this is not yours to decide*.\n\n` +
+            `One authority, three rungs. The person signs a root that carries the identity condition,\n` +
+            `a ${won(50_000n)} day budget, one merchant and a seven-day window, then signs each rung off\n` +
+            `it. Every rung inherits all of that and narrows one thing further.\n\n` +
+            `| Rung | Per payment | Human in the loop |\n|---|---|---|\n` +
+            `| 1 | ${won(10_000n)} | no |\n| 2 | ${won(30_000n)} | no |\n| 3 | ${won(200_000n)} | yes |\n\n` +
+            `**Who signs a rung decides whether its gate means anything.** The root delegates to the\n` +
+            `*person*, not to the agent, and the person signs each rung. Conditions can only be added\n` +
+            `going down a chain, never removed - so a rung the agent signed would bind nobody, because\n` +
+            `the agent could sign a second rung without the gate and redeem through that instead. Both\n` +
+            `arrangements are pinned in \`test/integration/TierBudget.t.sol\`.\n\n` +
             `${header}\n${rows}\n\n` +
-            `The third row is the one worth reading twice. That payment is inside every limit, from a live\n` +
+            `The last three rows are the reason this is one authority rather than three. Rung 2 spends\n` +
+            `the day down to nothing; rung 1 is then refused even though it never once exceeded its own\n` +
+            `${won(10_000n)} ceiling. **A rung cannot be read on its own** - the budget belongs to the root\n` +
+            `they hang from, and \`ERC20PeriodTransferEnforcer\` keys its ledger on the delegation hash it\n` +
+            `is attached to.\n\n` +
+            `Signed as siblings instead - two roots, each saying ${won(50_000n)} a day - the same ladder\n` +
+            `would spend ${won(100_000n)}, because two delegation hashes mean two ledgers. Nothing reverts;\n` +
+            `the chain does exactly what was signed. The gap is between what was signed and what the\n` +
+            `person believes they signed, which is why it is a test and not a footnote.\n\n` +
+            `Row 4 is the other one worth reading twice. That payment is inside every limit, from a live\n` +
             `identity, on an enabled delegation, to an allowed merchant. It is refused because no live\n` +
             `human confirmation stands behind it. Verified Codes are issued by exchanges through their\n` +
             `own channels, so the confirming half cannot be staged here - the refusal is the half that\n` +

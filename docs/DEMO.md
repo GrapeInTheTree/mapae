@@ -210,69 +210,50 @@ property that distinguishes erc7710 from eip3009/permit2 in the x402 exact/EVM s
 
 ## Graduated autonomy - how much may the agent decide alone?
 
-Two authorities the same person signed, differing only in what they let the agent do without
-asking. Both carry the same identity, the same ₩200,000 day budget, the same single
-merchant and the same seven-day window.
+One authority, three rungs. The person signs a root that carries the identity condition,
+a ₩50,000 day budget, one merchant and a seven-day window, then signs each rung off
+it. Every rung inherits all of that and narrows one thing further.
 
-| | Per payment | Human in the loop |
+| Rung | Per payment | Human in the loop |
 |---|---|---|
-| Tier 1 | ₩10,000 | no |
-| Tier 2 | ₩100,000 | yes |
+| 1 | ₩10,000 | no |
+| 2 | ₩30,000 | no |
+| 3 | ₩200,000 | yes |
 
-Nothing above tier 2 exists, so a larger payment is refused by having no authority to
-redeem rather than by a rule - which is the honest shape of *this is not yours to decide*.
+**Who signs a rung decides whether its gate means anything.** The root delegates to the
+*person*, not to the agent, and the person signs each rung. Conditions can only be added
+going down a chain, never removed - so a rung the agent signed would bind nobody, because
+the agent could sign a second rung without the gate and redeem through that instead. Both
+arrangements are pinned in `test/integration/TierBudget.t.sol`.
 
 | What the agent tried | Outcome on chain | Transaction |
 |---|---|---|
-| ₩10,000 within the unattended tier | **settled** | [0xbff3a51a…](https://sepolia-explorer.giwa.io/tx/0xbff3a51aa95d036c2aa374cbfbb0c2ba22e43cd260dd070b361e86a9d64e56ab) |
-| ₩30,000 above the unattended tier | **refused** `PerPaymentCapExceeded(30000, 10000)` | [0x88d7aea7…](https://sepolia-explorer.giwa.io/tx/0x88d7aea77f466e0190a0a8c6423b19a11f951518af9afa67abb06efc6253f777) |
-| ₩30,000 on the human-confirmation tier, presenting a code nobody confirmed | **refused** `CodeNotVerified(0xcde44ed867b9bce97f3e687eb4537822a871742b6fb41147551659f06749ff07, mapae.tiers.demo, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x3c93a192…](https://sepolia-explorer.giwa.io/tx/0x3c93a1922be357fd2c10e24d7578f63c0c84d51e50d2a04c5d7a8d4d5deb3043) |
-| ₩5,000 to an unlisted payee | **refused** `PayeeNotAllowed(0x8627eEE60293Eb53646d30031186c5B83D5889ae)` | [0x556713b1…](https://sepolia-explorer.giwa.io/tx/0x556713b119ce803bfba14cfa42e7f2e4f71643ba19abfb73dfa67a185cdad6a9) |
-| ₩5,000 after the identity was revoked | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0xe3f64303…](https://sepolia-explorer.giwa.io/tx/0xe3f64303fab6a4a8194423c3ba4ee888190ce2d8db9351c4ed4bff1e1a1b1b0f) |
-| ₩5,000 after the identity was restored | **settled** | [0xe60f819a…](https://sepolia-explorer.giwa.io/tx/0xe60f819a96159b81bf4bd249d125ce672b57084f7c3084f035e3b961e3073eb5) |
+| ₩10,000 on rung 1 | **settled** | [0xd17f165d…](https://sepolia-explorer.giwa.io/tx/0xd17f165da972389366dda0411c7afc772e6d40fb41a4952f3284f7c8bbf3d52f) |
+| ₩30,000 on rung 1, above its ₩10,000 ceiling | **refused** `PerPaymentCapExceeded(30000, 10000)` | [0x49b9dcba…](https://sepolia-explorer.giwa.io/tx/0x49b9dcba2a52808e0d6fbe282dd68cc438002656cffcfc7dadb111faa583155e) |
+| ₩5,000 to an unlisted payee | **refused** `PayeeNotAllowed(0x8627eEE60293Eb53646d30031186c5B83D5889ae)` | [0x6429c669…](https://sepolia-explorer.giwa.io/tx/0x6429c66977894a6b538fad2076424d4b36229155a659eae0d7b0da6bb96c022d) |
+| ₩150,000 on rung 3, presenting a code nobody confirmed | **refused** `CodeNotVerified(0xcde44ed867b9bce97f3e687eb4537822a871742b6fb41147551659f06749ff07, mapae.tiers.demo, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0xfdeaf01b…](https://sepolia-explorer.giwa.io/tx/0xfdeaf01b2ab2dafc31a4854dd03bc26a8553698c3cf7ace28e036d5dc861091c) |
+| ₩5,000 after the identity was revoked | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0xef36af5d…](https://sepolia-explorer.giwa.io/tx/0xef36af5d12c038dcb19276caad058f8480e57bcb01bf29c9a54861b7c56beed2) |
+| ₩5,000 after the identity was restored | **settled** | [0x87459ecc…](https://sepolia-explorer.giwa.io/tx/0x87459ecc48cc9efc3eeda1e956744bd8ca975038201e2c7f99cb13dad23884cd) |
+| ₩30,000 on rung 2 | **settled** | [0x832fa392…](https://sepolia-explorer.giwa.io/tx/0x832fa3921237a5272200ab06689070fc523f538c590c3a3f41a87e7cf48b7230) |
+| ₩20,000 on rung 2, inside its ceiling but past the shared budget | **refused** `Error(ERC20PeriodTransferEnforcer:transfer-amount-exceeded)` | [0xc949e811…](https://sepolia-explorer.giwa.io/tx/0xc949e811c7e90d660dcf943552707cf08811af9f2723e5a164ffbcd5f0114248) |
+| ₩5,000 on rung 2, exactly the remaining budget | **settled** | [0x12600cf4…](https://sepolia-explorer.giwa.io/tx/0x12600cf4facfda4fc123355c3dab06149b30a235a3d96e2353e3e725f830e0af) |
+| ₩5,000 on rung 1, after rung 2 spent the day | **refused** `Error(ERC20PeriodTransferEnforcer:transfer-amount-exceeded)` | [0x2e7d9c44…](https://sepolia-explorer.giwa.io/tx/0x2e7d9c44a85007eea985d59e6c5d9eca2183087fd99888c7583c3e39af5c1982) |
 
-The third row is the one worth reading twice. That payment is inside every limit, from a live
+The last three rows are the reason this is one authority rather than three. Rung 2 spends
+the day down to nothing; rung 1 is then refused even though it never once exceeded its own
+₩10,000 ceiling. **A rung cannot be read on its own** - the budget belongs to the root
+they hang from, and `ERC20PeriodTransferEnforcer` keys its ledger on the delegation hash it
+is attached to.
+
+Signed as siblings instead - two roots, each saying ₩50,000 a day - the same ladder
+would spend ₩100,000, because two delegation hashes mean two ledgers. Nothing reverts;
+the chain does exactly what was signed. The gap is between what was signed and what the
+person believes they signed, which is why it is a test and not a footnote.
+
+Row 4 is the other one worth reading twice. That payment is inside every limit, from a live
 identity, on an enabled delegation, to an allowed merchant. It is refused because no live
 human confirmation stands behind it. Verified Codes are issued by exchanges through their
 own channels, so the confirming half cannot be staged here - the refusal is the half that
 can be proven, and it is the half that matters.
 
 Reproduce with `pnpm tsx scripts/tiers-demo.ts <account>`.
-
-## Depth - the authority nobody remembers granting
-
-One person signed one delegation, to agent A. A hired B; B hired C. Neither hire was a
-transaction and neither carries the person's signature, so **the tree that spends their money
-is not a tree they can enumerate.** This run checks that rather than assuming it: neither
-sub-agent's address appears anywhere in what the person signed.
-
-| Hop | Signed by | Per-payment ceiling |
-|---|---|---|
-| A | the person | ₩10,000 |
-| B | A | ₩5,000 |
-| C | B | ₩50,000 — five times the root's |
-
-| What was attempted | Outcome on chain | Transaction |
-|---|---|---|
-| ₩3,000 by a sub-sub-agent the person never saw | **settled** | [0x93b64a86…](https://sepolia-explorer.giwa.io/tx/0x93b64a86330751b85bba1311ee79b4d4e289871a768ca0e3247456081d651328) |
-| ₩8,000 — within C's own ceiling, above B's | **refused** `PerPaymentCapExceeded(8000, 5000)` | [0x295c8b71…](https://sepolia-explorer.giwa.io/tx/0x295c8b71492d67372e4aef965f19a517708dbc4bcc2fa1c469f946a4486cfe32) |
-| ₩3,000 by C, after the identity was revoked | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x8581e7a0…](https://sepolia-explorer.giwa.io/tx/0x8581e7a0fe580966a9e71e5ed9b4512736d50cf819a70499e0f5933487e5d17f) |
-| ₩3,000 by A, the agent they actually granted to | **refused** `NotDojangVerified(0x2875B01Abf0E5EB98253274d62Db08FA7630B783, 0xaa92f8c143657dde575de430aecaea6ca91f2e6072339b16932d426895d8d678)` | [0x671f72d7…](https://sepolia-explorer.giwa.io/tx/0x671f72d785f6494bd065cef774ad17450e5673d589a557920e2679d6ab7b4814) |
-| ₩3,000 by C, after the identity was restored | **settled** | [0x8d9f8aae…](https://sepolia-explorer.giwa.io/tx/0x8d9f8aaec86834e4027376da7004d9c9af244d30d59c2dff63031b4492827b02) |
-
-The second row is redelegation's load-bearing property. B was free to *write* C a ceiling
-above the root's; nothing prevents signing it. What it cannot do is survive redemption -
-every hop's conditions run, so the tightest one binds and a child can only narrow.
-
-Rows three and four are the point of the whole script. The revocation is one transaction
-sent to an attestation registry: it names no delegation, touches no Mapae contract, and the
-person could not have named C if they had wanted to. The leaf stops, and so does the branch
-they do remember. Restoring the identity brings back all of it.
-
-The narrow claim is worth keeping narrow. **Disabling a root delegation severs a chain in
-any ERC-7710 framework** - that is the standard working, not something Mapae adds. What is
-ours is the other direction: the person acts on *their own identity*, and every tree they
-ever rooted stops at once, including the branches they never signed. Revoking what you
-remember is easy. The authority that hurts you is the one you cannot list.
-
-Reproduce with `pnpm tsx scripts/depth-demo.ts <account>`.
