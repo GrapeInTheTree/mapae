@@ -107,10 +107,14 @@ RPC endpoint, and this is the clearest single reason why.
 ## Delegation
 
 **No delegation framework is deployed.** MetaMask's delegation framework is absent, and nothing
-equivalent exists. More broadly — and this is the gap Mapae exists for — among the 38 audited
+equivalent exists. More broadly — and this is the gap Mapae exists for — among the 37 audited
 caveat enforcers MetaMask ships, and every enforcer we could find on any chain, **none conditions
 a delegation on identity**. The chain with a licensed exchange as its attestation issuer is
 precisely where that enforcer belongs.
+
+*Counted, not quoted:* `src/enforcers/` in MetaMask/delegation-framework holds 38 `.sol` files, of
+which `CaveatEnforcer.sol` is the abstract base every other one inherits from. Thirty-seven are
+conditions.
 
 We are not the only ones who notice the shape of this. Writing in February 2026, before any of
 this existed, [Oso Knows](https://www.osoknows.com/caveat/who-authorized-the-agent) put it as a

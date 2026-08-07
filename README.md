@@ -148,7 +148,7 @@ bytecode that someone else had verified. It is verified in its own right now.
 ## The contribution
 
 Delegation frameworks already express almost every spending condition: amounts, periods, streams,
-targets, methods, calldata, time windows, call counts. MetaMask's framework alone ships 38 audited
+targets, methods, calldata, time windows, call counts. MetaMask's framework alone ships 37 audited
 caveat enforcers.
 
 **None of them — in any deployed framework, on any chain — conditions a delegation on identity.**
@@ -368,8 +368,10 @@ merchants* or *only while this person is verified*, and no extension point to ad
 recovered signer must equal `from`, so an agent paying autonomously under it is an agent holding
 the payer's key: the arrangement this project exists to replace. The third, `erc7710`, is
 verified by *simulating the delegation manager*, and is the only one a single authorisation can
-settle **more than once**. This is not a niche rail: x402 has settled 157M+ payments on-chain
-(July 2026), and the foundation stewarding it under the Linux Foundation went operational on 14
+settle **more than once**. This is not a niche rail: x402 carried **75.41M on-chain payments in
+the last thirty days**, on USD 24.24M of volume across 94.06K buyers — the figures
+[x402.org](https://x402.org) publishes, read 2026-08-07. The foundation stewarding it under the
+Linux Foundation went operational on 14
 July with 40 members — Coinbase, Google, Visa and Mastercard among the Premier tier, and
 **KakaoPay, Galaxia Moneytree and Hecto Financial** among the General one. Three Korean payment
 companies, not one.
@@ -427,7 +429,7 @@ races on GIWA's load-balanced public endpoint are documented in [docs/GAPS.md](d
 ```bash
 git clone --recursive https://github.com/GrapeInTheTree/mapae && cd mapae
 
-# 157 unit, integration and invariant tests. No configuration, no network, ~27s.
+# 162 unit, integration and invariant tests. No configuration, no network, ~27s.
 forge test
 
 # 15 more, forked against live GIWA Sepolia and Ethereum Sepolia. Opt-in because they depend on

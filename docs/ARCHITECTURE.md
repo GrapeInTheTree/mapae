@@ -263,7 +263,7 @@ EIP-712 digest.
 
 ## 15. Next
 
-**All 38 audited conditions.** Six are deployed — the ones a payment needs, now including a
+**All 37 audited conditions.** Six are deployed — the ones a payment needs, now including a
 per-payment ceiling, deployed and proven live with a settle/refuse pair. Because the structures
 are byte-compatible, the rest is verification work rather than authoring: lifetime total, call
 count, allowed selector, and an approved-order hash that binds a payment to a purpose.

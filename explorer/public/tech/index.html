@@ -250,8 +250,8 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
 <section id="s1">
     <h2><span class="num">01</span>요약</h2>
     <p>에이전트가 스스로 결제하는 경로는 이미 열려 있습니다. x402는 공개된 지 1년 남짓 만에
-       온체인 정산 <strong>1억 5,700만 건</strong>을 넘겼고(2026년 7월 기준), 표준을 관리하는
-       재단에는 <strong>한국 결제사 세 곳</strong>이 이름을 올렸습니다.</p>
+       <strong>지난 30일에만 온체인 결제 7,541만 건</strong>이 지나갔고(x402.org 공표, 2026-08-07
+       조회), 표준을 관리하는 재단에는 <strong>한국 결제사 세 곳</strong>이 이름을 올렸습니다.</p>
     <p>정작 막혀 있는 것은 결제가 아니라 <strong>권한을 넘기는 방법</strong>입니다. 지금 쓸 수
        있는 방법은 두 가지뿐입니다. 개인키를 통째로 넘기거나, 수탁 서비스에 맡기는 것입니다.
        앞의 방법으로는 한도도 수취인도 기한도 걸 수 없고, 뒤의 방법은 온체인 결제를 하려고 다시
@@ -260,7 +260,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
        ERC-7710/7715와 x402를 그대로 쓰고, 거기에 <em>어디에도 없던 조건 하나</em>를 더합니다.
        바로 <strong>위임한 사람이 누구인가</strong>입니다.</p>
     <p>이미 배포된 위임 프레임워크들은 감사받은 지출 조건을 수십 종 갖추고 있습니다. MetaMask
-       하나만 해도 38종입니다. 그런데 <strong>위임을 신원에 거는 조건은 그중 하나도
+       하나만 해도 37종입니다. 그런데 <strong>위임을 신원에 거는 조건은 그중 하나도
        없습니다.</strong> 조건으로 걸 만한 온체인 신원을 가진 체인이 없었기 때문입니다. 기와에는
        도장이 있습니다.</p>
     <div class="scroll"><table>
@@ -285,8 +285,7 @@ footer .links { display: flex; flex-wrap: wrap; gap: 10px 24px; margin-top: 14px
     </div>
     <p>이 시장이 얼마나 빠르게 커지고 있는지는 추정치가 아니라 실제 집계로 확인됩니다.</p>
     <div class="scroll"><table>
-        <tr><td>x402 온체인 정산 누적</td><td class="n">1.57억 건</td><td>스테이블코인 4,100만 달러 · 체인 7 · facilitator 18 (2026-07 기준)</td></tr>
-        <tr><td>활성 에이전트</td><td class="n">69,000</td><td>Coinbase 집계, 2026-04</td></tr>
+        <tr><td>x402 결제 (지난 30일)</td><td class="n">7,541만 건</td><td>거래액 2,424만 달러 · 구매자 9.4만 · 판매자 2.2만. <a href="https://x402.org">x402.org</a>가 공표하는 값, 2026-08-07 조회</td></tr>
         <tr><td>x402 재단</td><td class="n">40개사</td><td>Linux Foundation 산하, 2026-07-14 운영 개시. Premier에 Coinbase·Google·AWS·Visa·Mastercard·Stripe·Shopify·Cloudflare 등, General에 <strong>카카오페이·갈럭시아머니트리·헥토파이낸셜</strong></td></tr>
     </table></div>
     <p>물론 이 거래량의 상당 부분은 아직 테스트와 투기성 거래입니다. 하지만 그 사실은 오히려
@@ -594,7 +593,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <h2><span class="num">07</span>기여물 — 신원 조건</h2>
     <p>배포된 위임 프레임워크들은 거의 모든 지출 조건을 이미 표현합니다. 금액·기간·스트리밍·
        타겟·메서드·calldata·시간 범위·호출 횟수. MetaMask 프레임워크 하나만 해도 감사된 조건이
-       <strong>38종</strong>입니다.</p>
+       <strong>37종</strong>입니다.</p>
     <p><strong>그중 위임을 신원에 거는 것은 없습니다</strong> — 어떤 배포된 프레임워크에도,
        어떤 체인에도. 조건으로 걸 만한 온체인 신원 자체가 없었기 때문입니다.</p>
     <h3>설계 결정 넷</h3>
@@ -1052,7 +1051,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        <code>execute</code>는 일부러 열어 뒀습니다. 매니저를 부르는 것이 사람이 킬스위치를 내리는
        방법입니다.</p>
     <div class="note">
-        <strong>배포 상태를 정직하게.</strong> 이 가드는 소스와 테스트에 있고(157 통과), 아직
+        <strong>배포 상태를 정직하게.</strong> 이 가드는 소스와 테스트에 있고(162 통과), 아직
         <em>온체인에 없습니다.</em> 심사에 제출한 주소를 재배포로 무효화하지 않기 위해 8월 중순
         이후로 미뤘습니다. 현재 배포본에서도 발급된 마패는 기간 조건이 막고 있으므로 실사용 노출은
         없습니다.
@@ -1090,7 +1089,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 <section id="s17">
     <h2><span class="num">17</span>다음</h2>
     <div class="card key">
-        <h4>감사된 조건 38종 전부 탑재</h4>
+        <h4>감사된 조건 37종 전부 탑재</h4>
         <p>지금은 결제에 필요한 6종이 올라가 있습니다. 여섯 번째인 회당 한도까지 배포·검증을 마쳤고,
            정산과 거부를 짝으로 라이브 증명했습니다. 표준을 그대로 따르기 때문에 남은 조건들은 고쳐
            쓸 일이 아니라 <strong>검증할 일</strong>입니다. 누적 총액, 호출 횟수, 허용 함수 셀렉터,
@@ -1201,9 +1200,9 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 <section id="e1">
     <h2><span class="num">01</span>Summary</h2>
     <p>x402 opened the path for an agent to pay for things on its own &mdash; over
-       <strong>157 million settlements</strong> on-chain in little more than a year (as of July
-       2026), and the foundation that stewards the standard has <strong>three Korean payment
-       companies</strong> in it. What is still missing is a way to <strong>hand over the
+       <strong>75 million on-chain payments in the last thirty days alone</strong> (the figure
+       x402.org publishes, read 2026-08-07), and the foundation that stewards the standard has
+       <strong>three Korean payment companies</strong> in it. What is still missing is a way to <strong>hand over the
        authority to do so</strong>. Today there are two options: give the agent a private key,
        with no cap, no payee restriction and no expiry; or trust a custodial service, which
        reintroduces the intermediary that on-chain payment was meant to remove.</p>
@@ -1236,8 +1235,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     </div>
     <p>And how fast this rail is growing is a tally, not an estimate.</p>
     <div class="scroll"><table>
-        <tr><td>Cumulative x402 settlements</td><td class="n">157M</td><td>USD 41M in stablecoins &middot; 7 chains &middot; 18 facilitators (as of July 2026)</td></tr>
-        <tr><td>Active agents</td><td class="n">69,000</td><td>Coinbase count, April 2026</td></tr>
+        <tr><td>x402 payments (last 30 days)</td><td class="n">75.41M</td><td>USD 24.24M in volume &middot; 94.06K buyers &middot; 22K sellers. The figures <a href="https://x402.org">x402.org</a> publishes, read 2026-08-07</td></tr>
         <tr><td>x402 Foundation</td><td class="n">40 members</td><td>Under the Linux Foundation, operational 14 July 2026. Premier includes Coinbase, Google, AWS, Visa, Mastercard, Stripe, Shopify, Cloudflare; General includes <strong>KakaoPay, Galaxia Moneytree and Hecto Financial</strong></td></tr>
     </table></div>
     <p>Much of this traffic is still testing and speculation &mdash; which sharpens the argument
@@ -1561,7 +1559,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <h2><span class="num">07</span>The contribution &mdash; the identity caveat</h2>
     <p>Delegation frameworks already express nearly every spending condition: amounts, periods,
        streams, targets, methods, calldata, time windows, call counts. MetaMask's framework alone
-       ships <strong>38 audited caveat enforcers</strong>.</p>
+       ships <strong>37 audited caveat enforcers</strong>.</p>
     <p><strong>None of them &mdash; in any deployed framework, on any chain &mdash; conditions a
        delegation on identity</strong>, because there was no on-chain identity to condition on.</p>
     <h3>Four load-bearing decisions</h3>
@@ -2047,7 +2045,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        calling the manager is how a principal throws the kill switch.</p>
     <div class="note">
         <strong>Where this stands, precisely.</strong> The guard is in the source and under test
-        (157 passing) and is <em>not yet on-chain</em>. Redeploying would invalidate the addresses
+        (162 passing) and is <em>not yet on-chain</em>. Redeploying would invalidate the addresses
         submitted for review, so it waits until mid-August. On the currently deployed contracts,
         issued permissions are still covered by the period condition, so there is no live exposure.
     </div>
@@ -2087,7 +2085,7 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
 <section id="e17">
     <h2><span class="num">17</span>Next</h2>
     <div class="card key">
-        <h4>All 38 audited conditions</h4>
+        <h4>All 37 audited conditions</h4>
         <p>Six are deployed &mdash; the ones a payment needs, the per-payment ceiling having just
            joined: deployed, verified, and proven live with a settle/refuse pair. Because the
            structures are byte-compatible, the rest is verification work rather than authoring:
