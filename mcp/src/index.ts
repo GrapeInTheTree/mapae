@@ -365,8 +365,11 @@ server.tool(
                     "Compose the ask with request_permission, have the human sign it at " +
                     `${APP_URL}/create, then hand the issued context to load_context.`,
                 gasNote:
-                    "This agent pays its own gas - fund its address with a little GIWA Sepolia " +
-                    "ETH from any Sepolia faucet before the first pay.",
+                    "This agent pays its own gas. Ask the human to open https://faucet.giwa.io, " +
+                    "paste agentAddress, and claim - it pays GIWA Sepolia ETH directly, no " +
+                    "bridging, up to 0.005 ETH per address every 24 hours. That is tens of " +
+                    "thousands of payments. The faucet is a web page a person has to open, so " +
+                    "nothing here can top the agent up on its own.",
             });
         const out = await Promise.all(
             held.map(async (h, index) => {
@@ -396,7 +399,7 @@ server.tool(
 
 server.tool(
     "agent_status",
-    "[마패] 이 에이전트의 신원·가스 잔액·보유한 마패별 남은 여력 한눈에. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and one line of headroom per held authority (remaining budget, per-payment ceiling, usable or not). Gas cannot be fetched programmatically - GIWA's ETH faucets are web pages with captchas - so when the tank is low, hand the human this address to fund.",
+    "[마패] 이 에이전트의 신원·가스 잔액·보유한 마패별 남은 여력 한눈에. Who this agent is on this machine: address, gas balance, roughly how many payments that covers, and one line of headroom per held authority (remaining budget, per-payment ceiling, usable or not). When gas runs low, hand the human this address and https://faucet.giwa.io - the faucet is a web page a person has to open, so nothing here can top the agent up on its own.",
     {},
     async () => {
         const [balance, block] = await Promise.all([
@@ -432,8 +435,10 @@ server.tool(
             profile: process.env.MAPAE_PROFILE ?? "(default)",
             contextsFile: CONTEXTS_FILE,
             fundingNote:
-                "Send GIWA Sepolia ETH to agentAddress from any funded wallet. There is no " +
-                "programmatic faucet - the human does this once, a fraction of a cent covers hundreds of payments.",
+                "To top up: open https://faucet.giwa.io, paste agentAddress, claim. It pays GIWA " +
+                "Sepolia ETH directly, no bridging from Ethereum Sepolia, and gives up to 0.005 " +
+                "ETH per address every 24 hours - tens of thousands of payments. A person has to " +
+                "do this; there is no programmatic faucet.",
         });
     },
 );
