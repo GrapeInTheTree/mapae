@@ -2,22 +2,39 @@
  * Graduated autonomy, mined.
  *
  * The question an agent budget never answers is the only one anyone actually asks: *how much may
- * it decide alone?* This script answers it on-chain, with two authorities the same person signs:
+ * it decide alone?* This script answers it on-chain, with ONE authority and three rungs:
  *
- *   tier 1  ₩10,000 per payment, no human in the loop      → the agent just pays
- *   tier 2  ₩100,000 per payment, human confirmation gate  → the agent cannot pay alone
+ *   root    identity, ₩50,000 a day, one merchant, seven days   → the person signs this once
+ *     rung 1  ≤ ₩10,000 per payment, unattended                 → the agent just pays
+ *     rung 2  ≤ ₩30,000 per payment, unattended                 → the same payment, one rung up
+ *     rung 3  ≤ ₩200,000 per payment, human confirmation        → the agent cannot pay alone
  *
- * Nothing above tier 2 exists, so a payment past it has no authority to redeem at all - refusal
- * by absence rather than by rule, which is the honest shape of "this is not yours to decide".
+ * One authority rather than three, and that is the whole point of the shape. An earlier version of
+ * this script signed the rungs as SIBLINGS, and `ERC20PeriodTransferEnforcer` keys its ledger on
+ * the delegation hash - so two rungs meant two ledgers, and a person who signed "₩50,000 a day"
+ * twice had granted ₩100,000. Nothing reverted; the chain did exactly what was signed. Hanging the
+ * rungs off one root fixes it, because the manager hands each delegation's caveats that
+ * delegation's own hash and the cap therefore lives in one ledger.
+ *
+ * The root delegates to the PERSON, not to the agent, and the person signs each rung. Conditions
+ * can only be added going down a chain, never removed - so a human gate on a rung the AGENT signed
+ * would bind nobody: it would sign a second rung without the gate and redeem through that. Moving
+ * the gate up to the root binds everyone and makes a ₩1,000 payment need a human, which is a
+ * ladder with no rungs. Both arrangements are pinned in test/integration/TierBudget.t.sol.
+ *
+ * The ceiling above rung 3 is the root's own: ₩200,000 per payment and ₩50,000 a day. A larger
+ * payment is refused by the authority that was signed, not by the absence of a rung.
  *
  * The historical mapae worked the same way: the number of horses on the plate scaled with the
  * weight of the errand, and the plate said which one you held.
  *
- * On the human tier, note what is being proven. Verified Code attestations are issued by exchanges
- * through their own channels - we cannot mint one, so the confirmation cannot be staged. What
- * settles that scene is the REFUSAL: a payment inside every limit, from a live identity, on an
- * enabled delegation, to an allowed payee, refused solely because no live human confirmation
- * stands behind it. That is the gate working, and it is the only half of it we can honestly show.
+ * On rung 3, note what is being proven. Verified Code attestations are issued by exchanges through
+ * their own channels - we cannot mint one, so the confirmation cannot be staged. What settles that
+ * scene is the REFUSAL: a payment inside every limit, from a live identity, on an enabled
+ * delegation, to an allowed payee, refused solely because no live human confirmation stands behind
+ * it. That is the gate working, and it is the only half of it we can honestly show. It is also why
+ * there are three rungs and not two: a gated rung can never settle, so the rungs that exhaust the
+ * shared budget have to be the ungated ones.
  *
  *   pnpm tsx scripts/tiers-demo.ts <mapaeAccountAddress>
  */
