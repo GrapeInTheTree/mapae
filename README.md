@@ -362,7 +362,11 @@ than a slow right one. The explorer ignores an index that says it is not ready.
 ## The x402 path
 
 x402 v2's `exact` scheme on EVM defines three asset-transfer methods. Two of them — `eip3009`,
-`permit2` — authorise at the token layer and die with their nonce. The third, `erc7710`, is
+`permit2` — authorise at the token layer and die with their nonce. An EIP-3009 authorisation is
+six fields — `from, to, value, validAfter, validBefore, nonce` — with no field for *only these
+merchants* or *only while this person is verified*, and no extension point to add one. And the
+recovered signer must equal `from`, so an agent paying autonomously under it is an agent holding
+the payer's key: the arrangement this project exists to replace. The third, `erc7710`, is
 verified by *simulating the delegation manager*, and is the only one a single authorisation can
 settle **more than once**. This is not a niche rail: x402 has settled 157M+ payments on-chain
 (July 2026), and the foundation stewarding it under the Linux Foundation went operational on 14

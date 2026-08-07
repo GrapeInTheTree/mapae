@@ -702,11 +702,29 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
     <p>마패는 이 세 번째 방식을 구현합니다. 정산자는 <strong>정책도 자금도 갖지 않습니다</strong> — 모든
        한도·수취인·기한·신원 검사가 온체인에서 돌고, 정산자의 키는 가스만 냅니다. 이것은 우회가 아니라 설계 목표입니다. 정책 판정이 전부 온체인에 있으므로 정산자는 정책을 알 필요가 없고, 알 수도 없습니다.</p>
     <p>2026년 7월에 조사했을 때 기와에는 EIP-3009 토큰이 배포돼 있지 않았고, 그래서 다른 두 방식은
-       정산할 대상 자체가 없었습니다. 다만 이 선택을 떠받치는 것은 그 부재가 아니라 구조입니다.
-       <code>eip3009</code>는 <strong>그 방식을 위해 쓰인 토큰</strong>에만 정산할 수 있고,
-       <code>erc7710</code>은 <strong>이미 돌고 있는 아무 ERC-20</strong>에나 붙습니다. 승인이
-       토큰이 아니라 위임에 들어 있기 때문입니다. 누군가 오늘 규격에 맞는 토큰을 배포해도 그
-       사실은 바뀌지 않습니다.</p>
+       정산할 대상 자체가 없었습니다. 다만 그 부재는 작업 순서를 정했을 뿐이고, 선택을 떠받치는
+       것은 따로 있습니다.</p>
+    <p><strong>EIP-3009 인가서에는 정책을 넣을 자리가 없습니다.</strong> 서명되는 메시지가 여섯
+       필드이고, 타입해시가 그것을 못 박습니다.</p>
+    <pre><code>TransferWithAuthorization(address from,address to,uint256 value,
+                          uint256 validAfter,uint256 validBefore,bytes32 nonce)
+  <span class="k">keccak256 = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267</span></code></pre>
+    <p>보내는 사람, 받는 사람, 금액, 시간창, 그리고 쓰면 소진되는 nonce. <em>이 세 가맹점에만</em>,
+       <em>한 번에 ₩10,000까지</em>, <em>이 사람 신원이 살아 있는 동안만</em>을 적을 필드가 없고,
+       하나 덧붙일 확장점도 없습니다. 메시지 자체가 이미 완전히 특정된 이체이기 때문입니다.</p>
+    <p>더 중요한 것은 뒷부분입니다. 복원된 서명자가 <code>from</code>과 같아야 하므로
+       <strong>서명하는 사람이 곧 지불인</strong>입니다. <code>eip3009</code>로 에이전트가 자율
+       결제를 하려면 <strong>에이전트가 지불인의 키를 쥐어야</strong> 합니다 — 마패가 없애려는
+       바로 그 구조입니다. 사람이 인가서를 여러 장 미리 서명해 둘 수는 있지만, 한 장마다 수취인과
+       금액이 이미 정해집니다. 그건 위임이 아니라 <strong>수표 묶음</strong>이고,
+       <em>"이 가맹점들에서, 이만큼까지, 내 신원이 유효한 동안"</em>에 답하지 못합니다.</p>
+    <p><code>erc7710</code>은 그 서명을 둘로 나눕니다. 사람이 조건을 붙여 권한을 한 번 서명하고,
+       에이전트가 그 안에서 상환마다 서명합니다. 조건이 <strong>컨트랙트</strong>라는 것이 신원
+       같은 조건이 존재할 수 있는 유일한 이유입니다.</p>
+    <p>덧붙이면 <code>eip3009</code>는 <strong>그 방식을 위해 쓰인 토큰</strong>에만 정산하고,
+       <code>erc7710</code>은 <strong>이미 돌고 있는 아무 ERC-20</strong>에나 붙습니다. 누군가
+       오늘 규격에 맞는 토큰을 배포해도 위의 어느 것도 바뀌지 않습니다. 서명할 필드가 여전히
+       여섯 개이기 때문입니다.</p>
     <p>라이브 증명에서는 같은 서명 payload로 정산이 두 번 일어나고, 세 번째는 브로드캐스트 전에
        거부됩니다.</p>
     <p>이 정산자는 <strong>공개로 돌고 있습니다</strong> — <em>x402.mapae.org</em>. 정산은 영수증이
@@ -1633,11 +1651,32 @@ CAVEAT_TYPEHASH = keccak256("Caveat(address enforcer,bytes terms)")</code></pre>
        gas and nothing else. This is a design goal rather than a workaround &mdash; because
        adjudication is entirely on-chain, the settler does not need to know the policy, and cannot.</p>
     <p>When we surveyed GIWA in July 2026, no EIP-3009 token was deployed, so the other two methods
-       had nothing to settle against. What holds up the choice, though, is structure rather than
-       that absence. <code>eip3009</code> settles only against <strong>a token written for
-       it</strong>; <code>erc7710</code> rides on <strong>any ERC-20 already circulating</strong>,
-       because the authorisation lives in a delegation instead of in the token. Someone deploying a
-       compliant token today would not change that.</p>
+       had nothing to settle against. That decided the order of the work. What holds up the choice
+       is something else.</p>
+    <p><strong>An EIP-3009 authorisation has nowhere to put a policy.</strong> Its signed message is
+       six fields, and the typehash pins them:</p>
+    <pre><code>TransferWithAuthorization(address from,address to,uint256 value,
+                          uint256 validAfter,uint256 validBefore,bytes32 nonce)
+  <span class="k">keccak256 = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267</span></code></pre>
+    <p>A sender, a recipient, an amount, a time window, and a nonce that burns on use. There is no
+       field where <em>only these merchants</em>, <em>at most ₩10,000 at a time</em>, or <em>only
+       while this person's identity is live</em> could go, and no extension point to add one: the
+       message is the transfer, already fully specified.</p>
+    <p>The second half matters more. The recovered signer must equal <code>from</code>, so
+       <strong>whoever signs is the payer</strong>. An agent paying autonomously under
+       <code>eip3009</code> is an agent <strong>holding the payer's key</strong> &mdash; the
+       arrangement this project exists to replace. A person could pre-sign a stack of
+       authorisations instead, but each fixes its recipient and amount in advance. That is a book
+       of cheques rather than a delegation, and it cannot answer <em>"up to this much, at these
+       merchants, while I am still verified"</em>.</p>
+    <p><code>erc7710</code> splits that signature in two: the person signs the authority once with
+       conditions attached, and the agent signs each redemption inside it. The conditions are
+       <strong>contracts</strong>, which is the only reason a condition like identity can exist at
+       all.</p>
+    <p>Separately, <code>eip3009</code> settles only against <strong>a token written for it</strong>
+       while <code>erc7710</code> rides on <strong>any ERC-20 already circulating</strong>. Someone
+       deploying a compliant token today changes none of the above &mdash; there would still be six
+       fields to sign.</p>
     <p>In the live run, one signed payload settles twice and a third attempt is refused before
        broadcast.</p>
     <p>This settler <strong>runs publicly</strong> at <em>x402.mapae.org</em>. A settlement is

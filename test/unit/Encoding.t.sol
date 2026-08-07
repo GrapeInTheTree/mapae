@@ -240,6 +240,28 @@ contract EncodingConformanceTest is Test {
     /*                                   Helpers                                   */
     /* -------------------------------------------------------------------------- */
 
+    /// @notice EIP-3009's authorisation is six fields, and this pins the shape our documents argue
+    ///         from.
+    ///
+    /// @dev The x402 section claims an EIP-3009 authorisation has nowhere to put a policy - no
+    ///      payee set, no per-payment ceiling, no identity condition - and that the signer must be
+    ///      the payer. Both follow from this typehash, so the typehash is asserted as a literal
+    ///      rather than recomputed. If the standard ever grew a field, this fails and the claim
+    ///      gets revisited instead of quietly becoming false.
+    ///
+    ///      Nothing here imports or depends on EIP-3009. It is a claim we make about a neighbour,
+    ///      held to the same standard as claims we make about ourselves.
+    function test_Eip3009_AuthorizationHasNoPolicyFields() public pure {
+        assertEq(
+            keccak256(
+                "TransferWithAuthorization(address from,address to,uint256 value,"
+                "uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+            ),
+            bytes32(0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267),
+            "EIP-3009 typehash drift - the x402 argument quotes this value"
+        );
+    }
+
     function _sampleDelegation() internal pure returns (Delegation memory d) {
         Caveat[] memory caveats = new Caveat[](1);
         caveats[0] = Caveat({enforcer: address(0xCAFE), terms: hex"1234", args: hex"5678"});

@@ -59,8 +59,33 @@ third-party "KRW"/"USDC" token we probed reverted on `DOMAIN_SEPARATOR()` and
 `authorizationState()`, so x402's default `eip3009` method had nothing on this chain to settle
 against and we built the `erc7710` path instead.
 
+**And an EIP-3009 authorisation has nowhere to put a policy.** Its signed message is six fields,
+and the typehash pins them:
+
+```
+TransferWithAuthorization(address from,address to,uint256 value,
+                          uint256 validAfter,uint256 validBefore,bytes32 nonce)
+  keccak256 = 0x7c7c6cdb67a18743f49ec6fa9b35f50d52ed05cbed4cc592e13b44501c1a2267
+```
+
+`from`, `to`, `value`, a time window, a nonce. There is no field where *only these merchants*, *at
+most ₩10,000 at a time*, or *only while this person's identity is live* could go, and no extension
+point to add one — the message is the transfer, fully specified, and the nonce burns on use.
+
+The second half matters more. The recovered signer must equal `from`, so **whoever signs is the
+payer.** An agent paying autonomously under `eip3009` is an agent holding the payer's key, which
+is the arrangement this project exists to replace. A person could instead pre-sign a stack of
+authorisations, but each one fixes its own recipient and amount in advance: that is a book of
+cheques, not a delegation, and it cannot answer "spend up to this much, at these merchants, while
+I am still verified".
+
+`erc7710` splits the signature in two. The person signs the authority once, with conditions
+attached; the agent signs each redemption inside it. The conditions are contracts, which is the
+only reason a condition like identity can exist at all.
+
 Nothing prevents anyone from deploying a compliant token, and by the time you read this someone
-may have. That does not undo the reason for the choice, because the constraint is not scarcity —
+may have. It would not touch any of the above — a token written for EIP-3009 still has six fields
+to sign. That does not undo the reason for the choice, because the constraint is not scarcity —
 it is that **you have to issue the asset first.** `eip3009` settles only against a token written
 for it; `erc7710` rides on whatever is already circulating, because the authorisation lives in a
 delegation rather than in the token. A chain with one compliant stablecoin can use `eip3009` for
