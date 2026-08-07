@@ -98,3 +98,22 @@ export async function indexedDelegationExists(hash: Hex): Promise<boolean | null
         return null;
     }
 }
+
+/** Everything a Mapae has ever settled, as opposed to what it has settled this period.
+ *
+ *  The period ledger resets on every roll-over, so a Mapae that spent its whole daily cap reads
+ *  as zero the next morning. That is true and it is also the opposite of what a reader concludes
+ *  when the page above it says two payments settled. Null when the index cannot say - the line is
+ *  then omitted rather than guessed at. */
+export async function indexedDelegationTotals(
+    hash: Hex,
+): Promise<{spentTotal: bigint; redemptions: number} | null> {
+    const d = await ask<{delegation?: {spentTotal?: string; redemptions?: number}}>(
+        `/api/delegation/${hash}`,
+    );
+    if (!d?.delegation?.spentTotal) return null;
+    return {
+        spentTotal: BigInt(d.delegation.spentTotal),
+        redemptions: d.delegation.redemptions ?? 0,
+    };
+}

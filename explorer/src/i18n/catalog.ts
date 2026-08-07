@@ -199,6 +199,9 @@ export const en = {
         refused: "Refused",
         lastUsed: "Last used",
         perPeriod: "per period",
+        spentEver: "Settled in total",
+        deadNoSpend:
+            "This Mapae can no longer settle. The period allowance below still resets, but nothing can draw on it.",
         periodNote: "Unused allowance is forfeited when the period rolls over; it never accumulates.",
         conditions: "What was signed",
         payeeHeading: "Payments may only go to these {n} addresses",
@@ -622,6 +625,9 @@ export const ko: Catalog = {
         refused: "거부",
         lastUsed: "마지막 사용",
         perPeriod: "기간당",
+        spentEver: "누적 정산",
+        deadNoSpend:
+            "이 마패는 더 이상 정산할 수 없습니다. 아래 기간 한도는 여전히 초기화되지만, 거기서 끌어다 쓸 수 있는 것은 없습니다.",
         periodNote: "쓰지 않은 한도는 기간이 넘어가면 소멸하며, 누적되지 않습니다.",
         conditions: "무엇이 서명되었나",
         payeeHeading: "다음 {n}곳에만 결제할 수 있습니다",

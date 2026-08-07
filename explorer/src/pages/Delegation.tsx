@@ -19,6 +19,7 @@ import {useLang} from "../i18n";
 import {addresses, short} from "../lib/config";
 import {readableError, useMapaeAccount} from "../lib/account";
 import {client, enrichDelegations, fetchDelegationList, type DelegationSummary} from "../lib/data";
+import {indexedDelegationTotals} from "../lib/indexer";
 import {fmtToken, renderCondition} from "../lib/policy";
 import * as store from "../lib/store";
 import {useWallet} from "../lib/wallet";
@@ -46,11 +47,16 @@ export default function Delegation() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [reloadKey, setReloadKey] = useState(0);
+    /** Lifetime settled, from the index. Null when it cannot say - the line is then left off
+     *  rather than shown as zero, which is the very confusion this exists to remove. */
+    const [totals, setTotals] = useState<{spentTotal: bigint; redemptions: number} | null>(null);
 
     useEffect(() => {
         let cancelled = false;
         setList(null);
         setFailed(false);
+        setTotals(null);
+        if (hash) indexedDelegationTotals(hash).then((v) => !cancelled && setTotals(v));
         // The listing is cheap; the live state is not. A detail page needs it for exactly one
         // authority, so it enriches that one rather than all seventy-three.
         fetchDelegationList()
@@ -64,7 +70,10 @@ export default function Delegation() {
         return () => {
             cancelled = true;
         };
-    }, [reloadKey]);
+        // `hash` belongs here: react-router keeps this component mounted when only the param
+        // changes, so without it a walk from one Mapae to another would keep the first one's
+        // enriched state and lifetime total.
+    }, [hash, reloadKey]);
 
     const d = useMemo(
         () => list?.find((x) => x.hash.toLowerCase() === (hash ?? "").toLowerCase()) ?? null,
@@ -138,6 +147,10 @@ export default function Delegation() {
             ? {ok: false, label: t("permissions", "expired")}
             : {ok: true, label: t("permissions", "active")};
 
+    /** Whether a payment could settle under this authority right now. Three separate ways to be
+     *  dead, and any one of them makes the period allowance below a number about nothing. */
+    const canSpend = !d.disabled && d.identityLive !== false && !expired;
+
     const spent = d.available != null && d.periodCap != null ? d.periodCap - d.available : null;
     const pct =
         spent != null && d.periodCap && d.periodCap > 0n
@@ -200,9 +213,16 @@ export default function Delegation() {
 
             {period?.kind === "period" && (
                 <Card className="mt-4 px-5 py-4">
+                    {/* An authority that cannot settle any more still has a period that rolls
+                        over, and a bar drawn from it reads as headroom. Say so before showing it. */}
+                    {!canSpend && (
+                        <p className="mb-3 text-[12.5px] leading-relaxed text-mute">
+                            {t("dpage", "deadNoSpend")}
+                        </p>
+                    )}
                     <div className="flex items-baseline justify-between text-[13px]">
                         <span className="text-mute">
-                            {t("permissions", "spent")}{" "}
+                            {t("permissions", "spentThisPeriod")}{" "}
                             <span className="tnum text-ink">
                                 {spent != null ? fmtToken(period.token, spent) : "—"}
                             </span>
@@ -211,6 +231,19 @@ export default function Delegation() {
                             {fmtToken(period.token, period.amount)} / {t("dpage", "perPeriod")}
                         </span>
                     </div>
+                    {/* The period ledger resets, so a Mapae that spent its whole cap yesterday
+                        reads as zero today - directly contradicting the settled count above it
+                        unless the lifetime figure is also on the page. */}
+                    {totals != null && (
+                        <div className="mt-2 flex items-baseline justify-between text-[12.5px]">
+                            <span className="text-mute">
+                                {t("dpage", "spentEver")}{" "}
+                                <span className="tnum text-ink-2">
+                                    {fmtToken(period.token, totals.spentTotal)}
+                                </span>
+                            </span>
+                        </div>
+                    )}
                     <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
                         <div className="h-full rounded-full bg-bronze" style={{width: `${pct}%`}} />
                     </div>
